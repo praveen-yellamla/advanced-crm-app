@@ -7,7 +7,7 @@ const connectionString = process.env.DATABASE_URL;
 const pool = new Pool({ 
   connectionString,
   // Enable SSL for production (Render) to prevent Access Denied errors
-  ssl: process.env.NODE_ENV === 'production' 
+  ssl: connectionString.includes('render.com') || process.env.NODE_ENV === 'production'
     ? { rejectUnauthorized: false } 
     : false 
 });
