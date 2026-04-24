@@ -5,7 +5,13 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
 const connectionString = process.env.DATABASE_URL;
-const pool = new Pool({ connectionString });
+const pool = new Pool({ 
+  connectionString,
+  // Enable SSL for production (Render)
+  ssl: process.env.DATABASE_URL.includes('render.com') || process.env.NODE_ENV === 'production'
+    ? { rejectUnauthorized: false } 
+    : false 
+});
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
