@@ -1,23 +1,41 @@
 const express = require('express');
+const router = express.Router();
+const { 
+  createTeam, 
+  getTeams, 
+  updateTeam, 
+  deleteTeam,
+  createAgent,
+  getAgents,
+  updateAgent,
+  deleteAgent,
+  sendInvite
+} = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-const router = express.Router();
+// All routes here are protected and require ADMIN role
+router.use(protect);
+router.use(authorize('ADMIN'));
 
-router.get('/dashboard', protect, authorize('ADMIN'), (req, res) => {
-  res.json({
-    status: 'success',
-    message: 'Welcome to the Admin Dashboard',
-    data: {
-      stats: { users: 10, revenue: 50000, leads: 150 }
-    }
-  });
-});
+// Team Routes
+router.route('/teams')
+  .post(createTeam)
+  .get(getTeams);
 
-router.post('/create-user', protect, authorize('ADMIN'), (req, res) => {
-  res.json({
-    status: 'success',
-    message: 'Admin specialized user creation endpoint'
-  });
-});
+router.route('/teams/:id')
+  .put(updateTeam)
+  .delete(deleteTeam);
+
+// Agent Routes
+router.route('/agents')
+  .post(createAgent)
+  .get(getAgents);
+
+router.route('/agents/:id')
+  .put(updateAgent)
+  .delete(deleteAgent);
+
+// Invite Route
+router.post('/invite', sendInvite);
 
 module.exports = router;

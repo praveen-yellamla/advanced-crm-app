@@ -11,24 +11,47 @@ model User {
   name          String
   email         String   @unique
   password      String
+  phone         String?
   role          Role     @default(AGENT)
+  region        String?
+  language      String?
   isActive      Boolean  @default(true) @map("is_active")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  teamId        Int?     @map("team_id")
+  team          Team?    @relation("TeamAgents", fields: [teamId], references: [id])
+  
+  managerId     Int?     @map("manager_id")
+  manager       User?    @relation("AgentManager", fields: [managerId], references: [id])
+  agents        User[]   @relation("AgentManager")
+  
+  managedTeams  Team[]   @relation("TeamManager")
+  
   calls         Call[]
   assignedLeads Lead[]   @relation("AssignedLeads")
   tasks         Task[]
-  managedTeams  Team[]   @relation("TeamManager")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@index([email])
   @@map("users")
 }
 
 model Team {
-  id        Int    @id @default(autoincrement())
-  teamName  String @map("team_name")
-  managerId Int    @map("manager_id")
-  manager   User   @relation("TeamManager", fields: [managerId], references: [id])
+  id            Int      @id @default(autoincrement())
+  teamName      String   @map("team_name")
+  region        String?
+  language      String?
+  isActive      Boolean  @default(true) @map("is_active")
+  
+  managerId     Int      @map("manager_id")
+  manager       User     @relation("TeamManager", fields: [managerId], references: [id])
+  
+  agents        User[]   @relation("TeamAgents")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@map("teams")
 }

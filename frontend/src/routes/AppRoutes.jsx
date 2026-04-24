@@ -7,6 +7,8 @@ import RoleBasedRoute from '../components/common/RoleBasedRoute';
 
 // Admin Pages
 import AdminDashboard from '../pages/admin/AdminDashboard';
+import TeamManagement from '../pages/admin/TeamManagement';
+import AgentManagement from '../pages/admin/AgentManagement';
 // Manager Pages
 import ManagerDashboard from '../pages/manager/ManagerDashboard';
 // Agent Pages
@@ -26,10 +28,10 @@ const AppRoutes = () => {
           <Route path="/admin" element={<DashboardLayout />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="users" element={<div className="font-bold text-2xl">User Management (Elite Controls)</div>} />
+            <Route path="users" element={<TeamManagement />} />
             <Route path="leads" element={<div className="font-bold text-2xl">Organization Leads (Kanban View)</div>} />
             <Route path="managers" element={<div className="font-bold text-2xl">Manager Oversight Portal</div>} />
-            <Route path="agents" element={<div className="font-bold text-2xl">Agent Performance Center</div>} />
+            <Route path="agents" element={<AgentManagement />} />
             <Route path="analytics" element={<div className="font-bold text-2xl">Global Enterprise Analytics</div>} />
             <Route path="calling" element={<div className="font-bold text-2xl">Global Calling Center</div>} />
             <Route path="invoices" element={<div className="font-bold text-2xl">Financial Invoicing System</div>} />
