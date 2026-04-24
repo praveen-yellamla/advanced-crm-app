@@ -22,13 +22,28 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/manager', managerRoutes);
 app.use('/api/agent', agentRoutes);
 
-// Health route
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    message: 'Backend server is healthy and running',
-    timestamp: new Date().toISOString()
-  });
+const prisma = require('./config/prisma');
+
+// Health route with DB check
+app.get('/api/health', async (req, res) => {
+  try {
+    // Check DB connectivity
+    await prisma.$queryRaw`SELECT 1`;
+    
+    res.status(200).json({
+      status: 'success',
+      message: 'Backend server and Database are healthy',
+      database: 'Connected',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Backend server is up, but Database is DISCONNECTED',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Basic error handler
