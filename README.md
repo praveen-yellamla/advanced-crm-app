@@ -1,5 +1,17 @@
-# advanced-crm-app
-Production-level Advanced CRM Web Application with role-based access, lead management, calling system, invoicing, analytics, and AI features.
+# Advanced CRM Application 🚀
+
+A world-class, executive-grade CRM solution built for high-performance sales teams. Surpassing standard industry interfaces with a premium design system, real-time analytics, and role-based operational control.
+
+### 🌍 Live Production Deployment
+*   **Frontend (Static UI)**: [https://advanced-crm-frontend.onrender.com](https://advanced-crm-frontend.onrender.com)
+*   **Backend (API & DB)**: [https://advanced-crm-app.onrender.com](https://advanced-crm-app.onrender.com)
+*   **API Health Status**: [Check System Health](https://advanced-crm-app.onrender.com/api/health)
+
+## 🏗️ Day 2 Architecture Review
+*   **Elite UI/UX**: Minimalist luxury aesthetic with rounded geometry and clean executive spacing.
+*   **Role-Based Access (RBAC)**: Secure multi-portal entry for Admin, Manager, and Agent workflows.
+*   **Executive Dashboard**: Real-time sales intelligence, automated AI insights, and live operations tracking.
+*   **Production Infrastructure**: Fully deployed on **Render** using a high-performance PostgreSQL (Prisma) backend.
 
 ## 🚀 CI/CD Pipeline
 
