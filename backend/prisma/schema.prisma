@@ -4,5 +4,101 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  password      String
+  role          Role     @default(AGENT)
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  calls         Call[]
+  assignedLeads Lead[]   @relation("AssignedLeads")
+  tasks         Task[]
+  managedTeams  Team[]   @relation("TeamManager")
+
+  @@index([email])
+  @@map("users")
+}
+
+model Team {
+  id        Int    @id @default(autoincrement())
+  teamName  String @map("team_name")
+  managerId Int    @map("manager_id")
+  manager   User   @relation("TeamManager", fields: [managerId], references: [id])
+
+  @@map("teams")
+}
+
+model Lead {
+  id           Int        @id @default(autoincrement())
+  customerName String     @map("customer_name")
+  phone        String
+  email        String?
+  source       LeadSource @default(WEBSITE)
+  status       LeadStatus @default(NEW)
+  region       String?
+  language     String?
+  assignedToId Int?       @map("assigned_to")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  calls        Call[]
+  assignedTo   User?      @relation("AssignedLeads", fields: [assignedToId], references: [id])
+
+  @@index([phone])
+  @@index([status])
+  @@index([assignedToId])
+  @@map("leads")
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  dueDate     DateTime? @map("due_date")
+  priority    String?   @default("Normal")
+  status      String?   @default("Pending")
+  userId      Int       @map("user_id")
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@map("tasks")
+}
+
+model Call {
+  id              Int      @id @default(autoincrement())
+  leadId          Int      @map("lead_id")
+  agentId         Int      @map("agent_id")
+  callStatus      String   @map("call_status")
+  durationSeconds Int      @map("duration_seconds")
+  recordingUrl    String?  @map("recording_url")
+  createdAt       DateTime @default(now()) @map("created_at")
+  agent           User     @relation(fields: [agentId], references: [id])
+  lead            Lead     @relation(fields: [leadId], references: [id])
+
+  @@map("calls")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  AGENT
+}
+
+enum LeadSource {
+  GOOGLE_ADS
+  META
+  WEBSITE
+  CSV
+  REFERRAL
+  CALL
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  INTERESTED
+  WON
+  LOST
 }

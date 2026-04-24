@@ -1,0 +1,21 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  deploy:
+    name: Trigger Render Deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Render
+        run: |
+          if [ -z "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}" ]; then
+            echo "Error: RENDER_BACKEND_DEPLOY_HOOK is not set."
+            exit 1
+          fi
+          curl -f -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}"
