@@ -96,16 +96,24 @@ const DashboardLayout = () => {
               <Link
                 key={item.name}
                 to={item.path}
-                className={`flex items-center p-3 rounded-2xl transition-all duration-300 group relative ${
+                className={`flex items-center p-3 rounded-2xl transition-all duration-500 group relative overflow-hidden ${
                   isActive 
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                    ? 'bg-blue-600 text-white shadow-[0_10px_25px_-5px_rgba(37,99,235,0.4)]' 
+                    : 'text-slate-400 hover:bg-white/10 hover:text-white'
                 }`}
               >
-                <item.icon size={20} className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400 transition-colors'} />
-                {sidebarOpen && <span className="ml-3 text-sm font-semibold tracking-wide">{item.name}</span>}
+                {isActive && (
+                  <motion.div 
+                    layoutId="sidebar-active"
+                    className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 -z-10"
+                    initial={false}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  />
+                )}
+                <item.icon size={20} className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400 transition-colors duration-300'} />
+                {sidebarOpen && <span className="ml-3 text-sm font-bold tracking-tight">{item.name}</span>}
                 {isActive && !sidebarOpen && (
-                  <div className="absolute right-0 w-1 h-6 bg-blue-500 rounded-l-full" />
+                  <div className="absolute right-0 w-1 h-6 bg-blue-400 rounded-l-full shadow-[0_0_10px_#60a5fa]" />
                 )}
               </Link>
             );
@@ -133,22 +141,24 @@ const DashboardLayout = () => {
           </div>
 
           <div className="flex items-center gap-6">
-            <button className="relative p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all">
+            <button className="relative w-11 h-11 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all border border-transparent hover:border-blue-100">
                <Bell size={20} />
-               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 border-2 border-white rounded-full"></span>
+               <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
             </button>
-            <div className="h-8 w-px bg-slate-200"></div>
-            <div className="flex items-center gap-4 group cursor-pointer">
-              <div className="flex flex-col items-end">
-                <span className="text-sm font-bold text-slate-800">{user?.name}</span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 px-2 py-0.5 bg-blue-50 rounded-full">{user?.role}</span>
-              </div>
-              <div className="h-11 w-11 rounded-2xl bg-[#0F172A] border-2 border-blue-600/20 p-0.5 shadow-sm group-hover:scale-105 transition-transform duration-300">
-                <div className="w-full h-full rounded-[14px] bg-gradient-to-tr from-blue-600 to-blue-400 flex items-center justify-center text-white font-bold text-lg">
+            <div className="h-10 w-px bg-slate-200/60"></div>
+            <div className="flex items-center gap-4 pl-2 group cursor-pointer p-1.5 pr-4 rounded-[20px] hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
+              <div className="h-11 w-11 rounded-[16px] bg-[#0F172A] border-2 border-blue-600/10 p-0.5 shadow-sm group-hover:scale-105 transition-all duration-500">
+                <div className="w-full h-full rounded-[14px] bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shadow-inner">
                   {user?.name?.charAt(0)}
                 </div>
               </div>
-              <ChevronDown size={16} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-black text-slate-900 tracking-tight">{user?.name}</span>
+                  <ChevronDown size={14} className="text-slate-400 group-hover:translate-y-0.5 transition-transform" />
+                </div>
+                <span className="text-[9px] font-black uppercase tracking-[0.15em] text-blue-600/80">Account Executive</span>
+              </div>
             </div>
           </div>
         </header>
