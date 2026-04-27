@@ -57,7 +57,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         <KPICard title="Total Leads" value={cards?.totalLeads ?? 0} trend="+12.4%" icon={<Target />} />
         <KPICard title="Today's Leads" value={cards?.todayLeads ?? 0} trend="Live" icon={<Zap />} />
         <KPICard title="Active Agents" value={cards?.activeAgents ?? 0} trend="Secure" icon={<Users />} />
@@ -163,7 +163,7 @@ const KPICard = ({ title, value, trend, icon }) => (
 const DashboardSkeleton = () => (
   <div className="space-y-10 animate-pulse">
     <div className="h-20 bg-slate-200 rounded-3xl w-full" />
-    <div className="grid grid-cols-6 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
        {[1,2,3,4,5,6].map(i => <div key={i} className="h-40 bg-slate-200 rounded-3xl" />)}
     </div>
     <div className="grid grid-cols-3 gap-10">
