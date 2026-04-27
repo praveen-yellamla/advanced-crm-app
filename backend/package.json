@@ -27,7 +27,6 @@
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
-    "community": "^0.0.1",
     "jest": "^30.3.0",
     "jest-mock-extended": "^4.0.1",
     "nodemon": "^3.1.14",
