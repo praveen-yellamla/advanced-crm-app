@@ -71,12 +71,3 @@ module.exports = {
   inviteUser,
   getInvites
 };
- Deborah 
- Deborah 
- Deborah 
- Deborah 
- Deborah 
- Deborah 
- Deborah 
- Deborah 
- Deborah 

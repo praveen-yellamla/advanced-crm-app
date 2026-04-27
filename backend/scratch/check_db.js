@@ -14,12 +14,3 @@ async function check() {
 }
 
 check();
- Deborah 
- Deborah 
- Deborah 
- Deborah 
- Deborah 
- Deborah 
- Deborah 
- Deborah 
- Deborah 
