@@ -1,205 +1,170 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import api from '../../utils/api';
 import { 
-  BarChart, 
   Users, 
-  PhoneCall, 
-  Star, 
+  Target, 
   TrendingUp, 
-  Filter, 
-  ShieldAlert, 
-  Award,
-  ChevronRight,
-  ArrowUpRight,
+  DollarSign, 
+  Zap, 
+  Activity,
+  ShieldCheck,
+  PieChart as PieIcon,
+  BarChart2,
   Clock,
-  Mic2
+  ArrowUpRight,
+  Headphones
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Cell
+} from 'recharts';
 
 const ManagerDashboard = () => {
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: statsData, isLoading } = useQuery({
+    queryKey: ['managerDashboard'],
+    queryFn: async () => {
+      const res = await api.get('/manager/dashboard');
+      return res.data.data;
+    }
+  });
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
+  if (isLoading) return <DashboardSkeleton />;
 
-  const stats = [
-    { name: 'Team Productivity', value: '92%', change: '+4.5%', icon: BarChart, color: 'indigo' },
-    { name: 'Managed Agents', value: '12', change: '+1', icon: Users, color: 'emerald' },
-    { name: 'Average CSAT', value: '4.8', change: '+0.2', icon: Star, color: 'amber' },
-    { name: 'Evaluations', value: '450', change: '+124', icon: PhoneCall, color: 'blue' },
+  const { cards, funnel, sources } = statsData || {};
+
+  const funnelData = [
+    { name: 'New', value: funnel?.find(l => l.status === 'NEW')?._count || 0 },
+    { name: 'Contacted', value: funnel?.find(l => l.status === 'CONTACTED')?._count || 0 },
+    { name: 'Interested', value: funnel?.find(l => l.status === 'INTERESTED')?._count || 0 },
+    { name: 'Won', value: funnel?.find(l => l.status === 'WON')?._count || 0 },
   ];
-
-  const leaders = [
-    { name: 'Emma Watson', score: 98, deals: 12, trend: 'up' },
-    { name: 'James Rod', score: 94, deals: 10, trend: 'up' },
-    { name: 'Sarah Connor', score: 91, deals: 8, trend: 'down' },
-  ];
-
-  const alerts = [
-    { id: 1, agent: 'John Doe', reason: 'Abrupt closure', score: '65', time: '20m ago' },
-    { id: 2, agent: 'Alice Key', reason: 'High background noise', score: '72', time: '1h ago' },
-  ];
-
-  if (isLoading) return <ManagerSkeleton />;
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }}
-      className="space-y-8 pb-12"
-    >
+    <div className="space-y-10 pb-16">
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h2 className="text-4xl font-black text-slate-900 tracking-tight">Manager Command</h2>
-          <p className="text-slate-500 font-medium mt-2">Team performance and quality governance.</p>
+           <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Team Overview</h1>
+           <p className="text-[#64748B] font-medium text-sm mt-1">Real-time Performance & Operational Oversight</p>
         </div>
-        <div className="flex gap-3">
-          <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
-            <button className="px-4 py-2 bg-white text-slate-900 text-xs font-bold rounded-xl shadow-sm">Daily</button>
-            <button className="px-4 py-2 text-slate-500 text-xs font-bold">Weekly</button>
-          </div>
-          <button className="p-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all shadow-sm">
-            <Filter size={20} className="text-slate-600" />
-          </button>
+        <div className="flex gap-4">
+           <button className="h-12 px-6 bg-white border border-[#E2E8F0] rounded-2xl text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 transition-all">Export Team Report</button>
+           <button className="h-12 px-6 bg-blue-600 text-white rounded-2xl text-xs font-bold shadow-lg shadow-blue-500/20 hover:scale-105 transition-all">Refresh Sync</button>
         </div>
       </div>
 
       {/* KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, idx) => (
-          <motion.div 
-            key={stat.name} 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: idx * 0.1 }}
-            className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 group relative overflow-hidden"
-          >
-            <div className={`w-14 h-14 rounded-2xl bg-${stat.color}-50 flex items-center justify-center text-${stat.color}-600 mb-6 group-hover:scale-110 transition-transform`}>
-              <stat.icon size={26} />
-            </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{stat.name}</p>
-            <div className="flex items-end justify-between">
-              <p className="text-3xl font-black text-slate-900">{stat.value}</p>
-              <span className="text-[10px] font-bold text-emerald-500 mb-1">{stat.change}</span>
-            </div>
-          </motion.div>
-        ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        <KPICard title="Total Leads" value={cards?.totalLeads ?? 0} trend="+12%" icon={<Target />} />
+        <KPICard title="Today's Leads" value={cards?.todayLeads ?? 0} trend="Live" icon={<Zap />} />
+        <KPICard title="Active Agents" value={cards?.activeAgents ?? 0} trend="Active" icon={<Users />} />
+        <KPICard title="Revenue (MTD)" value={`$${((cards?.revenueMTD || 0) / 1000).toFixed(1)}k`} trend="+8%" icon={<DollarSign />} />
+        <KPICard title="Conv. Rate" value={`${(cards?.conversionRate || 0).toFixed(1)}%`} trend="+1.2%" icon={<TrendingUp />} />
+        <KPICard title="Calls Today" value={cards?.callsToday ?? 0} icon={<Headphones />} />
+        <KPICard title="Avg QA Score" value={`${(cards?.avgQAScore || 0).toFixed(1)}%`} icon={<ShieldCheck />} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* TEAM PERFORMANCE CHART */}
-        <div className="lg:col-span-2 space-y-8">
-           <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between mb-10">
-                 <div>
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Agent Efficiency</h3>
-                    <p className="text-sm text-slate-400 font-medium">Conversion vs Target Completion</p>
-                 </div>
-                 <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
-                    <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-600" /> Success</div>
-                    <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-slate-200" /> Target</div>
-                 </div>
-              </div>
-              <div className="h-[300px] flex items-end justify-between px-4 gap-6">
-                 {[85, 92, 78, 95, 88, 72].map((v, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-3 group">
-                       <div className="w-full relative h-full flex flex-col justify-end">
-                          <div className="absolute inset-0 bg-slate-50/50 rounded-t-xl" />
-                          <motion.div 
-                             initial={{ height: 0 }}
-                             animate={{ height: `${v}%` }}
-                             transition={{ duration: 1, delay: i * 0.1 }}
-                             className="w-full bg-blue-600 rounded-t-xl z-10 shadow-lg shadow-blue-500/10 group-hover:bg-blue-500 transition-colors"
-                          />
-                       </div>
-                       <span className="text-[10px] font-black text-slate-400">Agent {i+1}</span>
-                    </div>
-                 ))}
-              </div>
-           </div>
-
-           {/* ACTIVE EVALUATIONS / QA LIST */}
-           <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between mb-8">
-                 <h3 className="text-xl font-black text-slate-900 tracking-tight">Quality Evaluator</h3>
-                 <ShieldAlert className="text-rose-500" size={20} />
-              </div>
-              <div className="space-y-4">
-                 {alerts.map((alert) => (
-                    <div key={alert.id} className="p-4 bg-slate-50 border border-slate-100 rounded-3xl flex items-center justify-between group hover:bg-white hover:shadow-xl transition-all">
-                       <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-rose-500">
-                             <Mic2 size={18} />
-                          </div>
-                          <div>
-                             <p className="text-xs font-black text-slate-900">{alert.agent}</p>
-                             <p className="text-[10px] font-medium text-slate-400">{alert.reason}</p>
-                          </div>
-                       </div>
-                       <div className="text-right">
-                          <p className={`text-sm font-black ${parseInt(alert.score) < 70 ? 'text-rose-500' : 'text-amber-500'}`}>{alert.score}%</p>
-                          <p className="text-[9px] font-black text-slate-400 uppercase">{alert.time}</p>
-                       </div>
-                    </div>
-                 ))}
-              </div>
-           </div>
-        </div>
-
-        {/* TEAM LEADERBOARD */}
-        <div className="bg-[#0F172A] p-8 rounded-[40px] shadow-2xl relative overflow-hidden flex flex-col">
-           <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 blur-[60px] rounded-full" />
-           <div className="relative z-10 h-full flex flex-col justify-between">
-              <div>
-                 <div className="flex items-center gap-3 mb-8">
-                    <Award className="text-amber-400" size={28} />
-                    <h3 className="text-xl font-black text-white tracking-tight">Team Excellence</h3>
-                 </div>
-                 <div className="space-y-8">
-                    {leaders.map((leader, i) => (
-                       <div key={leader.name} className="flex items-center justify-between group">
-                          <div className="flex items-center gap-4">
-                             <div className="w-10 h-10 rounded-full border-2 border-white/10 overflow-hidden">
-                                <img src={`https://i.pravatar.cc/100?u=leader-${i}`} alt="" className="w-full h-full object-cover" />
-                             </div>
-                             <div>
-                                <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">{leader.name}</p>
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{leader.deals} Won Deals</p>
-                             </div>
-                          </div>
-                          <div className="text-right">
-                             <p className="text-lg font-black text-white">{leader.score}</p>
-                             <p className="text-[9px] font-black text-emerald-500 uppercase">Top 1%</p>
-                          </div>
-                       </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        {/* FUNNEL CHART */}
+        <div className="lg:col-span-2 bg-white p-10 rounded-[32px] border border-[#E2E8F0] shadow-sm relative overflow-hidden group">
+          <div className="flex items-center justify-between mb-12">
+            <div className="space-y-1">
+              <h3 className="text-xl font-bold text-[#0F172A] tracking-tight">Team Sales Funnel</h3>
+              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest leading-none">Conversion velocity & bottle-necks</p>
+            </div>
+            <BarChart2 size={24} className="text-slate-200" />
+          </div>
+          <div className="h-[400px]">
+             <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={funnelData} barSize={60}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 10, fontWeight: 700}} dy={12} />
+                  <YAxis hide />
+                  <Tooltip 
+                    cursor={{fill: '#F8FAFC'}}
+                    contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', padding: '16px'}}
+                  />
+                  <Bar dataKey="value" radius={[12, 12, 0, 0]}>
+                    {funnelData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={index === (funnelData.length - 1) ? '#7C3AED' : '#F1F5F9'} />
                     ))}
-                 </div>
-              </div>
-              <button className="mt-12 w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-white text-xs font-black uppercase tracking-widest hover:bg-white hover:text-slate-900 transition-all">
-                 View Full Team Rankings
-              </button>
-           </div>
+                  </Bar>
+                </BarChart>
+             </ResponsiveContainer>
+          </div>
         </div>
 
+        {/* SOURCE DISTRIBUTION */}
+        <div className="bg-white p-10 rounded-[32px] border border-[#E2E8F0] shadow-sm relative flex flex-col justify-between">
+           <div className="flex items-center justify-between mb-10">
+              <h3 className="text-xl font-bold text-[#0F172A] tracking-tight">Active Lead Sources</h3>
+              <PieIcon size={24} className="text-slate-200" />
+           </div>
+           
+           <div className="space-y-8 flex-1">
+              {sources?.map((source, i) => (
+                <div key={i} className="group cursor-pointer">
+                  <div className="flex items-center justify-between mb-3">
+                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{source.source}</span>
+                     <span className="text-sm font-bold text-[#0F172A]">{source._count} leads</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden">
+                     <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(source?._count / (cards?.totalLeads || 1)) * 100}%` }}
+                        className="h-full bg-violet-600 shadow-[0_0_10px_rgba(124,58,237,0.3)]"
+                     />
+                  </div>
+                </div>
+              ))}
+           </div>
+
+           <div className="mt-12 pt-10 border-t border-slate-50">
+              <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
+                 <ShieldCheck className="text-violet-600" />
+                 <div>
+                    <p className="text-[10px] font-bold uppercase text-[#0F172A]">Quality Assurance</p>
+                    <p className="text-[9px] text-slate-400 uppercase tracking-tight">All team calls are being monitored for QA</p>
+                 </div>
+              </div>
+           </div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
-const ManagerSkeleton = () => (
-   <div className="space-y-8 animate-pulse p-4">
-      <div className="h-20 bg-slate-100 rounded-[32px] w-full" />
-      <div className="grid grid-cols-4 gap-6">
-         {[1, 2, 3, 4].map(i => <div key={i} className="h-44 bg-slate-100 rounded-[32px]" />)}
-      </div>
-      <div className="grid grid-cols-3 gap-8">
-         <div className="col-span-2 h-[500px] bg-slate-100 rounded-[40px]" />
-         <div className="h-[500px] bg-slate-100 rounded-[40px]" />
-      </div>
-   </div>
+const KPICard = ({ title, value, trend, icon }) => (
+  <motion.div 
+    whileHover={{ y: -5 }}
+    className="bg-white px-5 py-4 rounded-[24px] border border-[#E2E8F0] shadow-sm hover:shadow-xl hover:border-violet-100 transition-all duration-500 group overflow-hidden flex flex-col justify-between h-[160px]"
+  >
+    <div className="flex items-center justify-between">
+       <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-violet-600 group-hover:text-white transition-all duration-500">
+          {React.cloneElement(icon, { size: 18 })}
+       </div>
+       {trend && <span className="text-[9px] font-bold text-violet-600 uppercase tracking-widest px-2 py-0.5 bg-violet-50 rounded-lg">{trend}</span>}
+    </div>
+    <div>
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{title}</p>
+      <h4 className="text-2xl font-bold text-slate-900 truncate mt-1">{value}</h4>
+    </div>
+  </motion.div>
+);
+
+const DashboardSkeleton = () => (
+  <div className="space-y-10 animate-pulse">
+    <div className="h-20 bg-slate-200 rounded-3xl w-full" />
+    <div className="grid grid-cols-7 gap-4">
+       {[1,2,3,4,5,6,7].map(i => <div key={i} className="h-40 bg-slate-200 rounded-3xl" />)}
+    </div>
+    <div className="grid grid-cols-3 gap-10">
+       <div className="col-span-2 h-[500px] bg-slate-200 rounded-3xl" />
+       <div className="h-[500px] bg-slate-200 rounded-3xl" />
+    </div>
+  </div>
 );
 
 export default ManagerDashboard;

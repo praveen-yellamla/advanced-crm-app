@@ -2,19 +2,29 @@
 
 @layer base {
   :root {
-    --primary: #2563EB;
-    --navy: #0F172A;
-    --text-gray: #64748B;
-    --border: #E2E8F0;
+    --brand-blue: #2563EB;
+    --brand-violet: #7C3AED;
+    --brand-cyan: #06B6D4;
+    --brand-indigo: #4F46E5;
+    --main-bg: #F4F7FB;
+    --secondary-bg: #EEF4FF;
+    --card-bg: #FFFFFF;
+    --text-main: #0F172A;
+    --text-secondary: #64748B;
+    --border-color: #E2E8F0;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
   }
 
   body {
-    @apply antialiased text-slate-800 bg-slate-50 font-sans;
+    @apply antialiased text-[#0F172A] bg-[#F4F7FB] font-sans;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    letter-spacing: -0.01em;
   }
 }
 
-/* Custom Scrollbar - Premium Minimalist */
+/* Custom Scrollbar - Clean Light */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -33,11 +43,43 @@
   background: #94a3b8;
 }
 
-/* Glassmorphism Utilities */
-.glass-panel {
-  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-sm;
+/* Premium Utilities */
+.glass-surface {
+  @apply bg-white/80 backdrop-blur-xl border border-white/50 shadow-xl;
 }
 
-.premium-card {
-  @apply bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300;
+.enterprise-shadow {
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.05);
+}
+
+.card-hover {
+  @apply transition-all duration-700;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-hover:hover {
+  @apply -translate-y-2;
+  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.1);
+}
+
+.text-gradient-primary {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-[#2563EB] to-[#7C3AED];
+}
+
+/* Page Animations */
+.page-fade-in {
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Subtle Grid Texture for Light Theme */
+.bg-grid-light {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(0,0,0,0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.02) 1px, transparent 1px);
 }

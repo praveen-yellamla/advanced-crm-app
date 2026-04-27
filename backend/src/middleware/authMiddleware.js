@@ -19,17 +19,24 @@ const protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Get user from the token and attach to request
-      // We don't want to return the password
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.userId },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          isActive: true
+      let user;
+      const { userId, role } = decoded;
+
+      if (role === 'CLIENT') {
+        user = await prisma.client.findUnique({
+          where: { id: userId },
+          select: { id: true, name: true, email: true, status: true }
+        });
+        if (user) {
+          user.role = 'CLIENT';
+          user.isActive = user.status === 'ACTIVE';
         }
-      });
+      } else {
+        user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, name: true, email: true, role: true, isActive: true }
+        });
+      }
 
       if (!user) {
         return res.status(401).json({ message: 'User no longer exists' });

@@ -1,41 +1,57 @@
 const express = require('express');
 const router = express.Router();
 const { 
-  createTeam, 
+  getDashboardStats, 
   getTeams, 
-  updateTeam, 
+  createTeam, 
+  updateTeam,
   deleteTeam,
-  createAgent,
   getAgents,
+  createAgent,
   updateAgent,
   deleteAgent,
-  sendInvite
+  getAuditLogs
 } = require('../controllers/adminController');
+const { 
+  getInvoices, 
+  createInvoice, 
+  getCalls 
+} = require('../controllers/adminExtraController');
+const { inviteUser, getInvites } = require('../controllers/inviteController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // All routes here are protected and require ADMIN role
 router.use(protect);
 router.use(authorize('ADMIN'));
 
-// Team Routes
+router.get('/dashboard', getDashboardStats);
+
 router.route('/teams')
-  .post(createTeam)
-  .get(getTeams);
+  .get(getTeams)
+  .post(createTeam);
 
 router.route('/teams/:id')
   .put(updateTeam)
   .delete(deleteTeam);
 
-// Agent Routes
 router.route('/agents')
-  .post(createAgent)
-  .get(getAgents);
+  .get(getAgents)
+  .post(createAgent);
 
 router.route('/agents/:id')
   .put(updateAgent)
   .delete(deleteAgent);
 
-// Invite Route
-router.post('/invite', sendInvite);
+router.get('/audit-logs', getAuditLogs);
+
+router.route('/invites')
+  .get(getInvites)
+  .post(inviteUser);
+
+router.route('/invoices')
+  .get(getInvoices)
+  .post(createInvoice);
+
+router.get('/calls', getCalls);
 
 module.exports = router;

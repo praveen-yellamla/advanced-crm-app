@@ -10,9 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.100.5",
     "autoprefixer": "^10.5.0",
     "axios": "^1.15.2",
     "clsx": "^2.1.1",
+    "community": "^0.0.1",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.9.0",
     "postcss": "^8.5.10",
@@ -20,6 +22,7 @@
     "react-dom": "^19.2.5",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.14.2",
+    "recharts": "^3.8.1",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.4"
   },

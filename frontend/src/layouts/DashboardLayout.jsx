@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import AIAssistant from '../components/AIAssistant';
+import ErrorBoundary from '../components/common/ErrorBoundary';
 import { 
   LayoutDashboard, 
   Users, 
-  UserSquare2, 
+  SquareUser, 
   Target, 
   BarChart3, 
   Settings, 
@@ -13,8 +15,8 @@ import {
   Menu, 
   X,
   Search,
-  CheckCircle2,
-  Mic2,
+  CircleCheck,
+  Mic,
   Headphones,
   History,
   MessageSquare,
@@ -26,7 +28,15 @@ import {
   ShieldAlert,
   ClipboardCheck,
   TrendingUp,
-  Briefcase
+  Briefcase,
+  Layers,
+  Activity,
+  Globe,
+  Zap,
+  ShieldCheck,
+  FileBarChart,
+  Mail,
+  BrainCircuit
 } from 'lucide-react';
 
 const DashboardLayout = () => {
@@ -40,139 +50,244 @@ const DashboardLayout = () => {
     navigate('/login');
   };
 
+  const portalStyles = {
+    ADMIN: {
+      accent: '#2563EB',
+      gradient: 'from-blue-600 to-blue-700',
+      glow: 'shadow-blue-500/25',
+      label: 'Platform Admin'
+    },
+    MANAGER: {
+      accent: '#7C3AED',
+      gradient: 'from-violet-600 to-violet-700',
+      glow: 'shadow-violet-500/25',
+      label: 'Regional Manager'
+    },
+    AGENT: {
+      accent: '#06B6D4',
+      gradient: 'from-cyan-500 to-cyan-600',
+      glow: 'shadow-cyan-500/25',
+      label: 'Strategic Agent'
+    },
+    CLIENT: {
+      accent: '#4F46E5',
+      gradient: 'from-indigo-600 to-indigo-700',
+      glow: 'shadow-indigo-500/25',
+      label: 'Executive Client'
+    }
+  };
+
+  const currentStyle = portalStyles[user?.role] || portalStyles.ADMIN;
+
   const menuItems = {
     ADMIN: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
-      { name: 'Users', icon: Users, path: '/admin/users' },
-      { name: 'Leads', icon: Target, path: '/admin/leads' },
-      { name: 'Managers', icon: Briefcase, path: '/admin/managers' },
-      { name: 'Agents', icon: UserSquare2, path: '/admin/agents' },
-      { name: 'Analytics', icon: TrendingUp, path: '/admin/analytics' },
-      { name: 'Calling Center', icon: PhoneCall, path: '/admin/calling' },
-      { name: 'Invoices', icon: FileText, path: '/admin/invoices' },
-      { name: 'QA / QC', icon: ClipboardCheck, path: '/admin/qc' },
-      { name: 'Audit Logs', icon: ShieldAlert, path: '/admin/audit' },
+      { name: 'Teams', icon: Layers, path: '/admin/teams' },
+      { name: 'Agents', icon: Users, path: '/admin/agents' },
+      { name: 'Lead Engine', icon: Target, path: '/admin/leads' },
+      { name: 'Integrations', icon: Globe, path: '/admin/integrations' },
+      { name: 'Bulk Import', icon: Zap, path: '/admin/import' },
+      { name: 'Task Board', icon: ClipboardCheck, path: '/admin/tasks' },
+      { name: 'Fiscal Ledger', icon: FileText, path: '/admin/ledger' },
+      { name: 'Call History', icon: PhoneCall, path: '/admin/calls' },
+      { name: 'Quality Center', icon: ShieldCheck, path: '/admin/qcqa' },
+      { name: 'AI Hub', icon: BrainCircuit, path: '/admin/ai' },
       { name: 'Settings', icon: Settings, path: '/admin/settings' },
     ],
     MANAGER: [
-      { name: 'Overview', icon: LayoutDashboard, path: '/manager/dashboard' },
-      { name: 'Analytics', icon: BarChart3, path: '/manager/analytics' },
-      { name: 'Quality Control', icon: CheckCircle2, path: '/manager/qc' },
-      { name: 'Voice Logs', icon: Mic2, path: '/manager/recordings' },
-      { name: 'Allocations', icon: Target, path: '/manager/team-leads' },
+      { name: 'Dashboard', icon: LayoutDashboard, path: '/manager/dashboard' },
+      { name: 'Team Leads', icon: Target, path: '/manager/team-leads' },
+      { name: 'Quality Center', icon: Headphones, path: '/manager/qcqa' },
+      { name: 'My Agents', icon: Users, path: '/manager/agents' },
+      { name: 'Invoices', icon: FileText, path: '/manager/invoices' },
+      { name: 'Reporting', icon: BarChart3, path: '/manager/reports' },
     ],
     AGENT: [
-      { name: 'Workbench', icon: LayoutDashboard, path: '/agent/dashboard' },
-      { name: 'Active Leads', icon: Target, path: '/agent/leads' },
-      { name: 'IP Calling', icon: Headphones, path: '/agent/calling' },
-      { name: 'Call Logs', icon: History, path: '/agent/history' },
-      { name: 'Insights', icon: MessageSquare, path: '/agent/feedback' },
+      { name: 'Dashboard', icon: LayoutDashboard, path: '/agent/dashboard' },
+      { name: 'My Leads', icon: Target, path: '/agent/leads' },
+      { name: 'Dialer', icon: Headphones, path: '/agent/dialer' },
+      { name: 'Call History', icon: History, path: '/agent/history' },
+      { name: 'Tasks', icon: ClipboardCheck, path: '/agent/tasks' },
+      { name: 'Feedback', icon: MessageSquare, path: '/agent/feedback' },
+      { name: 'Emails', icon: Mail, path: '/agent/emails' },
+      { name: 'Invoices', icon: FileText, path: '/agent/invoices' },
+      { name: 'Performance', icon: TrendingUp, path: '/agent/performance' },
+      { name: 'Profile', icon: SquareUser, path: '/agent/profile' },
+    ],
+    CLIENT: [
+       { name: 'Performance', icon: LayoutDashboard, path: '/client/dashboard' },
+       { name: 'Subsidiaries', icon: Briefcase, path: '/client/companies' },
+       { name: 'Lead Grid', icon: Target, path: '/client/leads' },
+       { name: 'Reports', icon: FileText, path: '/client/reports' },
+       { name: 'Fiscal Ledger', icon: ClipboardCheck, path: '/client/invoices' },
+       { name: 'Support Tickets', icon: Headphones, path: '/client/tickets' },
+       { name: 'Profile', icon: Settings, path: '/client/profile' },
     ]
   };
 
   const currentMenu = menuItems[user?.role] || [];
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased">
-      {/* Sidebar - Executive Focus */}
-      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-[#0F172A] transition-all duration-500 ease-in-out flex flex-col relative z-20 shadow-2xl`}>
-        <div className="h-20 flex items-center justify-between px-6 border-b border-white/5">
-          {sidebarOpen && (
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                 <Target className="text-white" size={18} />
-              </div>
-              <h1 className="text-white font-bold text-lg tracking-tight">Advanced<span className="text-blue-500">CRM</span></h1>
-            </div>
-          )}
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+    <div className="flex h-screen bg-[#F8FAFC] text-[#0F172A] font-sans antialiased overflow-hidden">
+      
+      {/* PREMIUM SIDEBAR */}
+      <aside className={`
+        ${sidebarOpen ? 'w-[280px]' : 'w-24'} 
+        bg-[#0F172A] transition-all duration-500 ease-in-out flex flex-col relative z-20 shadow-2xl
+      `}>
+        {/* TOP: LOGO SECTION */}
+        <div className="h-24 flex items-center justify-between px-6 shrink-0">
+          <AnimatePresence>
+            {sidebarOpen && (
+              <motion.div 
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="flex items-center gap-3"
+              >
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg">
+                   <Layers className="text-white" size={22} />
+                </div>
+                <h1 className="text-white font-black text-xl tracking-tighter">ADV<span className="text-blue-500">.CRM</span></h1>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <button 
+            onClick={() => setSidebarOpen(!sidebarOpen)} 
+            className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+          >
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
 
-        <div className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-          {currentMenu.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={`flex items-center p-3 rounded-2xl transition-all duration-500 group relative overflow-hidden ${
-                  isActive 
-                    ? 'bg-blue-600 text-white shadow-[0_10px_25px_-5px_rgba(37,99,235,0.4)]' 
-                    : 'text-slate-400 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                {isActive && (
-                  <motion.div 
-                    layoutId="sidebar-active"
-                    className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 -z-10"
-                    initial={false}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  />
-                )}
-                <item.icon size={20} className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400 transition-colors duration-300'} />
-                {sidebarOpen && <span className="ml-3 text-sm font-bold tracking-tight">{item.name}</span>}
-                {isActive && !sidebarOpen && (
-                  <div className="absolute right-0 w-1 h-6 bg-blue-400 rounded-l-full shadow-[0_0_10px_#60a5fa]" />
-                )}
-              </Link>
-            );
-          })}
-        </div>
+        {/* MIDDLE: SCROLLABLE MENU */}
+        <nav className="flex-1 px-4 py-6 overflow-y-auto scrollbar-hide space-y-[10px]">
+          {currentMenu.map((item) => (
+            <SidebarNavItem 
+              key={item.name}
+              item={item}
+              isOpen={sidebarOpen}
+              isActive={location.pathname === item.path}
+              currentStyle={currentStyle}
+            />
+          ))}
+        </nav>
 
-        <div className="p-4 border-t border-white/5">
+        {/* BOTTOM: FIXED LOGOUT */}
+        <div className="p-4 border-t border-white/5 shrink-0">
           <button 
             onClick={handleLogout}
-            className="flex items-center w-full p-3 text-slate-400 hover:bg-red-500/10 hover:text-red-500 rounded-2xl transition-all duration-300 group"
+            className={`
+              flex items-center w-full h-[52px] px-4 text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 rounded-[14px] transition-all duration-200 group font-medium text-[14px]
+              ${!sidebarOpen ? 'justify-center' : ''}
+            `}
           >
-            <LogOut size={20} />
-            {sidebarOpen && <span className="ml-3 text-sm font-semibold">Sign Out</span>}
+            <LogOut size={20} className="shrink-0" />
+            {sidebarOpen && <span className="ml-4 truncate">Logout System</span>}
           </button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
+      {/* MAIN VIEWPORT */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        {/* Top Navigation */}
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-10 relative z-10">
-          <div className="flex items-center bg-slate-100/50 border border-slate-200 px-4 py-2.5 rounded-2xl w-[400px] group focus-within:ring-4 focus-within:ring-blue-600/5 focus-within:border-blue-600 focus-within:bg-white transition-all">
-            <Search size={18} className="text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-            <input type="text" placeholder="Global system search..." className="bg-transparent border-none focus:ring-0 text-sm ml-3 w-full font-medium text-slate-600" />
+        
+        {/* HEADER */}
+        <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-10 shrink-0 relative z-10 shadow-sm">
+          
+          <div className="flex items-center bg-slate-50 border border-slate-200 px-6 py-2.5 rounded-2xl w-[440px] focus-within:ring-4 focus-within:ring-blue-500/5 focus-within:border-blue-500/50 transition-all">
+            <Search size={18} className="text-slate-400" />
+            <input 
+              type="text" placeholder="Intelligence search..." 
+              className="bg-transparent border-none focus:ring-0 text-[14px] ml-4 w-full font-medium text-[#0F172A] placeholder:text-slate-400" 
+            />
           </div>
 
           <div className="flex items-center gap-6">
-            <button className="relative w-11 h-11 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all border border-transparent hover:border-blue-100">
-               <Bell size={20} />
-               <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
-            </button>
-            <div className="h-10 w-px bg-slate-200/60"></div>
-            <div className="flex items-center gap-4 pl-2 group cursor-pointer p-1.5 pr-4 rounded-[20px] hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
-              <div className="h-11 w-11 rounded-[16px] bg-[#0F172A] border-2 border-blue-600/10 p-0.5 shadow-sm group-hover:scale-105 transition-all duration-500">
-                <div className="w-full h-full rounded-[14px] bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shadow-inner">
-                  {user?.name?.charAt(0)}
-                </div>
+            <div className="flex items-center gap-2">
+               <NavIconBtn icon={Activity} />
+               <NavIconBtn icon={Bell} badge />
+            </div>
+
+            <div className="h-8 w-px bg-slate-100 mx-2"></div>
+            
+            <div className="flex items-center gap-4 pl-2 group cursor-pointer py-1.5 pr-3 rounded-2xl hover:bg-slate-50 transition-all">
+              <div className={`h-11 w-11 rounded-xl bg-gradient-to-tr ${currentStyle.gradient} flex items-center justify-center text-white font-black text-lg shadow-lg`}>
+                {user?.name?.charAt(0)}
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-black text-slate-900 tracking-tight">{user?.name}</span>
+                  <span className="text-[14px] font-bold text-[#0F172A]">{user?.name}</span>
                   <ChevronDown size={14} className="text-slate-400 group-hover:translate-y-0.5 transition-transform" />
                 </div>
-                <span className="text-[9px] font-black uppercase tracking-[0.15em] text-blue-600/80">Account Executive</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-blue-600" style={{ color: currentStyle.accent }}>{currentStyle.label}</span>
               </div>
             </div>
           </div>
         </header>
 
-        {/* Dynamic Page Scroll Area */}
+        {/* CONTENT */}
         <div className="flex-1 overflow-y-auto p-10 bg-[#F8FAFC]">
-          <div className="max-w-[1600px] mx-auto animate-in fade-in duration-700 slide-in-from-bottom-4">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="max-w-[1600px] mx-auto"
+          >
             <Outlet />
-          </div>
+          </motion.div>
         </div>
       </main>
+
+      <ErrorBoundary>
+        <AIAssistant />
+      </ErrorBoundary>
     </div>
   );
 };
+
+// REUSABLE SUB-COMPONENTS
+const SidebarNavItem = ({ item, isOpen, isActive, currentStyle }) => {
+  return (
+    <Link
+      to={item.path}
+      className={`
+        flex items-center h-[52px] px-4 rounded-[14px] transition-all duration-200 group relative
+        ${isActive 
+          ? `text-white shadow-lg ${currentStyle.glow}` 
+          : 'text-slate-400 hover:bg-white/5 hover:text-white'
+        }
+        ${!isOpen ? 'justify-center' : ''}
+      `}
+    >
+      {isActive && (
+        <motion.div 
+          layoutId="sidebar-active-bg"
+          className={`absolute inset-0 bg-gradient-to-r ${currentStyle.gradient} rounded-[14px] -z-10`}
+          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+        />
+      )}
+      <item.icon size={20} className={`shrink-0 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-white transition-colors'}`} />
+      {isOpen && (
+        <span className={`ml-4 text-[14px] font-medium tracking-tight whitespace-nowrap overflow-hidden transition-all duration-300 ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+          {item.name}
+        </span>
+      )}
+      
+      {/* HOVER TOOLTIP FOR CLOSED SIDEBAR */}
+      {!isOpen && (
+        <div className="absolute left-full ml-4 px-3 py-2 bg-[#0F172A] text-white text-[12px] font-bold rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all translate-x-[-10px] group-hover:translate-x-0 z-[50] shadow-2xl border border-white/10 whitespace-nowrap">
+           {item.name}
+        </div>
+      )}
+    </Link>
+  );
+};
+
+const NavIconBtn = ({ icon: Icon, badge }) => (
+  <button className="relative w-11 h-11 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent">
+    <Icon size={20} />
+    {badge && <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-blue-500 border-2 border-white rounded-full"></span>}
+  </button>
+);
 
 export default DashboardLayout;

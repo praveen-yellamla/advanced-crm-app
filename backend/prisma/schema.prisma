@@ -17,6 +17,17 @@ model User {
   language      String?
   isActive      Boolean  @default(true) @map("is_active")
   
+  // Performance Targets
+  dailyCallsTarget       Int      @default(0) @map("daily_calls_target")
+  monthlySalesTarget     Int      @default(0) @map("monthly_sales_target")
+  monthlyFollowupsTarget Int      @default(0) @map("monthly_followups_target")
+
+  // Permissions / Feature Flags
+  canCall                Boolean  @default(true) @map("can_call")
+  canEmail               Boolean  @default(true) @map("can_email")
+  canExport              Boolean  @default(false) @map("can_export")
+  canViewInvoices        Boolean  @default(false) @map("can_view_invoices")
+  
   // Relations
   teamId        Int?     @map("team_id")
   team          Team?    @relation("TeamAgents", fields: [teamId], references: [id])
@@ -30,6 +41,15 @@ model User {
   calls         Call[]
   assignedLeads Lead[]   @relation("AssignedLeads")
   tasks         Task[]
+  auditLogs     AuditLog[]
+  invoices      Invoice[] @relation("InvoiceRaisedBy")
+  emailsSent    Email[]   @relation("AgentEmails")
+
+  // Quality Assurance / Feedback
+  qaPerformed   CallQA[] @relation("QAManager")
+  feedbacksReceived Feedback[] @relation("AgentFeedback")
+  feedbacksGiven Feedback[] @relation("ManagerFeedback")
+  aiUsage       AIUsage[]
   
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
@@ -44,7 +64,14 @@ model Team {
   region        String?
   language      String?
   isActive      Boolean  @default(true) @map("is_active")
+  isArchived    Boolean  @default(false) @map("is_archived")
   
+  // Team KPIs
+  monthlyLeadsTarget Int @default(0) @map("monthly_leads_target")
+  monthlySalesTarget Int @default(0) @map("monthly_sales_target")
+  conversionTarget   Float @default(0) @map("conversion_target")
+  revenueGoal        Float @default(0) @map("revenue_goal")
+
   managerId     Int      @map("manager_id")
   manager       User     @relation("TeamManager", fields: [managerId], references: [id])
   
@@ -56,24 +83,93 @@ model Team {
   @@map("teams")
 }
 
+model Company {
+  id              Int      @id @default(autoincrement())
+  clientId        Int      @map("client_id")
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name            String
+  website         String?
+  location        String?
+  industry        String?
+  status          String   @default("ACTIVE")
+  leads           Lead[]
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("companies")
+}
+
 model Lead {
-  id           Int        @id @default(autoincrement())
-  customerName String     @map("customer_name")
-  phone        String
-  email        String?
-  source       LeadSource @default(WEBSITE)
-  status       LeadStatus @default(NEW)
-  region       String?
-  language     String?
-  assignedToId Int?       @map("assigned_to")
-  createdAt    DateTime   @default(now()) @map("created_at")
-  calls        Call[]
-  assignedTo   User?      @relation("AssignedLeads", fields: [assignedToId], references: [id])
+  id              Int        @id @default(autoincrement())
+  customerName    String     @map("customer_name")
+  email           String?
+  phone           String
+  alternatePhone  String?    @map("alternate_phone")
+  company         String?
+  city            String?
+  state           String?
+  country         String?
+  
+  source          LeadSource @default(WEBSITE)
+  subSource       String?    @map("sub_source")
+  
+  // Marketing / UTM
+  campaignName    String?    @map("campaign_name")
+  adGroup         String?    @map("ad_group")
+  keyword         String?
+  utmSource       String?    @map("utm_source")
+  utmMedium       String?    @map("utm_medium")
+  utmCampaign     String?    @map("utm_campaign")
+  gclid           String?
+  
+  status          LeadStatus @default(NEW)
+  stage           String?    
+  score           Int?       @default(0)
+  aiSummary       String?    @map("ai_summary") @db.Text
+  aiRisk          String?    @map("ai_risk")
+  scoreReasoning  String?    @map("score_reasoning") @db.Text
+  
+  companyId       Int?       @map("company_id")
+  mappedCompany   Company?   @relation(fields: [companyId], references: [id])
+  
+  region          String?
+  language        String?
+  
+  assignedToId    Int?       @map("assigned_to")
+  assignedTo      User?      @relation("AssignedLeads", fields: [assignedToId], references: [id])
+  
+  teamId          Int?       @map("team_id")
+  
+  calls           Call[]
+  emails          Email[]
+  tasks           Task[]     @relation("LeadTasks")
+  
+  notes           String?    @db.Text
+  
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @default(now()) @updatedAt @map("updated_at")
 
   @@index([phone])
+  @@index([email])
   @@index([status])
   @@index([assignedToId])
   @@map("leads")
+}
+
+model SupportTicket {
+  id              Int      @id @default(autoincrement())
+  clientId        Int      @map("client_id")
+  client          Client   @relation(fields: [clientId], references: [id])
+  subject         String
+  priority        String   @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  type            String   // TECHNICAL, BILLING, FEATURE, SALES
+  description     String   @db.Text
+  status          String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("support_tickets")
 }
 
 model Task {
@@ -85,6 +181,9 @@ model Task {
   status      String?   @default("Pending")
   userId      Int       @map("user_id")
   user        User      @relation(fields: [userId], references: [id])
+  
+  leadId      Int?      @map("lead_id")
+  lead        Lead?     @relation("LeadTasks", fields: [leadId], references: [id])
 
   @@map("tasks")
 }
@@ -99,14 +198,176 @@ model Call {
   createdAt       DateTime @default(now()) @map("created_at")
   agent           User     @relation(fields: [agentId], references: [id])
   lead            Lead     @relation(fields: [leadId], references: [id])
+  qa              CallQA?
+  feedbacks       Feedback[]
 
   @@map("calls")
+}
+
+model CallQA {
+  id              Int      @id @default(autoincrement())
+  callId          Int      @unique @map("call_id")
+  call            Call     @relation(fields: [callId], references: [id])
+  managerId       Int      @map("manager_id")
+  manager         User     @relation("QAManager", fields: [managerId], references: [id])
+  
+  // Rubric Scores (0-20 typical max)
+  greeting        Int      @default(0)
+  discovery       Int      @default(0)
+  pitch           Int      @default(0)
+  objectionHandling Int    @default(0) @map("objection_handling")
+  closing         Int      @default(0)
+  compliance      Int      @default(0)
+  
+  totalScore      Float    @map("total_score")
+  status          String   @default("PASS") // PASS, NEEDS_COACHING
+  managerNotes    String?  @map("manager_notes")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("call_qa")
+}
+
+model Feedback {
+  id              Int      @id @default(autoincrement())
+  agentId         Int      @map("agent_id")
+  agent           User     @relation("AgentFeedback", fields: [agentId], references: [id])
+  managerId       Int      @map("manager_id")
+  manager         User     @relation("ManagerFeedback", fields: [managerId], references: [id])
+  callId          Int?     @map("call_id")
+  call            Call?    @relation(fields: [callId], references: [id])
+  
+  content         String
+  priority        String   @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  suggestions     String?
+  status          String   @default("UNREAD") // READ, UNREAD
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("feedbacks")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  module    String
+  oldValue  Json?    @map("old_value")
+  newValue  Json?    @map("new_value")
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}
+
+model Invoice {
+  id          Int      @id @default(autoincrement())
+  invoiceNo   String   @unique @map("invoice_no")
+  clientId    Int      @map("client_id")
+  client      Client   @relation(fields: [clientId], references: [id])
+  raisedById  Int      @map("raised_by_id")
+  raisedBy    User     @relation("InvoiceRaisedBy", fields: [raisedById], references: [id])
+  amount      Float
+  status      String   @default("PENDING") // PENDING, PAID, VOID
+  dueDate     DateTime @map("due_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  items       InvoiceItem[]
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id              Int      @id @default(autoincrement())
+  invoiceId       Int      @map("invoice_id")
+  invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description     String
+  quantity        Int      @default(1)
+  unitPrice       Float    @map("unit_price")
+  tax             Float    @default(0)
+  total           Float
+
+  @@map("invoice_items")
+}
+
+model Email {
+  id              Int      @id @default(autoincrement())
+  leadId          Int?     @map("lead_id")
+  lead            Lead?    @relation(fields: [leadId], references: [id])
+  agentId         Int      @map("agent_id")
+  agent           User     @relation("AgentEmails", fields: [agentId], references: [id])
+  
+  subject         String
+  content         String   
+  sentAt          DateTime @default(now()) @map("sent_at")
+  
+  // Tracking
+  isOpened        Boolean  @default(false) @map("is_opened")
+  openedAt        DateTime? @map("opened_at")
+  clickCount      Int      @default(0) @map("click_count")
+  
+  status          String   @default("SENT") // SENT, DRAFT, FAILED
+
+  @@map("emails")
+}
+
+model LeadImport {
+  id          Int      @id @default(autoincrement())
+  filename    String?
+  source      LeadSource
+  count       Int
+  status      String   @default("COMPLETED")
+  createdAt   DateTime @default(now()) @map("created_at")
+  logs        Json?
+
+  @@map("lead_imports")
+}
+
+model IntegrationAccount {
+  id            Int      @id @default(autoincrement())
+  platform      String   
+  accountName   String   @map("account_name")
+  accessToken   String   @map("access_token")
+  refreshToken  String?  @map("refresh_token")
+  expiresAt     DateTime? @map("expires_at")
+  config        Json?    
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("integration_accounts")
+}
+
+model RoutingRule {
+  id            Int      @id @default(autoincrement())
+  name          String
+  strategy      String   
+  priority      Int      @default(0)
+  conditions    Json?    
+  targetTeamId  Int?     @map("target_team_id")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("routing_rules")
+}
+
+model Setting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     Json
+  category  String   @default("GENERAL") // GENERAL, AI, EMAIL, KEYS
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
 }
 
 enum Role {
   ADMIN
   MANAGER
   AGENT
+  CLIENT
 }
 
 enum LeadSource {
@@ -124,4 +385,43 @@ enum LeadStatus {
   INTERESTED
   WON
   LOST
+}
+
+model Client {
+  id              Int      @id @default(autoincrement())
+  name            String
+  email           String   @unique
+  password        String
+  companyName     String   @map("company_name")
+  status          String   @default("ACTIVE")
+  companies       Company[]
+  supportTickets  SupportTicket[]
+  invoices        Invoice[]
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("clients")
+}
+
+model AIUsage {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @map("user_id")
+  user            User     @relation(fields: [userId], references: [id])
+  module          String   
+  tokens          Int      @default(0)
+  cost            Float    @default(0)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("ai_usage")
+}
+
+model SystemSetting {
+  id              Int      @id @default(autoincrement())
+  category        String   
+  key             String   @unique 
+  value           Json
+  isSecret        Boolean  @default(false) @map("is_secret")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
 }

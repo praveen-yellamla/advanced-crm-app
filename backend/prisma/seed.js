@@ -1,145 +1,111 @@
 require('dotenv').config();
-const { PrismaClient } = require('@prisma/client');
-const { PrismaPg } = require('@prisma/adapter-pg');
-const { Pool } = require('pg');
+const prisma = require('../src/config/prisma');
 const bcrypt = require('bcryptjs');
 
-const connectionString = process.env.DATABASE_URL;
-const pool = new Pool({ 
-  connectionString,
-  // Enable SSL for production (Render)
-  ssl: process.env.DATABASE_URL.includes('render.com') || process.env.NODE_ENV === 'production'
-    ? { rejectUnauthorized: false } 
-    : false 
-});
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
-
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('🌱 Seeding Enterprise Intelligence Grid...');
 
-  // 1. Clear existing data
+  const hashedPassword = await bcrypt.hash('password123', 10);
+
+  // 1. CLEAR EXISTING DATA (CASCADE FRIENDLY)
+  // Disable foreign key checks for thorough reset if needed, but here we just delete in order
+  await prisma.client.deleteMany();
+  await prisma.supportTicket.deleteMany();
+  await prisma.invoiceItem.deleteMany();
+  await prisma.invoice.deleteMany();
+  await prisma.callQA.deleteMany();
   await prisma.call.deleteMany();
   await prisma.task.deleteMany();
   await prisma.lead.deleteMany();
+  await prisma.company.deleteMany();
   await prisma.team.deleteMany();
   await prisma.user.deleteMany();
 
-  // 2. Create Users
-  const hashedPassword = await bcrypt.hash('password123', 10);
-
+  // 2. INTERNAL STAFF PROTOCOLS
   const admin = await prisma.user.create({
-    data: {
-      name: 'Super Admin',
-      email: 'admin@crm.com',
-      password: hashedPassword,
-      role: 'ADMIN',
-    },
+    data: { name: 'Institutional Admin', email: 'admin@crm.com', password: hashedPassword, role: 'ADMIN' }
   });
 
   const manager = await prisma.user.create({
-    data: {
-      name: 'Sales Manager',
-      email: 'manager@crm.com',
-      password: hashedPassword,
-      role: 'MANAGER',
-    },
+    data: { name: 'Operations Manager', email: 'manager@crm.com', password: hashedPassword, role: 'MANAGER' }
   });
 
   const agent1 = await prisma.user.create({
-    data: {
-      name: 'Agent One',
-      email: 'agent1@crm.com',
-      password: hashedPassword,
-      role: 'AGENT',
-    },
+    data: { name: 'Field Agent Alpha', email: 'agent1@crm.com', password: hashedPassword, role: 'AGENT' }
   });
 
-  const agent2 = await prisma.user.create({
-    data: {
-      name: 'Agent Two',
-      email: 'agent2@crm.com',
-      password: hashedPassword,
-      role: 'AGENT',
-    },
-  });
+  // 3. CLIENT REPOSITORY (ACME & NOVA)
+  const clients = [
+    { name: 'ACME Corp Admin', email: 'client@acme.com', corp: 'ACME Corp Solutions' },
+    { name: 'Nova Director', email: 'client@nova.com', corp: 'Nova Enterprises' }
+  ];
 
-  console.log('✅ Users created');
+  for (const c of clients) {
+    const client = await prisma.client.create({
+      data: {
+        name: c.name,
+        email: c.email.toLowerCase().trim(),
+        password: hashedPassword,
+        companyName: c.corp,
+        status: 'ACTIVE'
+      }
+    });
 
-  // 3. Create Team
-  const salesTeam = await prisma.team.create({
-    data: {
-      teamName: 'Core Sales Team',
-      managerId: manager.id,
-    },
-  });
+    // Create 2 Companies per Client
+    const comp1 = await prisma.company.create({
+      data: { clientId: client.id, name: `${c.corp} North America`, location: 'New York, USA', industry: 'Logistics' }
+    });
+    const comp2 = await prisma.company.create({
+      data: { clientId: client.id, name: `${c.corp} EMEA Hub`, location: 'Berlin, DE', industry: 'Energy' }
+    });
 
-  console.log('✅ Teams created');
+    // Create 5 Leads for each company
+    for (const comp of [comp1, comp2]) {
+      for (let i = 1; i <= 5; i++) {
+        await prisma.lead.create({
+          data: {
+            customerName: `Lead Node ${i} - ${comp.name}`,
+            email: `lead${i}@${comp.name.toLowerCase().replace(/\s/g, '')}.com`,
+            phone: `+12345678${i}`,
+            source: 'GOOGLE_ADS',
+            status: i % 2 === 0 ? 'WON' : 'NEW',
+            companyId: comp.id,
+            assignedToId: agent1.id
+          }
+        });
+      }
+    }
 
-  // 4. Create Leads
-  const lead1 = await prisma.lead.create({
-    data: {
-      customerName: 'John Doe',
-      phone: '+1234567890',
-      email: 'john@example.com',
-      source: 'GOOGLE_ADS',
-      status: 'NEW',
-      region: 'North America',
-      language: 'English',
-      assignedToId: agent1.id,
-    },
-  });
+    // Create a Support Ticket
+    await prisma.supportTicket.create({
+      data: {
+        clientId: client.id,
+        subject: `Institutional Inquiry - ${c.corp}`,
+        type: 'TECHNICAL',
+        priority: 'HIGH',
+        description: `Routine performance inquiry for ${c.corp} operational grid.`
+      }
+    });
 
-  const lead2 = await prisma.lead.create({
-    data: {
-      customerName: 'Jane Smith',
-      phone: '+9876543210',
-      email: 'jane@example.com',
-      source: 'WEBSITE',
-      status: 'INTERESTED',
-      region: 'Europe',
-      language: 'German',
-      assignedToId: agent2.id,
-    },
-  });
+    // Create a Sample Invoice
+    await prisma.invoice.create({
+      data: {
+        invoiceNo: `INV-${client.id}-${Date.now().toString().slice(-4)}`,
+        clientId: client.id,
+        raisedById: manager.id,
+        amount: 2500.00,
+        status: 'PAID',
+        dueDate: new Date(Date.now() + 864000000), // +10 days
+        items: {
+          create: [{ description: 'Managed CRM Services Q2', quantity: 1, unitPrice: 2500.00, total: 2500.00 }]
+        }
+      }
+    });
+  }
 
-  const lead3 = await prisma.lead.create({
-    data: {
-      customerName: 'Michael Brown',
-      phone: '+1122334455',
-      email: 'michael@example.com',
-      source: 'META',
-      status: 'CONTACTED',
-      region: 'Asia',
-      language: 'Mandarin',
-      assignedToId: agent1.id,
-    },
-  });
-
-  console.log('✅ Leads created');
-
-  // 5. Create Sample Tasks
-  await prisma.task.create({
-    data: {
-      title: 'Follow up with John Doe',
-      description: 'Check if he is ready for a demo.',
-      dueDate: new Date(Date.now() + 86400000), // 1 day from now
-      priority: 'High',
-      status: 'Pending',
-      userId: agent1.id,
-    },
-  });
-
-  console.log('✅ Tasks created');
-
-  console.log('🚀 Seeding complete!');
+  console.log('🚀 Enterprise Seeding Complete. Neural Grid Initialized.');
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .catch((e) => { console.error(e); process.exit(1); })
+  .finally(async () => { await prisma.$disconnect(); });

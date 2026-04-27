@@ -60,16 +60,32 @@ const register = async (req, res) => {
  * @access  Public
  */
 const login = async (req, res) => {
-  const { email, password } = req.body;
+  let { email, password } = req.body;
+  if (email) email = email.trim().toLowerCase();
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
+    // 1. Try to find in internal Staff repo (User Table)
+    let user = await prisma.user.findUnique({ where: { email } });
+    let role = user?.role;
+
+    // 2. If not found, try to find in External Client repo (Client Table)
+    if (!user) {
+      const client = await prisma.client.findUnique({ where: { email } });
+      if (client) {
+        user = client;
+        role = 'CLIENT';
+      }
+    }
 
     if (user && (await bcrypt.compare(password, user.password))) {
-      if (!user.isActive) {
-        return res.status(401).json({ message: 'Your account is deactivated' });
+      // Check status for staff
+      if (user.role && !user.isActive) {
+        return res.status(401).json({ message: 'Account deactivated' });
+      }
+
+      // Check status for clients
+      if (role === 'CLIENT' && user.status !== 'ACTIVE') {
+        return res.status(401).json({ message: 'Client account inactive' });
       }
 
       res.json({
@@ -78,15 +94,15 @@ const login = async (req, res) => {
           id: user.id,
           name: user.name,
           email: user.email,
-          role: user.role
+          role: role
         },
-        token: generateToken(user)
+        token: generateToken({ ...user, role })
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
-    console.error(error);
+    console.error('CRITICAL AUTH ERROR:', error);
     res.status(500).json({ message: 'Server error during login' });
   }
 };
