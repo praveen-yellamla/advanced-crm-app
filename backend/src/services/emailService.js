@@ -5,27 +5,23 @@ const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder_key_if_none_provided');
 
 const sendInviteEmail = async (email, inviteLink) => {
+  console.log("STEP 1: Preparing to send email");
+
   if (!process.env.RESEND_API_KEY) {
-    throw new Error("RESEND_API_KEY is missing");
+    throw new Error("RESEND_API_KEY missing in backend");
   }
 
-  console.log("Sending email to:", email);
-  console.log("Invite link:", inviteLink);
+  console.log("STEP 2: Calling Resend API");
 
   try {
     const response = await resend.emails.send({
       from: "onboarding@resend.dev",
       to: email,
-      subject: "You're invited to CRM Platform",
-      html: `         <h2>Welcome to CRM</h2>         <p>You have been invited to join the platform.</p>         <a href="${inviteLink}" target="_blank">Accept Invitation</a>
-      `
+      subject: "CRM Invite",
+      html: `<a href="${inviteLink}">Accept Invite</a>`
     });
 
-    console.log("Resend response:", response);
-
-    if (!response || (!response.id && !response.data?.id)) {
-      throw new Error("Email not accepted by Resend");
-    }
+    console.log("STEP 3: Resend response:", response);
 
     return response.data || response;
   } catch (error) {

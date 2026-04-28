@@ -4,6 +4,8 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+console.log("RESEND KEY CHECK:", process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.substring(0, 8) + '...' : "UNDEFINED");
+
 const app = express();
 
 // Middleware

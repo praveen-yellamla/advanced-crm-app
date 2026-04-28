@@ -4,20 +4,18 @@ const crypto = require('crypto');
 
 const inviteUser = async (req, res) => {
   try {
-    console.log("Invite API called");
+    console.log("INVITE STARTED");
     const { email, role } = req.body;
 
     if (!email) {
-      return res.status(400).json({ error: "Email is required" });
+      return res.status(400).json({ message: "Email required" });
     }
 
+    // Preserve backend token generation to maintain DB consistency
     const inviteToken = Math.random().toString(36).substring(2);
-
-    // Save token to DB to ensure accept-invite flow continues to work securely
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
 
-    // Clear stale invites
     const existingInvite = await prisma.invite.findUnique({ where: { email } });
     if (existingInvite) {
       await prisma.invite.delete({ where: { email } });
@@ -33,17 +31,21 @@ const inviteUser = async (req, res) => {
       }
     });
 
-    const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${inviteToken}&email=${email}&role=${role}`;
+    const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?email=${email}`;
 
-    const emailResponse = await sendInviteEmail(email, inviteLink);
+    const result = await sendInviteEmail(email, inviteLink);
 
-    return res.status(200).json({
+    if (!result || (!result.id && !result.data?.id)) {
+      throw new Error("Resend did not return success");
+    }
+
+    return res.json({
       success: true,
-      message: "Email sent successfully",
-      data: emailResponse
+      message: "Email sent",
+      data: result
     });
   } catch (error) {
-    console.error("INVITE ERROR:", error);
+    console.error("FINAL ERROR:", error);
     return res.status(500).json({
       success: false,
       message: error.message
