@@ -46,7 +46,7 @@ const AdminCalls = () => {
         <div className="flex gap-4">
            <div className="flex items-center gap-3 px-6 py-2 bg-blue-50 border border-blue-100 rounded-2xl">
               <Headphones className="text-blue-600" size={18} />
-              <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Global Playback Sync</span>
+              <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Global Playback Refresh</span>
            </div>
         </div>
       </div>
@@ -72,7 +72,7 @@ const AdminCalls = () => {
             <table className="w-full text-left border-collapse">
                <thead>
                   <tr className="bg-slate-50/50">
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Temporal Node</th>
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Temporal Account</th>
                      <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Strategic Agent</th>
                      <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Entity Target</th>
                      <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Duration</th>

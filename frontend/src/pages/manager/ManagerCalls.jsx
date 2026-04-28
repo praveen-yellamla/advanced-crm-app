@@ -165,7 +165,7 @@ const ManagerCalls = () => {
                       disabled={qaMutation.isPending}
                       className="h-16 px-12 bg-[#0F172A] text-white rounded-2xl font-bold uppercase text-[11px] tracking-widest shadow-2xl hover:brightness-125 transition-all"
                     >
-                      {qaMutation.isPending ? 'Syncing Score card...' : 'Submit Evaluation'}
+                      {qaMutation.isPending ? 'Loading...ore card...' : 'Submit Evaluation'}
                     </button>
                  </div>
               </motion.div>

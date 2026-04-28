@@ -77,7 +77,7 @@ const CompanyManagement = () => {
       {/* GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
          {isLoading ? (
-            <p className="text-slate-400 font-black italic uppercase animate-pulse">Syncing Organizational Node Archive...</p>
+            <p className="text-slate-400 font-black italic uppercase animate-pulse">Loading Data Archive...</p>
          ) : filteredCompanies?.map((company) => (
             <motion.div 
                key={company.id}
@@ -116,7 +116,7 @@ const CompanyManagement = () => {
 
                {company.website && (
                  <a href={company.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:translate-x-2 transition-transform italic">
-                    <ExternalLink size={14} /> Visit Institutional Node
+                    <ExternalLink size={14} /> Visit Website
                  </a>
                )}
             </motion.div>
@@ -148,7 +148,7 @@ const CompanyManagement = () => {
                      disabled={mutation.isPending}
                      className="w-full h-20 bg-[#0F172A] text-white rounded-3xl font-black uppercase text-sm tracking-[0.2em] shadow-2xl hover:brightness-125 transition-all"
                   >
-                     {mutation.isPending ? 'Syncing Schema...' : 'Initialize Subsidiary Node'}
+                     {mutation.isPending ? 'Saving...' : 'Create Subsidiary Account'}
                   </button>
                </motion.div>
             </div>

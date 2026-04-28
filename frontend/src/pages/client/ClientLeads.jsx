@@ -50,7 +50,7 @@ const ClientLeads = () => {
          <div className="flex-1 relative group">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={20} />
             <input 
-               type="text" placeholder="Search target identities or corporate nodes..." 
+               type="text" placeholder="Search target identities or Companys..." 
                className="w-full h-18 pl-16 pr-6 bg-white border border-[#E2E8F0] rounded-[32px] focus:ring-[12px] focus:ring-indigo-600/5 focus:border-indigo-600 outline-none transition-all font-bold text-[#0F172A] shadow-sm italic"
                value={search} onChange={e => setSearch(e.target.value)}
             />
@@ -64,7 +64,7 @@ const ClientLeads = () => {
                <thead>
                   <tr className="bg-slate-50/50">
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Target Identity</th>
-                     <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Corporate Node</th>
+                     <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Company</th>
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Acquisition Cycle</th>
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Status Level</th>
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Agent Assigned</th>
@@ -92,7 +92,7 @@ const ClientLeads = () => {
                        <td className="px-10 py-10">
                           <div className="flex items-center gap-3">
                              <Briefcase className="text-indigo-400" size={16} />
-                             <span className="text-sm font-black text-[#0F172A] uppercase italic">{lead.mappedCompany?.name || 'Unmapped Node'}</span>
+                             <span className="text-sm font-black text-[#0F172A] uppercase italic">{lead.mappedCompany?.name || 'Unassigned'}</span>
                           </div>
                        </td>
                        <td className="px-10 py-10 text-sm font-bold text-slate-400 italic">

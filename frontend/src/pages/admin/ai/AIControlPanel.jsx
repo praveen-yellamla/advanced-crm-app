@@ -39,14 +39,14 @@ const AIControlPanel = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['aiSettings']);
-      toast.success('Intelligence node synchronized.');
+      toast.success('Data Synchronized.');
     }
   });
 
   const featureCards = [
     { id: 'AI_ENABLED', label: 'Global Intelligence Core', desc: 'Main power switch for all AI-driven modules.', icon: <Zap /> },
     { id: 'ENABLE_SCORING', label: 'Lead Scoring Logic', desc: 'Automated 0-100 scoring based on multi-channel telemetry.', icon: <BrainCircuit /> },
-    { id: 'ENABLE_TRANSCRIPTION', label: 'Voice Recog. Node', desc: 'Convert speech-to-text with multi-speaker separation.', icon: <Cpu /> },
+    { id: 'ENABLE_TRANSCRIPTION', label: 'Voice Recognition', desc: 'Convert speech-to-text with multi-speaker separation.', icon: <Cpu /> },
     { id: 'ENABLE_COACHING', label: 'Conversation Coach', desc: 'Generate performance scorecards for sales agents.', icon: <ShieldCheck /> },
     { id: 'ENABLE_NL_QUERY', label: 'Auth Dashboard Query', desc: 'Allow natural language data retrieval via dashboard.', icon: <Database /> },
   ];
@@ -71,7 +71,7 @@ const AIControlPanel = () => {
          {/* CONFIG GRID */}
          <div className="lg:col-span-2 space-y-8">
             <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-4">
-               Active Intelligence Nodes <div className="h-px flex-1 bg-slate-100" />
+               Active Datas <div className="h-px flex-1 bg-slate-100" />
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

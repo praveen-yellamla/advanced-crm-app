@@ -33,7 +33,7 @@ const UnifiedTasks = () => {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-           <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Strategic Task Board</h1>
+           <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Strategic Tasks</h1>
            <p className="text-[#64748B] font-medium text-sm mt-1">Manage cross-relational conversion activities with Kanban orchestration</p>
         </div>
         <div className="flex gap-4">
@@ -73,7 +73,7 @@ const UnifiedTasks = () => {
 
               <div className="space-y-6">
                  {isLoading ? (
-                    <div className="p-10 text-center animate-pulse text-slate-300 font-bold uppercase text-[10px]">Syncing Column...</div>
+                    <div className="p-10 text-center animate-pulse text-slate-300 font-bold uppercase text-[10px]">Loading...lumn...</div>
                  ) : tasks?.filter(t => t.status === col).map(task => (
                    <motion.div 
                      layoutId={task.id}
@@ -112,7 +112,7 @@ const UnifiedTasks = () => {
                    </motion.div>
                  ))}
                  <button className="w-full h-18 rounded-[32px] border-2 border-dashed border-slate-100 text-slate-300 font-bold uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:border-blue-600 hover:text-blue-600 transition-all">
-                    <Plus size={16} /> New Node
+                    <Plus size={16} /> New Task
                  </button>
               </div>
            </div>

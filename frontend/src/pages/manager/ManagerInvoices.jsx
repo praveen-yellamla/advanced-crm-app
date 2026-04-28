@@ -42,7 +42,7 @@ const ManagerInvoices = () => {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-           <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Team Invoices</h1>
+           <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Invoices</h1>
            <p className="text-[#64748B] font-medium text-sm mt-1">Audit, Verify & Authorize Team Financial Records</p>
         </div>
       </div>

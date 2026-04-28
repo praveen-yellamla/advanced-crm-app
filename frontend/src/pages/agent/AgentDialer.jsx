@@ -166,7 +166,7 @@ const AgentDialer = () => {
                  <div className="space-y-12">
                     <div className="space-y-2">
                        <h3 className="text-3xl font-bold text-[#0F172A] tracking-tight">Call Disposition Mandatory</h3>
-                       <p className="text-sm font-medium text-slate-400">Classify the outcome for <span className="text-blue-600 font-bold">{activeLead?.customerName}</span> before sync.</p>
+                       <p className="text-sm font-medium text-slate-400">Classify the outcome for <span className="text-blue-600 font-bold">{activeLead?.customerName}</span> before Refresh.</p>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -207,7 +207,7 @@ const AgentDialer = () => {
                       onClick={submitTagging}
                       className="h-18 px-12 bg-[#0F172A] text-white rounded-[24px] font-bold uppercase text-xs tracking-widest shadow-2xl hover:brightness-125 transition-all"
                     >
-                       Commit & Sync Sequence
+                       Commit & Refresh Sequence
                     </button>
                  </div>
               </motion.div>

@@ -47,7 +47,7 @@ const ClientDashboard = () => {
         <div>
            <div className="flex items-center gap-3 mb-3">
               <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-600 italic font-mono">External Portal Node</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-600 italic font-mono">External Portal</span>
            </div>
            <h1 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase underline decoration-indigo-600 decoration-8 underline-offset-8">Corporate Overview.</h1>
            <p className="text-sm font-bold text-slate-400 mt-5 max-w-xl leading-relaxed uppercase italic">Consolidated lead generation & organizational performance telemetry</p>
@@ -111,7 +111,7 @@ const ClientDashboard = () => {
                            <Briefcase size={20} />
                         </div>
                         <div>
-                           <p className="text-sm font-black text-white tracking-widest italic uppercase">Alpha Corp Node {i}</p>
+                           <p className="text-sm font-black text-white tracking-widest italic uppercase">Alpha Corp Account {i}</p>
                            <p className="text-[10px] font-bold text-slate-500 uppercase">Operational Status: ACTIVE</p>
                         </div>
                      </div>

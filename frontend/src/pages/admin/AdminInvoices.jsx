@@ -150,7 +150,7 @@ const AdminInvoices = () => {
                     createInvoiceMutation.mutate(formData);
                  }} className="space-y-8">
                     <div className="space-y-4">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Invoice Node ID</label>
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Invoice ID</label>
                        <input readOnly value={formData.invoiceNo} className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl font-mono text-slate-400"/>
                     </div>
                     <div className="space-y-4">

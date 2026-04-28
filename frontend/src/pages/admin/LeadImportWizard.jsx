@@ -54,7 +54,7 @@ const LeadImportWizard = () => {
               </div>
               <div className="text-center space-y-3">
                  <h2 className="text-3xl font-bold text-[#0F172A] tracking-tight">Deployment Identity Upload</h2>
-                 <p className="text-slate-400 font-medium max-w-sm mx-auto">Supports CSV / XLSX up to 50,000 nodes. Duplicate detection will be executed post-normalization.</p>
+                 <p className="text-slate-400 font-medium max-w-sm mx-auto">Supports CSV / XLSX up to 50,000 Accounts. Duplicate detection will be executed post-normalization.</p>
               </div>
               <input type="file" id="bulk-upload" className="hidden" onChange={() => setStep(2)} />
               <label htmlFor="bulk-upload" className="h-18 px-12 bg-[#0F172A] text-white rounded-[24px] font-bold text-xs uppercase tracking-[0.2em] shadow-2xl hover:scale-105 transition-all cursor-pointer flex items-center gap-4">
@@ -108,7 +108,7 @@ const LeadImportWizard = () => {
               <div className="text-center space-y-4">
                  <h4 className="text-3xl font-bold text-[#0F172A] tracking-tight">Identity Analysis Finalized</h4>
                  <div className="grid grid-cols-3 gap-8 pt-8">
-                    <Stat n="48,290" l="Valid Nodes" c="text-emerald-600" />
+                    <Stat n="48,290" l="Valid Leads" c="text-emerald-600" />
                     <Stat n="1,710" l="Deduplicated" c="text-amber-600" />
                     <Stat n="0" l="Logic Errors" c="text-slate-400" />
                  </div>

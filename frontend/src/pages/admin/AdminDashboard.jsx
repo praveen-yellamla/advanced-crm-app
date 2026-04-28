@@ -132,7 +132,7 @@ const AdminDashboard = () => {
                  <ShieldCheck className="text-blue-600" />
                  <div>
                     <p className="text-[10px] font-black uppercase text-[#0F172A]">Infrastructure Hub</p>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase">Tier-IV Data Sync Verified</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase">Tier-IV Data Refresh Verified</p>
                  </div>
               </div>
            </div>

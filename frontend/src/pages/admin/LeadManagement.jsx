@@ -51,7 +51,7 @@ const LeadManagement = () => {
               <Download size={18} /> Export Results
            </button>
            <button className="h-14 px-8 bg-blue-600 text-white rounded-2xl font-bold text-xs shadow-xl shadow-blue-500/20 hover:scale-105 transition-all flex items-center gap-3">
-              <Plus size={20} /> Create Manual Node
+              <Plus size={20} /> Create Manual Lead
            </button>
         </div>
       </div>

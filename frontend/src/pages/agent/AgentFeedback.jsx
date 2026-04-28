@@ -28,7 +28,7 @@ const AgentFeedback = () => {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-           <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Coaching Hub</h1>
+           <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Coaching</h1>
            <p className="text-[#64748B] font-medium text-sm mt-1">Review manager feedback, QA audits & performance insights</p>
         </div>
       </div>
@@ -79,7 +79,7 @@ const AgentFeedback = () => {
                        <span className="text-xs text-slate-400 font-medium">&#x2022; Regional Manager</span>
                     </div>
                     <button className="h-12 px-8 bg-slate-50 text-slate-900 border border-slate-100 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all flex items-center gap-3 shadow-sm">
-                       <AcknowledgeIcon /> Acknowledge Sync
+                       <AcknowledgeIcon /> Acknowledge Refresh
                     </button>
                  </div>
               </motion.div>

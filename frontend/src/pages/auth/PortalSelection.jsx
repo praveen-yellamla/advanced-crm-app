@@ -22,51 +22,51 @@ const PortalSelection = () => {
   const portals = [
     {
       id: 'admin',
-      label: 'GOVERNANCE NODE',
-      title: 'CONTROL CENTER',
-      desc: 'Manage users, security, analytics, and platform governance.',
+      label: 'ADMINISTRATION',
+      title: 'ADMIN PORTAL',
+      desc: 'Manage users, security, analytics, and platform settings.',
       icon: <ShieldCheck size={32} />,
       accent: '#2563EB',
       gradient: 'from-blue-600 to-blue-800',
       path: '/login/admin',
       tags: ['Security', 'Users', 'Analytics'],
-      status: 'ACCESS READY'
+      status: 'LOGIN READY'
     },
     {
       id: 'manager',
-      label: 'OPERATIONS NODE',
-      title: 'MANAGER DESK',
+      label: 'MANAGEMENT',
+      title: 'MANAGER PORTAL',
       desc: 'Track teams, productivity, and lead allocation.',
       icon: <Zap size={32} />,
       accent: '#7C3AED',
       gradient: 'from-violet-600 to-violet-800',
       path: '/login/manager',
-      tags: ['KPI Tracking', 'Lead Flow', 'Team Sync'],
-      status: 'SYNC READY'
+      tags: ['KPI Tracking', 'Lead Flow', 'Team Refresh'],
+      status: 'LOGIN READY'
     },
     {
       id: 'agent',
-      label: 'MISSION NODE',
-      title: 'AGENT OPS',
-      desc: 'Run calls, leads, routing, and conversions.',
+      label: 'SALES & Support',
+      title: 'AGENT PORTAL',
+      desc: 'Run calls, manage leads, and drive conversions.',
       icon: <Headphones size={32} />,
       accent: '#06B6D4',
       gradient: 'from-cyan-500 to-cyan-700',
       path: '/login/agent',
       tags: ['Voice Suite', 'Smart Queue', 'Efficiency'],
-      status: 'NODE READY'
+      status: 'LOGIN READY'
     },
     {
       id: 'client',
-      label: 'SUCCESS NODE',
-      title: 'CLIENT HUB',
+      label: 'CUSTOMER ACCESS',
+      title: 'CLIENT PORTAL',
       desc: 'Monitor ROI, reports, and company growth.',
       icon: <Briefcase size={32} />,
       accent: '#4F46E5',
       gradient: 'from-indigo-600 to-indigo-800',
       path: '/login/client',
       tags: ['ROI Reports', 'Growth Grid', 'Insights'],
-      status: 'ACCESS READY'
+      status: 'LOGIN READY'
     }
   ];
 
@@ -101,14 +101,14 @@ const PortalSelection = () => {
                  <div className="w-2 h-2 rounded-full bg-violet-500 animate-pulse delay-75" />
                  <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse delay-150" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-900">AdvancedCRM Enterprise Hub</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-900">Advanced CRM Platform</span>
            </motion.div>
 
            <div className="space-y-4">
               <h1 className="text-6xl md:text-[90px] font-black text-[#0F172A] tracking-tighter leading-[0.9] drop-shadow-sm">
-                Unified Portal <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600">Sync Interface.</span>
+                Unified <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600">Account Access.</span>
               </h1>
-              <p className="text-slate-500 text-lg md:text-xl max-w-2xl mx-auto font-medium">Select your high-performance environment to initialize session protocols.</p>
+              <p className="text-slate-500 text-lg md:text-xl max-w-2xl mx-auto font-medium">Select your account type to sign in to your dashboard.</p>
            </div>
         </div>
 
@@ -154,7 +154,7 @@ const PortalSelection = () => {
            </div>
            
            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Access Policy 40.2 • Intelligence Node Secured
+              Enterprise Standards • Corporate Data Secured
            </div>
         </div>
 
@@ -245,7 +245,7 @@ const PortalCard = ({ portal, index, onClick, onHover, isHovered }) => {
                ) : (
                  <motion.div key="st-idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3 opacity-30">
                     <div className="w-2.5 h-2.5 rounded-full bg-slate-300" />
-                    <span className="text-[11px] font-black uppercase tracking-widest text-[#0F172A]">INIT INITIALIZE</span>
+                    <span className="text-[11px] font-black uppercase tracking-widest text-[#0F172A]">SIGN IN</span>
                  </motion.div>
                )}
             </AnimatePresence>

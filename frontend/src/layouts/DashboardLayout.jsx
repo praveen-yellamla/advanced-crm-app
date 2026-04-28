@@ -84,29 +84,29 @@ const DashboardLayout = () => {
       { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
       { name: 'Teams', icon: Layers, path: '/admin/teams' },
       { name: 'Agents', icon: Users, path: '/admin/agents' },
-      { name: 'Lead Engine', icon: Target, path: '/admin/leads' },
+      { name: 'Leads', icon: Target, path: '/admin/leads' },
       { name: 'Integrations', icon: Globe, path: '/admin/integrations' },
       { name: 'Bulk Import', icon: Zap, path: '/admin/import' },
-      { name: 'Task Board', icon: ClipboardCheck, path: '/admin/tasks' },
-      { name: 'Fiscal Ledger', icon: FileText, path: '/admin/ledger' },
-      { name: 'Call History', icon: PhoneCall, path: '/admin/calls' },
+      { name: 'Tasks', icon: ClipboardCheck, path: '/admin/tasks' },
+      { name: 'Invoices', icon: FileText, path: '/admin/ledger' },
+      { name: 'Call Logs', icon: PhoneCall, path: '/admin/calls' },
       { name: 'Quality Center', icon: ShieldCheck, path: '/admin/qcqa' },
-      { name: 'AI Hub', icon: BrainCircuit, path: '/admin/ai' },
+      { name: 'AI Assistant', icon: BrainCircuit, path: '/admin/ai' },
       { name: 'Settings', icon: Settings, path: '/admin/settings' },
     ],
     MANAGER: [
-      { name: 'Dashboard', icon: LayoutDashboard, path: '/manager/dashboard' },
+      { name: 'Manager Dashboard', icon: LayoutDashboard, path: '/manager/dashboard' },
       { name: 'Team Leads', icon: Target, path: '/manager/team-leads' },
-      { name: 'Quality Center', icon: Headphones, path: '/manager/qcqa' },
-      { name: 'My Agents', icon: Users, path: '/manager/agents' },
+      { name: 'Quality Review', icon: Headphones, path: '/manager/qcqa' },
+      { name: 'Agents', icon: Users, path: '/manager/agents' },
       { name: 'Invoices', icon: FileText, path: '/manager/invoices' },
-      { name: 'Reporting', icon: BarChart3, path: '/manager/reports' },
+      { name: 'Team Performance', icon: BarChart3, path: '/manager/reports' },
     ],
     AGENT: [
-      { name: 'Dashboard', icon: LayoutDashboard, path: '/agent/dashboard' },
+      { name: 'Agent Workspace', icon: LayoutDashboard, path: '/agent/dashboard' },
       { name: 'My Leads', icon: Target, path: '/agent/leads' },
       { name: 'Dialer', icon: Headphones, path: '/agent/dialer' },
-      { name: 'Call History', icon: History, path: '/agent/history' },
+      { name: 'Call Logs', icon: History, path: '/agent/history' },
       { name: 'Tasks', icon: ClipboardCheck, path: '/agent/tasks' },
       { name: 'Feedback', icon: MessageSquare, path: '/agent/feedback' },
       { name: 'Emails', icon: Mail, path: '/agent/emails' },
@@ -115,12 +115,12 @@ const DashboardLayout = () => {
       { name: 'Profile', icon: SquareUser, path: '/agent/profile' },
     ],
     CLIENT: [
-       { name: 'Performance', icon: LayoutDashboard, path: '/client/dashboard' },
-       { name: 'Subsidiaries', icon: Briefcase, path: '/client/companies' },
-       { name: 'Lead Grid', icon: Target, path: '/client/leads' },
-       { name: 'Reports', icon: FileText, path: '/client/reports' },
-       { name: 'Fiscal Ledger', icon: ClipboardCheck, path: '/client/invoices' },
-       { name: 'Support Tickets', icon: Headphones, path: '/client/tickets' },
+       { name: 'Client Portal', icon: LayoutDashboard, path: '/client/dashboard' },
+       { name: 'My Companies', icon: Briefcase, path: '/client/companies' },
+       { name: 'Leads Generated', icon: Target, path: '/client/leads' },
+       { name: 'Monthly Reports', icon: FileText, path: '/client/reports' },
+       { name: 'Billing', icon: ClipboardCheck, path: '/client/invoices' },
+       { name: 'Support', icon: Headphones, path: '/client/tickets' },
        { name: 'Profile', icon: Settings, path: '/client/profile' },
     ]
   };
@@ -183,7 +183,7 @@ const DashboardLayout = () => {
             `}
           >
             <LogOut size={20} className="shrink-0" />
-            {sidebarOpen && <span className="ml-4 truncate">Logout System</span>}
+            {sidebarOpen && <span className="ml-4 truncate">Logout</span>}
           </button>
         </div>
       </aside>

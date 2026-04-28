@@ -72,13 +72,13 @@ const AgentInvoices = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
            <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Financial Ledger</h1>
-           <p className="text-[#64748B] font-medium text-sm mt-1">Generate line-item invoices for converted lead conversion nodes</p>
+           <p className="text-[#64748B] font-medium text-sm mt-1">Generate line-item invoices for converted lead conversion Accounts</p>
         </div>
         <button 
            onClick={() => setIsModalOpen(true)}
            className="h-14 px-8 bg-emerald-600 text-white rounded-2xl font-bold text-xs shadow-xl shadow-emerald-500/20 hover:scale-105 transition-all flex items-center gap-3 border border-emerald-500"
         >
-           <PlusCircle size={20} /> Generate Fiscal Node
+           <PlusCircle size={20} /> Generate Invoice
         </button>
       </div>
 
@@ -107,7 +107,7 @@ const AgentInvoices = () => {
                              </div>
                              <div>
                                 <p className="text-lg font-bold text-[#0F172A] tracking-tight">{inv.invoiceNo}</p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Lead Verification Node</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Lead Verification</p>
                              </div>
                           </div>
                        </td>
@@ -142,7 +142,7 @@ const AgentInvoices = () => {
          </div>
       </div>
 
-      {/* CREATE INVOICE MODAL */}
+      {/* Create Invoice MODAL */}
       <AnimatePresence>
          {isModalOpen && (
            <div className="fixed inset-0 z-50 flex items-center justify-center p-8 overflow-y-auto">
@@ -150,7 +150,7 @@ const AgentInvoices = () => {
               <motion.div initial={{ opacity: 0, scale: 0.95, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 30 }} className="relative w-full max-w-4xl bg-white rounded-[56px] shadow-2xl p-16">
                  <div className="flex justify-between items-start mb-16">
                     <div className="space-y-4">
-                       <h2 className="text-4xl font-bold text-[#0F172A] tracking-tighter">Generate Fiscal Node</h2>
+                       <h2 className="text-4xl font-bold text-[#0F172A] tracking-tighter">Generate Invoice</h2>
                        <p className="text-sm font-medium text-slate-400 max-w-sm">Initialization of multi-channel fiscal dispatch for verified conversion data.</p>
                     </div>
                     <div className="bg-emerald-50 px-8 py-6 rounded-[32px] border border-emerald-100 text-right">
@@ -229,7 +229,7 @@ const AgentInvoices = () => {
                          disabled={createInvoiceMutation.isPending}
                          className="flex-[2] h-20 bg-[#0F172A] text-white rounded-3xl font-bold uppercase text-[11px] tracking-widest shadow-2xl hover:brightness-125 transition-all flex items-center justify-center gap-4"
                        >
-                          {createInvoiceMutation.isPending ? 'Syncing Fiscal Node...' : <><Send size={18} /> Finalize & Dispatch Intelligence Invoice</>}
+                          {createInvoiceMutation.isPending ? 'Loading...voice...' : <><Send size={18} /> Finalize & Dispatch Intelligence Invoice</>}
                        </button>
                     </div>
                  </form>

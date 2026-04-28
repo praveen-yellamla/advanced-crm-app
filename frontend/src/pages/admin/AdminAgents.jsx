@@ -58,7 +58,7 @@ const AdminAgents = () => {
     mutationFn: (newAgent) => api.post('/admin/agents', newAgent),
     onSuccess: () => {
       queryClient.invalidateQueries(['adminAgents']);
-      toast.success('Agent Node Initialized');
+      toast.success('Agents Initialized');
       setIsModalOpen(false);
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Deployment failed')
@@ -76,7 +76,7 @@ const AdminAgents = () => {
     mutationFn: (id) => api.delete(`/admin/agents/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries(['adminAgents']);
-      toast.success('Agent Node Terminated');
+      toast.success('Agents Terminated');
     }
   });
 
@@ -223,7 +223,7 @@ const AdminAgents = () => {
               <motion.div initial={{ opacity: 0, scale: 0.95, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 30 }} className="relative w-full max-w-2xl bg-white rounded-[48px] shadow-2xl overflow-hidden p-16">
                  <div className="mb-12">
                     <h2 className="text-4xl font-bold text-[#0F172A] tracking-tight uppercase">Add Agent</h2>
-                    <p className="text-sm font-medium text-slate-400 mt-2">Initialize a new organizational agent node</p>
+                    <p className="text-sm font-medium text-slate-400 mt-2">Initialize a new organizational Agents</p>
                  </div>
 
                  <form onSubmit={(e) => {
@@ -248,7 +248,7 @@ const AdminAgents = () => {
                           />
                        </div>
                        <div className="space-y-4">
-                          <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Security Phrase</label>
+                          <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Password</label>
                           <input 
                              type="password" required placeholder="Password Phrase"
                              className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A]"
@@ -256,7 +256,7 @@ const AdminAgents = () => {
                           />
                        </div>
                        <div className="space-y-4">
-                          <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Node Assignment</label>
+                          <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Team Assignment</label>
                           <select 
                              required 
                              className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A] appearance-none"
@@ -267,7 +267,7 @@ const AdminAgents = () => {
                           </select>
                        </div>
                        <div className="space-y-4 col-span-2">
-                          <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Voice Communication Node (Telephony)</label>
+                          <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Voice Communication (Telephony)</label>
                           <input 
                              type="text" placeholder="+1 (555) 000-0000"
                              className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A]"

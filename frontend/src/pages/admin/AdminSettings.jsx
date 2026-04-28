@@ -33,11 +33,11 @@ import toast from 'react-hot-toast';
 const CATEGORIES = [
   { id: 'COMPANY', label: 'Company Profile', icon: Building2 },
   { id: 'USERS', label: 'User & Role Mgmt', icon: Users },
-  { id: 'TELEPHONY', label: 'Telephony Node', icon: PhoneCall },
+  { id: 'TELEPHONY', label: 'Telephony', icon: PhoneCall },
   { id: 'EMAIL', label: 'Mail Infrastructure', icon: Mail },
   { id: 'ADS', label: 'Ad Intelligence', icon: Globe },
   { id: 'WEBHOOKS', label: 'Webhooks & APIs', icon: Database },
-  { id: 'BILLING', label: 'Fiscal Protocol', icon: CreditCard },
+  { id: 'Billing', label: 'Fiscal Protocol', icon: CreditCard },
   { id: 'AI', label: 'Cognitive Engine', icon: BrainCircuit },
   { id: 'STORAGE', label: 'Storage Cluster', icon: HardDrive },
   { id: 'NOTIFICATIONS', label: 'System Alerts', icon: Bell },
@@ -141,7 +141,7 @@ const DynamicContent = ({ category }) => {
     case 'COMPANY': return <CompanySettings />;
     case 'TELEPHONY': return <TelephonySettings />;
     case 'AI': return <AISettings />;
-    case 'BILLING': return <BillingSettings />;
+    case 'Billing': return <BillingSettings />;
     default: return <PlaceholderSettings category={category} />;
   }
 };
@@ -240,7 +240,7 @@ const AISettings = () => {
     <div className="space-y-12 relative z-10">
         <div>
             <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Intelligence.</h3>
-            <p className="text-sm font-bold text-slate-400 mt-2">Manage cognitive nodes and atmospheric model parameters.</p>
+            <p className="text-sm font-bold text-slate-400 mt-2">Manage AI Assistants and atmospheric model parameters.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -293,7 +293,7 @@ const BillingSettings = () => (
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <FormInput label="Bank Beneficiary Name" placeholder="AdvancedCRM Technologies LLP" />
-            <FormInput label="SWIFT/IFSC Cluster Node" placeholder="HDFC0001234" />
+            <FormInput label="SWIFT/IFSC Account Code" placeholder="HDFC0001234" />
         </div>
     </div>
 );
@@ -304,8 +304,8 @@ const PlaceholderSettings = ({ category }) => (
             <Database size={48} />
         </div>
         <div>
-            <h3 className="text-2xl font-black text-[#0F172A] uppercase tracking-tighter italic">Registry Node Loading...</h3>
-            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">{category} module synchronization in progress.</p>
+            <h3 className="text-2xl font-black text-[#0F172A] uppercase tracking-tighter italic">Settings Loading...</h3>
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">{category} module Synchronization in progress.</p>
         </div>
     </div>
 );

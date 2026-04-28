@@ -62,13 +62,13 @@ const AgentEmails = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
            <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Direct Intelligence</h1>
-           <p className="text-[#64748B] font-medium text-sm mt-1">Manage lead-linked communication nodes & tracking telemetry</p>
+           <p className="text-[#64748B] font-medium text-sm mt-1">Manage lead-linked communication Accounts & tracking telemetry</p>
         </div>
         <button 
            onClick={() => setIsModalOpen(true)}
            className="h-14 px-8 bg-blue-600 text-white rounded-2xl font-bold text-xs shadow-xl shadow-blue-500/20 hover:scale-105 transition-all flex items-center gap-3"
         >
-           <Plus size={20} /> Compose Node
+           <Plus size={20} /> Compose Email
         </button>
       </div>
 
@@ -104,7 +104,7 @@ const AgentEmails = () => {
                <thead>
                   <tr className="bg-slate-50/50 text-[11px] font-bold uppercase tracking-widest text-slate-400">
                      <th className="px-10 py-8">Communication Subject</th>
-                     <th className="px-10 py-8">Recipient Node</th>
+                     <th className="px-10 py-8">Recipient</th>
                      <th className="px-10 py-8">Tracking</th>
                      <th className="px-10 py-8">Timestamp</th>
                      <th className="px-10 py-8">Status</th>
@@ -159,10 +159,10 @@ const AgentEmails = () => {
            <div className="fixed inset-0 z-50 flex items-center justify-center p-8">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#0F172A]/70 backdrop-blur-3xl" onClick={() => setIsModalOpen(false)} />
               <motion.div initial={{ opacity: 0, scale: 0.95, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 30 }} className="relative w-full max-w-3xl bg-white rounded-[40px] shadow-2xl p-12">
-                 <h2 className="text-3xl font-bold text-[#0F172A] tracking-tight mb-8">Compose Intelligence Node</h2>
+                 <h2 className="text-3xl font-bold text-[#0F172A] tracking-tight mb-8">Compose Data</h2>
                  <form onSubmit={(e) => {
                     e.preventDefault();
-                    if (!emailData.leadId) return toast.error('Recipient node verification required');
+                    if (!emailData.leadId) return toast.error('Recipient verification required');
                     sendEmailMutation.mutate(emailData);
                  }} className="space-y-6">
                     <div className="space-y-2">
@@ -198,7 +198,7 @@ const AgentEmails = () => {
                     <div className="flex gap-4 pt-4">
                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-18 bg-slate-100 text-slate-400 rounded-2xl font-bold uppercase text-xs tracking-widest hover:bg-slate-200 transition-all">Discard Draft</button>
                        <button type="submit" disabled={sendEmailMutation.isPending} className="flex-1 h-18 bg-blue-600 text-white rounded-2xl font-bold uppercase text-xs tracking-widest shadow-2xl hover:brightness-125 transition-all flex items-center justify-center gap-3">
-                          {sendEmailMutation.isPending ? 'Syncing...' : <><Send size={18}/> Dispatch Digital Node</>}
+                          {sendEmailMutation.isPending ? 'Loading...' : <><Send size={18}/> Dispatch Email</>}
                        </button>
                     </div>
                  </form>

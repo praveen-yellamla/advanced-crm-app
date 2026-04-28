@@ -45,7 +45,7 @@ const AdminTeams = () => {
     mutationFn: (newTeam) => api.post('/admin/teams', newTeam),
     onSuccess: () => {
       queryClient.invalidateQueries(['adminTeams']);
-      toast.success('Operational Node Created');
+      toast.success('Team Created');
       setIsModalOpen(false);
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Initialization failed')
@@ -64,7 +64,7 @@ const AdminTeams = () => {
     mutationFn: (id) => api.delete(`/admin/teams/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries(['adminTeams']);
-      toast.success('Operational Node Decommissioned');
+      toast.success('Team Decommissioned');
     }
   });
 
@@ -141,7 +141,7 @@ const AdminTeams = () => {
                              <span className="text-sm font-black text-[#64748B] uppercase italic">{team.manager?.name || 'Unassigned'}</span>
                           </div>
                        </td>
-                       <td className="px-10 py-8 text-lg font-black text-[#0F172A] italic">{team._count.agents} Nodes</td>
+                       <td className="px-10 py-8 text-lg font-black text-[#0F172A] italic">{team._count.agents} Accounts</td>
                        <td className="px-10 py-8">
                           <div className="space-y-3">
                              <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-400">
@@ -165,7 +165,7 @@ const AdminTeams = () => {
                                 <Edit3 size={18} />
                              </button>
                              <button 
-                               onClick={() => { if(confirm('Sync deletion?')) deleteTeamMutation.mutate(team.id); }}
+                               onClick={() => { if(confirm('Refresh deletion?')) deleteTeamMutation.mutate(team.id); }}
                                className="w-12 h-12 rounded-xl bg-white border border-[#E2E8F0] shadow-sm hover:border-red-600 hover:text-red-600 transition-all flex items-center justify-center"
                              >
                                 <Archive size={18} />
@@ -203,7 +203,7 @@ const AdminTeams = () => {
                  }} className="p-12 space-y-8">
                     <div className="grid grid-cols-2 gap-8">
                        <div className="space-y-3">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Node Title</label>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Team Name</label>
                           <input 
                              type="text" required placeholder="Cluster Delta..."
                              className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-12 focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-bold text-[#0F172A]"
@@ -217,7 +217,7 @@ const AdminTeams = () => {
                              className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-12 focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-bold text-[#0F172A] appearance-none"
                              value={formData.managerId} onChange={e => setFormData({...formData, managerId: e.target.value})}
                           >
-                             <option value="">Select Commander</option>
+                             <option value="">Select Manager</option>
                              {managers?.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                           </select>
                        </div>
@@ -244,13 +244,13 @@ const AdminTeams = () => {
                           type="button" onClick={() => setIsModalOpen(false)}
                           className="flex-1 h-16 bg-slate-100 text-slate-500 rounded-3xl font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all"
                        >
-                          Abort Deploy
+                          Cancel
                        </button>
                        <button 
                           type="submit" disabled={createTeamMutation.isPending}
                           className="flex-1 h-16 bg-[#0F172A] text-white rounded-3xl font-black uppercase tracking-widest text-[11px] shadow-2xl hover:brightness-125 transition-all flex items-center justify-center gap-3"
                        >
-                          {createTeamMutation.isPending ? 'Syncing...' : <>Initialize Node <ArrowRight size={18} /></>}
+                          {createTeamMutation.isPending ? 'Loading...' : <>Create <ArrowRight size={18} /></>}
                        </button>
                     </div>
                  </form>

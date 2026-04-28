@@ -89,7 +89,7 @@ const AIAssistant = () => {
         }
       } catch (error) {
         if (retry) {
-          console.log("Retrying cognitive node...");
+          console.log("Retrying AI Assistant...");
           return callApi(false);
         }
         addMessage('assistant', "AI is temporarily busy. Please try again in a moment.");

@@ -91,7 +91,7 @@ const ReportCard = ({ title, desc, icon, onExport }) => (
        onClick={onExport}
        className="mt-10 h-14 w-full bg-slate-50 border border-slate-100 text-[#0F172A] rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-sm hover:bg-violet-600 hover:text-white hover:border-violet-600 transition-all flex items-center justify-center gap-3"
      >
-        <Download size={16} /> Download Intelligence Node
+        <Download size={16} /> Download Data
      </button>
   </motion.div>
 );

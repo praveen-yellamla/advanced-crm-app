@@ -30,7 +30,7 @@ const ClientInvoices = () => {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-           <h1 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase">Fiscal Ledger.</h1>
+           <h1 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase">Invoices.</h1>
            <p className="text-sm font-bold text-slate-400 mt-2 uppercase italic tracking-widest">Financial Protocol & Transaction Archive</p>
         </div>
       </div>

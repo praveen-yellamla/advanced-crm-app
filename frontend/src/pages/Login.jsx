@@ -46,44 +46,44 @@ const Login = () => {
 
   const config = {
     admin: {
-      label: 'GOVERNANCE NODE',
-      title: 'Admin Control',
-      titleHighlight: 'Center',
-      sub: 'Strategic platform orchestration unit.',
+      label: 'ADMIN PORTAL',
+      title: 'Admin',
+      titleHighlight: 'Dashboard',
+      sub: 'Manage your entire organization and sales pipeline.',
       color: '#2563EB',
       gradient: 'from-[#2563EB] to-[#3B82F6]',
       icon: <ShieldCheck size={32} />,
       metric: { label: 'Active Sessions', val: '142', trend: '+12.5%' }
     },
     manager: {
-      label: 'OPERATIONS NODE',
+      label: 'MANAGER PORTAL',
       title: 'Manager',
-      titleHighlight: 'Desk',
-      sub: 'Team performance and ops dashboard.',
+      titleHighlight: 'Dashboard',
+      sub: 'View team performance and manage agents.',
       color: '#7C3AED',
       gradient: 'from-violet-600 to-violet-800',
       icon: <Zap size={32} />,
       metric: { label: 'Team Velocity', val: '94.2%', trend: '+4.1%' }
     },
     agent: {
-      label: 'MISSION NODE',
+      label: 'AGENT PORTAL',
       title: 'Agent',
-      titleHighlight: 'Ops',
-      sub: 'Mission control for high-velocity sales.',
+      titleHighlight: 'Workspace',
+      sub: 'Your daily sales operations and lead management.',
       color: '#06B6D4',
       gradient: 'from-cyan-500 to-cyan-700',
       icon: <Headphones size={32} />,
       metric: { label: 'Inbound Flow', val: '1.8k', trend: 'Peak' }
     },
     client: {
-      label: 'SUCCESS NODE',
+      label: 'CLIENT PORTAL',
       title: 'Client',
-      titleHighlight: 'Hub',
-      sub: 'Executive reporting and growth view.',
+      titleHighlight: 'Portal',
+      sub: 'Access your campaign reports and Billing statements.',
       color: '#4F46E5',
       gradient: 'from-indigo-600 to-indigo-800',
       icon: <Briefcase size={32} />,
-      metric: { label: 'Entity Assets', val: '$8.4M', trend: 'Secure' }
+      metric: { label: 'Total Value', val: '$8.4M', trend: 'Growing' }
     }
   };
 
@@ -136,11 +136,11 @@ const Login = () => {
               onClick={() => navigate('/select-portal')}
               className="group flex items-center gap-3 text-slate-400 hover:text-[#0F172A] transition-all text-[10px] font-black uppercase tracking-[0.5em]"
             >
-               <ChevronLeft size={16} className="group-hover:-translate-x-2 transition-transform duration-500" /> Back to Grid
+               <ChevronLeft size={16} className="group-hover:-translate-x-2 transition-transform duration-500" /> Choose Account Type
             </button>
             <div className="flex items-center gap-3 opacity-40">
                <Layers size={20} className="text-[#0F172A]" />
-               <span className="text-[10px] font-black text-[#0F172A] uppercase tracking-[0.5em]">Adv-CRM.Sys v4.2</span>
+               <span className="text-[10px] font-black text-[#0F172A] uppercase tracking-[0.5em]">Adv-CRM v4.2</span>
             </div>
          </div>
 
@@ -163,7 +163,7 @@ const Login = () => {
                </motion.h1>
                
                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-[#64748B] text-xl font-medium leading-relaxed max-w-md">
-                  {current.sub} Verify your institutional identity to initialize session protocols.
+                  {current.sub}
                </motion.p>
             </div>
 
@@ -210,17 +210,17 @@ const Login = () => {
                   <div className="absolute inset-0 bg-white/10 opacity-20" />
                   <div className="relative z-10">{current.icon}</div>
                </div>
-               <h2 className="text-5xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">Secure Access</h2>
+               <h2 className="text-5xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">Login</h2>
                <p className="text-[#64748B] font-medium leading-relaxed">
-                  Verify organizational identity. <br />
-                  <span className="text-[9px] uppercase font-black tracking-[0.2em] opacity-40">Identity Node: {portalType.toUpperCase()}</span>
+                  Sign in to your account. <br />
+                  <span className="text-[9px] uppercase font-black tracking-[0.2em] opacity-40">Account Type: {portalType.toUpperCase()}</span>
                </p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-8">
-               {/* Identity ID */}
+               {/* Email Field */}
                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#64748B] ml-1">Identity Endpoint</label>
+                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#64748B] ml-1">Email Address</label>
                   <div className="relative group">
                      <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-600 transition-colors">
                         <Mail size={18} />
@@ -228,16 +228,16 @@ const Login = () => {
                      <input 
                        type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
                        className="w-full pl-16 pr-6 h-[72px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-[24px] focus:ring-[12px] focus:ring-blue-600/5 focus:border-blue-600 focus:bg-white outline-none transition-all font-bold text-[#0F172A] placeholder:text-slate-300"
-                       placeholder="enterprise-id@corporate.node"
+                       placeholder="name@company.com"
                      />
                   </div>
                </div>
 
-               {/* Secure Phrase */}
+               {/* Password Field */}
                <div className="space-y-3">
                   <div className="flex items-center justify-between ml-1">
-                     <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#64748B]">Security Phrase</label>
-                     <button type="button" className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline transition-all">Recover Key</button>
+                     <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#64748B]">Password</label>
+                     <button type="button" className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline transition-all">Forgot Password?</button>
                   </div>
                   <div className="relative group">
                      <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-600 transition-colors">
@@ -270,7 +270,7 @@ const Login = () => {
                   >
                      {isSubmitting ? <Loader2 className="animate-spin" size={28} /> : (
                        <>
-                         <span className="relative z-10 text-[11px] uppercase tracking-[0.4em] font-black">Initialize Session</span>
+                         <span className="relative z-10 text-[11px] uppercase tracking-[0.4em] font-black">Sign In</span>
                          <ArrowRight size={22} className="relative z-10 group-hover:translate-x-3 transition-transform duration-700" />
                        </>
                      )}
@@ -299,12 +299,12 @@ const Login = () => {
                   <div className="h-px flex-1 bg-slate-100" />
                   <div className="flex items-center gap-2">
                      <ShieldCheck size={16} className="text-emerald-500" />
-                     <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Institutional Secure</span>
+                     <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Secure Verification</span>
                   </div>
                   <div className="h-px flex-1 bg-slate-100" />
                </div>
                <p className="text-[10px] text-[#64748B] leading-[2] uppercase tracking-[0.3em] font-bold max-w-[280px] mx-auto opacity-60">
-                  Authorized access node. session monitored by infrastructure protocols.
+                  Authorized Users Only
                </p>
             </div>
 

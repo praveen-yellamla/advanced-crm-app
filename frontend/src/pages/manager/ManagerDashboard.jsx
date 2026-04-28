@@ -51,7 +51,7 @@ const ManagerDashboard = () => {
         </div>
         <div className="flex gap-4">
            <button className="h-12 px-6 bg-white border border-[#E2E8F0] rounded-2xl text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 transition-all">Export Team Report</button>
-           <button className="h-12 px-6 bg-blue-600 text-white rounded-2xl text-xs font-bold shadow-lg shadow-blue-500/20 hover:scale-105 transition-all">Refresh Sync</button>
+           <button className="h-12 px-6 bg-blue-600 text-white rounded-2xl text-xs font-bold shadow-lg shadow-blue-500/20 hover:scale-105 transition-all">Refresh Data</button>
         </div>
       </div>
 

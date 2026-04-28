@@ -22,7 +22,7 @@ const SystemIntegrations = () => {
       {/* HEADER */}
       <div>
          <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Ecosystem Orchestration</h1>
-         <p className="text-[#64748B] font-medium text-sm mt-1">Configure high-authority digital bridges for automated lead synchronization</p>
+         <p className="text-[#64748B] font-medium text-sm mt-1">Configure high-authority digital bridges for automated lead Synchronization</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -35,7 +35,7 @@ const SystemIntegrations = () => {
             <IntegrationCard 
                platform="Google Ads"
                icon={<Layout className="text-amber-600" />}
-               desc="OAuth2 synchronized campaign ingestion for real-time lead telemetry."
+               desc="OAuth2 Synchronized campaign ingestion for real-time lead telemetry."
                status="AUTHENTICATED"
                connectedAccount="Enterprise Global (928-112-9842)"
             />
@@ -58,7 +58,7 @@ const SystemIntegrations = () => {
             <div className="bg-white p-12 rounded-[56px] border border-slate-100 shadow-sm space-y-10">
                <div className="flex items-start justify-between">
                   <div>
-                     <h4 className="text-2xl font-bold text-[#0F172A] tracking-tight">Website Webhook Node</h4>
+                     <h4 className="text-2xl font-bold text-[#0F172A] tracking-tight">Website Webhooks</h4>
                      <p className="text-sm font-medium text-slate-400 mt-2">JS snippet for automated website lead capture.</p>
                   </div>
                   <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">

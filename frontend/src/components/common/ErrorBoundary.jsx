@@ -11,7 +11,7 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("AI Assistant Node Failure:", error, errorInfo);
+    console.error("AI Assistant Account Failure:", error, errorInfo);
   }
 
   render() {
@@ -23,7 +23,7 @@ class ErrorBoundary extends React.Component {
            </div>
            <div>
               <p className="text-xs font-bold text-slate-900">Assistant Offline</p>
-              <p className="text-[10px] font-medium text-slate-400">Node sync interrupted.</p>
+              <p className="text-[10px] font-medium text-slate-400">Account Refresh interrupted.</p>
            </div>
         </div>
       );

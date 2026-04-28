@@ -63,7 +63,7 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
         <div>
            <div className="flex items-center gap-3 mb-3">
               <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-600 italic">Quality Assurance Node</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-600 italic">Quality Assurance</span>
            </div>
            <h1 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase underline decoration-indigo-600 decoration-8 underline-offset-8">Quality Center.</h1>
            <p className="text-sm font-bold text-slate-400 mt-5 max-w-xl leading-relaxed uppercase italic">High-Authority Call Monitoring & Communication Performance Audit Infrastructure</p>
@@ -80,7 +80,7 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
          <KPICard label="Strategic Reviews" value={stats.totalReviewed} icon={ShieldCheck} color="indigo" />
          <KPICard label="Avg Performance Score" value={`${Math.round(stats.avgScore)}%`} icon={Star} color="amber" />
          <KPICard label="Compliance Rate" value={`${stats.complianceRate}%`} icon={CheckCircle2} color="emerald" />
-         <KPICard label="Pending Node Audit" value={stats.pendingReviews} icon={Clock} color="slate" />
+         <KPICard label="Pending QA Audit" value={stats.pendingReviews} icon={Clock} color="slate" />
          <KPICard label="Tactical Flags" value={stats.flagged} icon={Flag} color="rose" />
       </div>
 
@@ -121,7 +121,7 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Call Identity</th>
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Strategic Agent</th>
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Duration</th>
-                     <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Sentiment Node</th>
+                     <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Sentiment Score</th>
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Compliance Status</th>
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Audit Action</th>
                   </tr>
@@ -130,7 +130,7 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
                   {isLoading ? (
                     <tr><td colSpan="6" className="p-32 text-center text-slate-400 font-black uppercase tracking-widest animate-pulse italic">Interrogating Voice Archive...</td></tr>
                   ) : filteredCalls?.length === 0 ? (
-                    <tr><td colSpan="6" className="p-32 text-center text-slate-300 font-bold italic uppercase">Zero operational telemetry nodes discovered.</td></tr>
+                    <tr><td colSpan="6" className="p-32 text-center text-slate-300 font-bold italic uppercase">Zero operational telemetry Accounts discovered.</td></tr>
                   ) : filteredCalls?.map((call) => (
                     <tr key={call.id} className="border-b last:border-none border-slate-50 hover:bg-slate-50/30 transition-all duration-700 group">
                        <td className="px-10 py-10">
@@ -205,7 +205,7 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
                           </div>
                           <div>
                              <h2 className="text-3xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Session Audit.</h2>
-                             <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Protocol Node: REC-{selectedCall?.id} &#x2022; Strategic Agent: <span className="text-indigo-600 font-black italic">{selectedCall?.agent.name}</span></p>
+                             <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Recording ID: REC-{selectedCall?.id} &#x2022; Strategic Agent: <span className="text-indigo-600 font-black italic">{selectedCall?.agent.name}</span></p>
                           </div>
                        </div>
                     </div>
@@ -260,7 +260,7 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
                           <div className="space-y-8">
                              {[
                                { label: 'Strategic Greeting', max: 10 },
-                               { label: 'Discovery Node', max: 20 },
+                               { label: 'Discovery Phase', max: 20 },
                                { label: 'Proposition Pitch', max: 20 },
                                { label: 'Objection Handling', max: 20 },
                                { label: 'Closing Terminal', max: 20 },
@@ -285,7 +285,7 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
                           <div className="bg-slate-50 p-10 rounded-[48px] space-y-8 border border-slate-100 italic">
                              <div className="space-y-4">
                                 <span className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase italic">AI Analysis</span>
-                                <p className="text-sm font-bold text-[#0F172A] leading-relaxed">Agent maintained high thermal energy during the product pitch. A critical objection regarding "Enterprise Scalability" was detected but handled with 82% confidence. Recommendation: Further training on Objection Node 4: Pricing Friction.</p>
+                                <p className="text-sm font-bold text-[#0F172A] leading-relaxed">Agent maintained high thermal energy during the product pitch. A critical objection regarding "Enterprise Scalability" was detected but handled with 82% confidence. Recommendation: Further training on Objection Point 4: Pricing Friction.</p>
                              </div>
                              <div className="space-y-6 pt-6 border-t border-slate-200">
                                 <div className="flex items-center gap-4 text-emerald-600">
@@ -322,7 +322,7 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
                           Flag Escalation
                        </button>
                        <button className="h-20 px-12 bg-[#0F172A] text-white rounded-[32px] text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-indigo-500/20 hover:scale-105 transition-all italic">
-                          Synchronize Evaluation
+                          Refreshhronize Evaluation
                        </button>
                     </div>
                  </div>

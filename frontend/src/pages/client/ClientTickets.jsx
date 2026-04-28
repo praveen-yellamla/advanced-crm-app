@@ -58,7 +58,7 @@ const ClientTickets = () => {
       {/* TICKETS GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
          {isLoading ? (
-            <p className="text-slate-400 font-black italic uppercase animate-pulse">Synchronizing Support Node...</p>
+            <p className="text-slate-400 font-black italic uppercase animate-pulse">Synchronizing Support System...</p>
          ) : tickets?.map((ticket) => (
             <motion.div 
                key={ticket.id}
@@ -114,7 +114,7 @@ const ClientTickets = () => {
                <motion.div initial={{ opacity: 0, scale: 0.9, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 30 }} className="relative w-full max-w-xl bg-white rounded-[64px] shadow-2xl overflow-hidden p-16 space-y-12">
                   <div>
                      <h2 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Log Issue.</h2>
-                     <p className="text-sm font-bold text-slate-400 mt-4 uppercase italic">Initializing high-authority support request</p>
+                     <p className="text-sm font-bold text-slate-400 mt-4 uppercase italic">Initializing high-authority Support request</p>
                   </div>
 
                   <div className="space-y-8">
@@ -127,7 +127,7 @@ const ClientTickets = () => {
                         />
                      </div>
                      <div className="grid grid-cols-2 gap-8">
-                        <SelectField label="Category" options={['TECHNICAL', 'BILLING', 'FEATURE', 'SALES']} value={formData.type} onChange={v => setFormData({...formData, type: v})} />
+                        <SelectField label="Category" options={['TECHNICAL', 'Billing', 'FEATURE', 'SALES']} value={formData.type} onChange={v => setFormData({...formData, type: v})} />
                         <SelectField label="Priority" options={['LOW', 'NORMAL', 'HIGH', 'URGENT']} value={formData.priority} onChange={v => setFormData({...formData, priority: v})} />
                      </div>
                      <div className="space-y-3">
@@ -145,7 +145,7 @@ const ClientTickets = () => {
                      disabled={mutation.isPending}
                      className="w-full h-20 bg-[#0F172A] text-white rounded-3xl font-black uppercase text-sm tracking-[0.2em] shadow-2xl hover:brightness-125 transition-all"
                   >
-                     {mutation.isPending ? 'Syncing Schema...' : 'Push Signal to Support'}
+                     {mutation.isPending ? 'Saving...' : 'Push Signal to Support'}
                   </button>
                </motion.div>
             </div>

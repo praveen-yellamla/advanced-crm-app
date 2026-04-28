@@ -58,7 +58,7 @@ const AgentTasks = () => {
            onClick={() => setIsModalOpen(true)}
            className="h-14 px-8 bg-[#0F172A] text-white rounded-2xl font-bold text-xs shadow-xl hover:brightness-125 transition-all flex items-center gap-3"
         >
-           <Plus size={20} /> Create Task Node
+           <Plus size={20} /> Create Task
         </button>
       </div>
 
@@ -134,7 +134,7 @@ const AgentTasks = () => {
            <div className="fixed inset-0 z-50 flex items-center justify-center p-8">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#0F172A]/70 backdrop-blur-3xl" onClick={() => setIsModalOpen(false)} />
               <motion.div initial={{ opacity: 0, scale: 0.95, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 30 }} className="relative w-full max-w-lg bg-white rounded-[40px] shadow-2xl p-12">
-                 <h2 className="text-3xl font-bold text-[#0F172A] tracking-tight mb-8">Create Strategy Node</h2>
+                 <h2 className="text-3xl font-bold text-[#0F172A] tracking-tight mb-8">Create Strategy Task</h2>
                  <form onSubmit={(e) => { e.preventDefault(); createTaskMutation.mutate(newTask); }} className="space-y-6">
                     <div className="space-y-2">
                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Task Title</label>
@@ -173,9 +173,9 @@ const AgentTasks = () => {
                        </div>
                     </div>
                     <div className="flex gap-4 pt-6">
-                       <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-16 bg-slate-100 text-slate-500 rounded-2xl font-bold uppercase text-xs tracking-widest transition-all">Cancel Node</button>
+                       <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-16 bg-slate-100 text-slate-500 rounded-2xl font-bold uppercase text-xs tracking-widest transition-all">Cancel</button>
                        <button type="submit" className="flex-1 h-16 bg-blue-600 text-white rounded-2xl font-bold uppercase text-xs tracking-widest shadow-xl shadow-blue-500/20 hover:scale-105 transition-all">
-                          {createTaskMutation.isPending ? 'Syncing...' : 'Deploy Task'}
+                          {createTaskMutation.isPending ? 'Loading...' : 'Deploy Task'}
                        </button>
                     </div>
                  </form>

@@ -39,7 +39,7 @@ const AgentDashboard = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
            <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Personal Workbench</h1>
-           <p className="text-[#64748B] font-medium text-sm mt-1">Daily Performance Sync & Active Pipeline</p>
+           <p className="text-[#64748B] font-medium text-sm mt-1">Daily Performance Refresh & Active Pipeline</p>
         </div>
         <div className="flex gap-4">
            <button className="h-12 px-6 bg-blue-600 text-white rounded-2xl text-xs font-bold shadow-lg shadow-blue-500/20 hover:scale-105 transition-all flex items-center gap-3">

@@ -92,11 +92,11 @@ const AdminLeadsImport = () => {
                              <select className="w-full h-18 px-8 bg-slate-50 border border-slate-100 rounded-full font-black text-[11px] uppercase tracking-widest text-[#0F172A] outline-none appearance-none">
                                 <option>Round Robin (Global Hub)</option>
                                 <option>Weighted Deployment</option>
-                                <option>Manual Node Segment</option>
+                                <option>Manual Lead Segment</option>
                              </select>
                           </div>
                           <button className="h-18 px-12 bg-blue-600 text-white rounded-full font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-blue-500/20 hover:scale-105 transition-all">
-                             Initialize Sync
+                             Initialize Refresh
                           </button>
                        </div>
                     </motion.div>
@@ -110,7 +110,7 @@ const AdminLeadsImport = () => {
                         <h3 className="text-3xl font-bold text-[#0F172A] tracking-tight mb-4">Google Ads Integration</h3>
                         <p className="text-sm font-medium text-slate-400 max-w-sm mx-auto">Connecting to Google Cloud Services to automate keyword and search lead ingestion.</p>
                        <div className="mt-12 p-8 bg-slate-50 rounded-3xl border border-[#E2E8F0] max-w-xs mx-auto">
-                          <button className="w-full py-6 bg-white border border-[#E2E8F0] rounded-2xl text-[10px] font-black uppercase text-[#0F172A] tracking-widest shadow-sm hover:bg-slate-50 transition-all">Authorize Node Access</button>
+                          <button className="w-full py-6 bg-white border border-[#E2E8F0] rounded-2xl text-[10px] font-black uppercase text-[#0F172A] tracking-widest shadow-sm hover:bg-slate-50 transition-all">Authorize Access</button>
                        </div>
                     </motion.div>
                   )}
@@ -124,7 +124,7 @@ const AdminLeadsImport = () => {
                         <p className="text-sm font-medium text-slate-400 max-w-sm mx-auto">Initializing secure API connection between Meta Business Manager and your CRM.</p>
                        <div className="mt-12 p-8 bg-slate-50 rounded-3xl border border-[#E2E8F0] max-w-xs mx-auto">
                           <div className="flex justify-between text-[10px] font-black text-slate-400 mb-4 tracking-widest">
-                             <span>SYNC PROGRESS</span>
+                             <span>Refresh PROGRESS</span>
                              <span className="text-blue-600 italic">44%</span>
                           </div>
                           <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
@@ -138,7 +138,7 @@ const AdminLeadsImport = () => {
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12 relative z-10">
                         <div className="space-y-1">
                            <h3 className="text-3xl font-bold text-[#0F172A] tracking-tight">API Webhooks</h3>
-                           <p className="text-sm font-medium text-[#64748B]">Manage secure endpoints for real-time external data synchronization.</p>
+                           <p className="text-sm font-medium text-[#64748B]">Manage secure endpoints for real-time external data Synchronization.</p>
                         </div>
 
                        <div className="p-10 bg-[#0F172A] rounded-[32px] border border-[#0F172A] space-y-8 flex items-center justify-between shadow-2xl">
@@ -171,7 +171,7 @@ const AdminLeadsImport = () => {
             </div>
          </div>
 
-         {/* RECENT ACTIVITY (SYNC HISTORY) */}
+         {/* RECENT ACTIVITY (Refresh HISTORY) */}
          <div className="space-y-10">
             <div className="bg-white p-10 rounded-[40px] border border-[#E2E8F0] shadow-sm">
                <div className="flex items-center justify-between mb-10">
@@ -182,17 +182,17 @@ const AdminLeadsImport = () => {
                <div className="space-y-8 relative before:absolute before:left-5 before:top-2 before:bottom-10 before:w-px before:bg-slate-100">
                   {[
                     { source: 'CSV Upload', count: '482', time: '12m ago', status: 'COMPLETE' },
-                    { source: 'Google Ads API', count: '14', time: '1h ago', status: 'SYNCING' },
+                    { source: 'Google Ads API', count: '14', time: '1h ago', status: 'Loading...,
                     { source: 'Webhook Ingest', count: '102', time: '5h ago', status: 'COMPLETE' },
                   ].map((log, i) => (
                     <div key={i} className="flex gap-6 relative z-10 group cursor-default">
-                       <div className={`w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center group-hover:scale-110 transition-transform ${log.status === 'SYNCING' ? 'text-blue-500 animate-pulse' : 'text-slate-300'}`}>
+                       <div className={`w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center group-hover:scale-110 transition-transform ${log.status === 'Loading... 'text-blue-500 animate-pulse' : 'text-slate-300'}`}>
                           <Layers size={18} />
                        </div>
                        <div className="flex-1 bg-slate-50 border border-transparent hover:border-slate-100 hover:bg-white p-6 rounded-3xl transition-all duration-700">
                           <p className="text-[13px] font-black text-[#0F172A] uppercase italic">{log.source}</p>
                           <div className="flex justify-between items-center mt-3">
-                             <span className="text-[10px] font-black text-blue-600">{log.count} NODES</span>
+                             <span className="text-[10px] font-black text-blue-600">{log.count} Accounts</span>
                              <span className="text-[9px] font-bold text-slate-400 uppercase">{log.time}</span>
                           </div>
                        </div>

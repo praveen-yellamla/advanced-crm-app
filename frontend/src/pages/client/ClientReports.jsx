@@ -84,7 +84,7 @@ const ClientReports = () => {
       {/* EMPTY STATE / PENDING */}
       <div className="mt-12 p-20 bg-slate-50 rounded-[48px] border-2 border-dashed border-slate-200 flex flex-col items-center text-center">
          <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center text-slate-200 mb-6 font-black text-3xl italic">A</div>
-         <h4 className="text-xl font-black text-slate-900 mb-2">Automated Report Node P-12</h4>
+         <h4 className="text-xl font-black text-slate-900 mb-2">Automated Report P-12</h4>
          <p className="text-slate-400 max-w-sm">System is calculating custom attributes for your next scheduled growth intelligence report.</p>
       </div>
 

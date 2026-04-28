@@ -5,7 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import AppRoutes from './routes/AppRoutes';
 import { Toaster } from 'react-hot-toast';
 
-// Initialize Query Client for caching and real-time data sync
+// Initialize Query Client for caching and real-time data Refresh
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

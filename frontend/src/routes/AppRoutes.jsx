@@ -121,8 +121,8 @@ const AppRoutes = () => {
              <Route path="invoices" element={<ClientInvoices />} />
              <Route path="sources" element={<div className="font-bold text-2xl">Lead Source Distribution</div>} />
              <Route path="analytics" element={<div className="font-bold text-2xl">Growth Analytics</div>} />
-             <Route path="billing" element={<div className="font-bold text-2xl">Finance & Billing</div>} />
-             <Route path="support" element={<div className="font-bold text-2xl">System Support</div>} />
+             <Route path="Billing" element={<div className="font-bold text-2xl">Finance & Billing</div>} />
+             <Route path="Support" element={<div className="font-bold text-2xl">System Support</div>} />
              <Route path="profile" element={<div className="font-bold text-2xl">Corporate Profile</div>} />
           </Route>
         </Route>

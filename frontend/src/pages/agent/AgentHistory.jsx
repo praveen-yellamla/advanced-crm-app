@@ -31,7 +31,7 @@ const AgentHistory = () => {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-           <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Call History</h1>
+           <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Call Logs</h1>
            <p className="text-[#64748B] font-medium text-sm mt-1">Audit personal recording logs & session dispositions</p>
         </div>
       </div>
