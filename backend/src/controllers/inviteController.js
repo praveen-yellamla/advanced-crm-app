@@ -57,10 +57,12 @@ const inviteUser = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("INVITE ERROR:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: "Failed to send email" 
+    console.error("INVITE FULL ERROR:", error);
+    
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+      details: error
     });
   }
 };

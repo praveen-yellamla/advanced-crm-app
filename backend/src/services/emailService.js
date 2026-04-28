@@ -12,20 +12,14 @@ const sendInviteEmail = async (email, inviteLink) => {
       from: "onboarding@resend.dev",
       to: email,
       subject: "CRM Invitation",
-      html: `       <h2>You are invited</h2>       <p>Click below to join:</p>       <a href="${inviteLink}">Accept Invite</a>
-    `
+      html: `<a href="${inviteLink}">Accept Invite</a>`
     });
-    
-    console.log("RESEND RESPONSE:", response);
-    
-    if (response.error) {
-      throw new Error(response.error.message);
-    }
 
-    return response.data || response;
-  } catch (error) {
-    console.error("EMAIL ERROR:", error);
-    throw error;
+    console.log("RESEND SUCCESS:", response);
+    return response;
+  } catch (err) {
+    console.error("RESEND ERROR:", err);
+    throw err;
   }
 };
 
