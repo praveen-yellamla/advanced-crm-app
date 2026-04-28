@@ -179,7 +179,7 @@ const verifyInvite = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid invite link' });
     }
 
-    if (invite.status !== 'PENDING') {
+    if (!['PENDING', 'SENT'].includes(invite.status)) {
       return res.status(400).json({ success: false, message: 'This invite has already been accepted or expired' });
     }
 
@@ -210,7 +210,7 @@ const acceptInvite = async (req, res) => {
       where: { token }
     });
 
-    if (!invite || invite.status !== 'PENDING' || new Date() > invite.expiresAt) {
+    if (!invite || !['PENDING', 'SENT'].includes(invite.status) || new Date() > invite.expiresAt) {
       return res.status(400).json({ success: false, message: 'Invalid or expired invite link' });
     }
 
@@ -223,7 +223,7 @@ const acceptInvite = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const user = await prisma.user.create({
+    await prisma.user.create({
       data: {
         name,
         email: invite.email,
@@ -235,7 +235,10 @@ const acceptInvite = async (req, res) => {
 
     await prisma.invite.update({
       where: { id: invite.id },
-      data: { status: 'ACCEPTED' }
+      data: { 
+        status: 'ACCEPTED',
+        acceptedAt: new Date()
+      }
     });
 
     res.json({ success: true, message: 'Account created successfully' });

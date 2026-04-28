@@ -211,8 +211,8 @@ const DashboardLayout = () => {
             <div className="h-8 w-px bg-slate-100 mx-2"></div>
             
             <div className="flex items-center gap-4 pl-2 group cursor-pointer py-1.5 pr-3 rounded-2xl hover:bg-slate-50 transition-all">
-              <div className={`h-11 w-11 rounded-xl bg-gradient-to-tr ${currentStyle.gradient} flex items-center justify-center text-white font-black text-lg shadow-lg`}>
-                {user?.name?.charAt(0)}
+              <div className={`h-11 w-11 rounded-xl overflow-hidden shadow-lg`}>
+                <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=${currentStyle.accent.replace('#', '')}&color=fff&bold=true`} alt="" className="w-full h-full object-cover" />
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">

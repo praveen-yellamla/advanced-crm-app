@@ -18,7 +18,7 @@ const {
   createInvoice, 
   getCalls 
 } = require('../controllers/adminExtraController');
-const { inviteUser, getInvites } = require('../controllers/inviteController');
+const { inviteUser, getInvites, getInviteStats } = require('../controllers/inviteController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // All routes here are protected and require ADMIN role
@@ -48,6 +48,7 @@ router.get('/audit-logs', getAuditLogs);
 router.get('/managers', getManagers);
 
 
+router.get('/invite-stats', getInviteStats);
 router.route('/invites')
   .get(getInvites)
   .post(inviteUser);

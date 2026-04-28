@@ -179,7 +179,7 @@ const AdminAgents = () => {
                        <td className="px-10 py-8">
                           <div className="flex items-center gap-6">
                              <div className="w-14 h-14 rounded-full border-4 border-slate-50 bg-white overflow-hidden shadow-sm group-hover:scale-110 transition-transform">
-                                <img src={`https://i.pravatar.cc/150?u=${agent.id}`} alt="" className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all" />
+                                <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(agent.name)}&background=random&color=fff&bold=true`} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-all" />
                              </div>
                              <div>
                                 <p className="text-xl font-bold text-[#0F172A] tracking-tight">{agent.name}</p>

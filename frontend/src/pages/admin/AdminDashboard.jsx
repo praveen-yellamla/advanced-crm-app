@@ -30,6 +30,14 @@ const AdminDashboard = () => {
     }
   });
 
+  const { data: inviteStats } = useQuery({
+    queryKey: ['inviteStats'],
+    queryFn: async () => {
+      const res = await api.get('/admin/invite-stats');
+      return res.data.data;
+    }
+  });
+
   if (isLoading) return <DashboardSkeleton />;
 
   const { cards, funnel, sources } = statsData || {};
@@ -57,13 +65,11 @@ const AdminDashboard = () => {
       </div>
 
       {/* KPI CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <KPICard title="Total Leads" value={cards?.totalLeads ?? 0} trend="+12.4%" icon={<Target />} />
-        <KPICard title="Today's Leads" value={cards?.todayLeads ?? 0} trend="Live" icon={<Zap />} />
         <KPICard title="Active Agents" value={cards?.activeAgents ?? 0} trend="Secure" icon={<Users />} />
-        <KPICard title="Revenue (MTD)" value={`$${((cards?.revenueMTD || 0) / 1000).toFixed(1)}k`} trend="+8.2%" icon={<DollarSign />} />
-        <KPICard title="Conversion Rate" value={`${(cards?.conversionRate || 0).toFixed(1)}%`} trend="+1.2%" icon={<Activity />} />
-        <KPICard title="Calls Today" value={cards?.callsToday ?? 0} trend="Active" icon={<Activity />} />
+        <KPICard title="Conv. Rate" value={`${(cards?.conversionRate || 0).toFixed(1)}%`} trend="+1.2%" icon={<Activity />} />
+        <KPICard title="Invite Success" value={`${inviteStats?.conversionRate || 0}%`} trend={`${inviteStats?.accepted || 0}/${inviteStats?.total || 0}`} icon={<ShieldCheck />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">

@@ -89,7 +89,7 @@ const ManagerAgents = () => {
            >
               <div className="flex flex-col sm:flex-row items-center gap-10">
                  <div className="w-32 h-32 rounded-[32px] border-4 border-slate-50 bg-slate-100 relative overflow-hidden flex items-center justify-center">
-                    <img src={`https://i.pravatar.cc/300?u=${agent.id}`} alt="" className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" />
+                    <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(agent.name)}&background=random&color=fff&bold=true`} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700" />
                     <div className="absolute top-2 right-2 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full" />
                  </div>
                  <div className="flex-1 space-y-4 text-center sm:text-left">

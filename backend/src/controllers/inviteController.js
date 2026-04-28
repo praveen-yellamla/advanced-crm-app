@@ -35,6 +35,15 @@ const inviteUser = async (req, res) => {
 
     await sendInviteEmail(email, inviteLink);
 
+    // Update status to SENT after successful SMTP dispatch
+    await prisma.invite.update({
+      where: { email },
+      data: { 
+        status: 'SENT',
+        sentAt: new Date()
+      }
+    });
+
     return res.status(200).json({
       success: true,
       message: "Invite sent successfully",
@@ -46,6 +55,26 @@ const inviteUser = async (req, res) => {
     return res.status(500).json({
       error: error.message || "Failed to send invite",
     });
+  }
+};
+
+const getInviteStats = async (req, res) => {
+  try {
+    const total = await prisma.invite.count();
+    const pending = await prisma.invite.count({ where: { status: 'SENT' } });
+    const accepted = await prisma.invite.count({ where: { status: 'ACCEPTED' } });
+    
+    res.json({
+      success: true,
+      data: {
+        total,
+        pending,
+        accepted,
+        conversionRate: total > 0 ? ((accepted / total) * 100).toFixed(1) : 0
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -62,5 +91,6 @@ const getInvites = async (req, res) => {
 
 module.exports = { 
   inviteUser,
-  getInvites
+  getInvites,
+  getInviteStats
 };
