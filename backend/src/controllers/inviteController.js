@@ -38,12 +38,14 @@ const inviteUser = async (req, res) => {
     const clientUrl = process.env.FRONTEND_URL || req.headers.origin || 'https://advanced-crm-frontend.onrender.com';
     const inviteLink = `${clientUrl}/accept-invite/${token}`;
     
+    console.log("Generated Invite Link:", inviteLink);
+    
     await sendInviteEmail(email, inviteLink);
 
-    res.json({ success: true, message: 'Invitation sent successfully' });
+    return res.json({ message: "Invite sent successfully" });
   } catch (error) {
-    console.error('Invite Error:', error);
-    res.status(500).json({ success: false, message: error.message || 'Internal Server Error' });
+    console.error("Invite failed:", error);
+    return res.status(500).json({ error: "Failed to send email" });
   }
 };
 

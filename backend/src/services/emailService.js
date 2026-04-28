@@ -6,25 +6,20 @@ const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder_key_if_n
 
 const sendInviteEmail = async (email, inviteLink) => {
   try {
-    const data = await resend.emails.send({
-      from: "CRM <onboarding@resend.dev>",
+    const response = await resend.emails.send({
+      from: "onboarding@resend.dev",
       to: email,
-      subject: "You're invited to CRM",
-      html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #0F172A;">
-          <h2>Welcome to CRM</h2>
-          <p>You have been officially invited to join our platform.</p>
-          <a href="${inviteLink}" style="display:inline-block; padding: 14px 28px; background: #0F172A; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0;">Accept Invite</a>
-          <p style="font-size: 12px; color: #64748B;">This link will expire in 24 hours.</p>
-        </div>
+      subject: "You're invited to join CRM",
+      html: `         <h2>Welcome to CRM</h2>         <p>You have been invited to join the platform.</p>         <p>Click below to activate your account:</p>         <a href="${inviteLink}" style="padding:10px 20px;background:#2563eb;color:white;text-decoration:none;border-radius:5px;">
+          Accept Invitation         </a>
       `
     });
     
-    console.log("Resend Email successful:", data);
-    return data;
+    console.log("EMAIL SENT:", response);
+    return response;
   } catch (error) {
-    console.error("Email send error:", error);
-    throw new Error("Failed to send email");
+    console.error("EMAIL ERROR:", error);
+    throw error;
   }
 };
 
