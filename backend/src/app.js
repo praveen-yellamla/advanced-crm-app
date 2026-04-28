@@ -8,23 +8,26 @@ const app = express();
 
 // Middleware
 const allowedOrigins = [
-  "http://localhost:5173",
-  "https://advanced-crm-frontend.onrender.com"
+"http://localhost:5173",
+"https://advanced-crm-frontend.onrender.com"
 ];
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true
+origin: function (origin, callback) {
+if (!origin) return callback(null, true);
+if (allowedOrigins.includes(origin)) {
+return callback(null, true);
+} else {
+return callback(new Error("CORS blocked: " + origin));
+}
+},
+credentials: true
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+// NOTE: Express 5.x uses path-to-regexp v8 which strictly rejects '*' as a route string.
+// Using native RegExp /.*/ intercepts all paths flawlessly without crashing the router.
+app.options(/.*/, cors(corsOptions));
 app.use(express.json());
 
 // Routes
