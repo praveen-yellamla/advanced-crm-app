@@ -171,8 +171,8 @@ const AdminAgents = () => {
         </div>
       </div>
 
-      {/* FILTERS */}
-      <div className="flex flex-col md:flex-row gap-6">
+      {/* FILTERS & SUMMARY */}
+      <div className="flex flex-col xl:flex-row gap-8">
          <div className="flex-1 relative group">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
             <input 
@@ -181,9 +181,21 @@ const AdminAgents = () => {
                value={search} onChange={e => setSearch(e.target.value)}
             />
          </div>
-         <button className="h-16 px-8 bg-black text-white rounded-3xl flex items-center gap-4 text-[10px] font-black uppercase tracking-widest shadow-xl">
-            <Filter size={18} /> Role Allocation
-         </button>
+         
+         <div className="flex gap-4">
+            <div className="px-8 bg-white border border-[#E2E8F0] rounded-3xl flex flex-col justify-center min-w-[140px] shadow-sm">
+               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Sent</p>
+               <p className="text-xl font-black text-[#0F172A]">{inviteStats?.total || 0}</p>
+            </div>
+            <div className="px-8 bg-white border border-[#E2E8F0] rounded-3xl flex flex-col justify-center min-w-[140px] shadow-sm">
+               <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Joined</p>
+               <p className="text-xl font-black text-[#0F172A]">{inviteStats?.accepted || 0}</p>
+            </div>
+            <div className="px-8 bg-white border border-[#E2E8F0] rounded-3xl flex flex-col justify-center min-w-[140px] shadow-sm">
+               <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Pending</p>
+               <p className="text-xl font-black text-[#0F172A]">{inviteStats?.pending || 0}</p>
+            </div>
+         </div>
       </div>
 
       {/* AGENTS LIST */}
@@ -400,7 +412,7 @@ const AdminAgents = () => {
                     <h2 className="text-4xl font-bold text-[#0F172A] tracking-tight uppercase">Invite User</h2>
                     <p className="text-sm font-medium text-slate-400 mt-2">Send an onboarding invitation link</p>
                  </div>
-
+ 
                  <form onSubmit={(e) => {
                     e.preventDefault();
                     inviteUserMutation.mutate({ email: formData.email, role: formData.role, phone: formData.phone });
@@ -413,17 +425,18 @@ const AdminAgents = () => {
                           value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
                        />
                     </div>
+                    
                     <div className="space-y-4">
-                       <div className="space-y-4">
-                        <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Phone Number (Optional)</label>
-                        <input 
-                           type="text" placeholder="+1 (555) 000-0000"
-                           className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A]"
-                           value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
-                        />
-                     </div>
-                     <div className="space-y-4">
-                        <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Role Configuration</label>
+                       <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Phone Number (Optional)</label>
+                       <input 
+                          type="text" placeholder="+1 (555) 000-0000"
+                          className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A]"
+                          value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
+                       />
+                    </div>
+
+                    <div className="space-y-4">
+                       <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Role Configuration</label>
                        <select 
                           required 
                           className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A] appearance-none"
@@ -433,7 +446,7 @@ const AdminAgents = () => {
                           <option value="MANAGER">Manager (Elevated)</option>
                        </select>
                     </div>
-
+ 
                     <div className="flex gap-6 pt-10">
                        <button type="button" onClick={() => setIsInviteModalOpen(false)} className="flex-1 h-18 rounded-full bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all">Cancel</button>
                        <button 
