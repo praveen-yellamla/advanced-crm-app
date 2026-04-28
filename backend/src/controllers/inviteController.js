@@ -4,10 +4,14 @@ const crypto = require('crypto');
 
 const inviteUser = async (req, res) => {
   try {
+    console.log("INVITE API HIT");
     console.log('Dispatching invite request:', req.body);
+    
     const { email, role } = req.body;
 
-    if (!email) return res.status(400).json({ success: false, message: 'Email is required.' });
+    if (!email) {
+      return res.status(400).json({ error: "Email required" });
+    }
 
     // 1. Verify existence
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -24,7 +28,7 @@ const inviteUser = async (req, res) => {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24); // 24-hour expiration
 
-    const invite = await prisma.invite.create({
+    await prisma.invite.create({
       data: {
         email,
         role: role || 'AGENT',
@@ -35,17 +39,29 @@ const inviteUser = async (req, res) => {
     });
 
     // 4. Initialize communication dispatch
+    // NOTE: Generating a dual-compatible link that satisfies both the requested ?email= format and the secure /:token pathing.
     const clientUrl = process.env.FRONTEND_URL || req.headers.origin || 'https://advanced-crm-frontend.onrender.com';
-    const inviteLink = `${clientUrl}/accept-invite/${token}`;
+    const inviteLink = `${clientUrl}/accept-invite/${token}?email=${email}`;
     
-    console.log("Generated Invite Link:", inviteLink);
+    console.log("Invite link:", inviteLink);
     
-    await sendInviteEmail(email, inviteLink);
+    const emailResponse = await sendInviteEmail(email, inviteLink);
 
-    return res.json({ message: "Invite sent successfully" });
+    if (!emailResponse || !emailResponse.id) {
+      throw new Error("Email not sent properly");
+    }
+
+    return res.json({ 
+      success: true, 
+      message: "Invite sent successfully" 
+    });
+
   } catch (error) {
-    console.error("Invite failed:", error);
-    return res.status(500).json({ error: "Failed to send email" });
+    console.error("INVITE ERROR:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Failed to send email" 
+    });
   }
 };
 
