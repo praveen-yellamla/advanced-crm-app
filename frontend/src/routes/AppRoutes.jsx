@@ -56,7 +56,7 @@ const AppRoutes = () => {
       <Route path="/select-portal" element={<PortalSelection />} />
       <Route path="/login/:portal" element={<Login />} />
       <Route path="/login" element={<Navigate to="/select-portal" replace />} />
-      <Route path="/accept-invite/:token" element={<AcceptInvite />} />
+      <Route path="/accept-invite" element={<AcceptInvite />} />
       
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>

@@ -4,18 +4,19 @@ const crypto = require('crypto');
 
 const inviteUser = async (req, res) => {
   try {
-    console.log("INVITE API HIT");
+    console.log("INVITE STARTED (SMTP)");
     const { email, role } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: "Email required" });
+      return res.status(400).json({ error: "Email is required" });
     }
 
-    // Preserve backend token generation to maintain DB consistency
-    const inviteToken = Math.random().toString(36).substring(2);
+    // Generate token
+    const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
 
+    // Store in DB
     const existingInvite = await prisma.invite.findUnique({ where: { email } });
     if (existingInvite) {
       await prisma.invite.delete({ where: { email } });
@@ -25,28 +26,23 @@ const inviteUser = async (req, res) => {
       data: {
         email,
         role: role || 'AGENT',
-        token: inviteToken,
+        token: token,
         expiresAt,
         status: 'PENDING'
       }
     });
 
-    const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?email=${email}`;
+    const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${token}&email=${email}`;
+    
+    console.log("Generated Invite Link:", inviteLink);
 
-    const result = await sendInviteEmail(email, inviteLink);
+    await sendInviteEmail(email, inviteLink);
 
-    return res.json({
-      success: true,
-      data: result
-    });
+    res.json({ message: "Invite sent successfully" });
+
   } catch (error) {
-    console.error("FINAL BACKEND ERROR:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-      stack: error.stack,
-      details: error
-    });
+    console.error("INVITE CONTROLLER ERROR:", error);
+    res.status(500).json({ error: "Failed to send email", details: error.message });
   }
 };
 
