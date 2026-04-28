@@ -43,7 +43,9 @@ const inviteUser = async (req, res) => {
     console.error("FINAL BACKEND ERROR:", error);
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
+      stack: error.stack,
+      details: error
     });
   }
 };
