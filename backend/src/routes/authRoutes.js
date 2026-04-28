@@ -15,6 +15,7 @@ const {
   validate
 } = require('../validators/authValidator');
 const { protect } = require('../middleware/authMiddleware');
+const upload = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -24,7 +25,7 @@ const router = express.Router();
 router.post('/register', registerValidationRules(), validate, register);
 router.post('/login', loginValidationRules(), validate, login);
 router.get('/invite/:token', verifyInvite);
-router.post('/accept-invite', acceptInvite);
+router.post('/accept-invite', upload.single('image'), acceptInvite);
 
 /**
  * Private Routes

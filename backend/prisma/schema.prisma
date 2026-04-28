@@ -12,6 +12,7 @@ model User {
   email         String   @unique
   password      String
   phone         String?  @unique
+  profileImage  String?
   role          Role     @default(AGENT)
   region        String?
   language      String?
@@ -106,6 +107,7 @@ model Lead {
   email           String?
   phone           String
   alternatePhone  String?    @map("alternate_phone")
+  profileImage    String?    @map("profile_image")
   company         String?
   city            String?
   state           String?

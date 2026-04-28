@@ -17,7 +17,8 @@ const AcceptInvite = () => {
   const [formData, setFormData] = useState({
     name: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    image: null
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -43,14 +44,19 @@ const AcceptInvite = () => {
     if (formData.password.length < 6) {
       return toast.error("Password must be at least 6 characters");
     }
+    if (!formData.image) {
+      return toast.error("Profile image is required");
+    }
+
+    const data = new FormData();
+    data.append('token', token);
+    data.append('name', formData.name);
+    data.append('password', formData.password);
+    data.append('image', formData.image);
 
     setSubmitting(true);
     try {
-      await api.post('/auth/accept-invite', {
-        token,
-        name: formData.name,
-        password: formData.password
-      });
+      await api.post('/auth/accept-invite', data);
       toast.success('Account created successfully! Please login.');
       navigate('/login');
     } catch (err) {
@@ -126,6 +132,15 @@ const AcceptInvite = () => {
                    type="password" required placeholder="Re-enter password" minLength={6}
                    className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A]"
                    value={formData.confirmPassword} onChange={e => setFormData({...formData, confirmPassword: e.target.value})}
+                />
+             </div>
+
+             <div className="space-y-3">
+                <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Profile Image (Mandatory)</label>
+                <input 
+                   type="file" required accept="image/*"
+                   className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A] pt-4"
+                   onChange={e => setFormData({...formData, image: e.target.files[0]})}
                 />
              </div>
 

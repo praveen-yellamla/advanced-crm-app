@@ -187,10 +187,18 @@ const getAgents = async (req, res) => {
 
 const bcrypt = require('bcryptjs');
 
+const { uploadToCloudinary } = require('../utils/cloudinary');
+
 const createAgent = async (req, res) => {
   try {
     const { name, email, password, teamId, phone } = req.body;
     
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Profile image is required' });
+    }
+
+    const imageUrl = await uploadToCloudinary(req.file.buffer);
+
     // Mission-Critical: Hash passwords before persistence
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -201,6 +209,7 @@ const createAgent = async (req, res) => {
         email,
         password: hashedPassword,
         phone,
+        profileImage: imageUrl,
         role: 'AGENT',
         teamId: teamId ? parseInt(teamId) : null,
         isActive: true

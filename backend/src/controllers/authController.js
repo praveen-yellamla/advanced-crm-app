@@ -202,10 +202,16 @@ const verifyInvite = async (req, res) => {
  * @route   POST /api/auth/accept-invite
  * @access  Public
  */
+const { uploadToCloudinary } = require('../utils/cloudinary');
+
 const acceptInvite = async (req, res) => {
   try {
     const { token, name, password } = req.body;
     
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Profile image is required' });
+    }
+
     const invite = await prisma.invite.findUnique({
       where: { token }
     });
@@ -213,6 +219,8 @@ const acceptInvite = async (req, res) => {
     if (!invite || !['PENDING', 'SENT'].includes(invite.status) || new Date() > invite.expiresAt) {
       return res.status(400).json({ success: false, message: 'Invalid or expired invite link' });
     }
+
+    const imageUrl = await uploadToCloudinary(req.file.buffer);
 
     // Ensure user doesn't already exist somehow
     const existingUser = await prisma.user.findUnique({ where: { email: invite.email } });
@@ -228,6 +236,7 @@ const acceptInvite = async (req, res) => {
         name,
         email: invite.email,
         phone: invite.phone,
+        profileImage: imageUrl,
         password: hashedPassword,
         role: invite.role,
         isActive: true

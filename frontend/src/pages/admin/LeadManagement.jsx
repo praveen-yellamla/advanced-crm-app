@@ -109,8 +109,8 @@ const LeadManagement = () => {
                     <tr key={lead.id} className="border-b last:border-none border-slate-50 hover:bg-slate-50/30 transition-all duration-500 group">
                        <td className="px-10 py-8">
                           <div className="flex items-center gap-6">
-                             <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner">
-                                <Database size={22} />
+                             <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 group-hover:scale-110 overflow-hidden transition-all shadow-inner">
+                                <img src={lead.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(lead.customerName)}&background=random&color=fff&bold=true`} alt="" className="w-full h-full object-cover" />
                              </div>
                              <div>
                                 <p className="text-xl font-bold text-[#0F172A] tracking-tight">{lead.customerName}</p>

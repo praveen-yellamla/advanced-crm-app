@@ -29,6 +29,7 @@ const AdminAgents = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [editAgentId, setEditAgentId] = useState(null);
+  const [filterStatus, setFilterStatus] = useState('ALL');
   const [search, setSearch] = useState('');
   const queryClient = useQueryClient();
 
@@ -121,6 +122,8 @@ const AdminAgents = () => {
       toast.success('Invitation Sent Successfully');
       setIsInviteModalOpen(false);
       setFormData({ name: '', email: '', password: '', phone: '', teamId: '', role: 'AGENT' });
+      queryClient.invalidateQueries(['adminInvites']);
+      queryClient.invalidateQueries(['inviteStats']);
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to send invite')
   });
@@ -138,10 +141,16 @@ const AdminAgents = () => {
     })) || [])
   ];
 
-  const filteredAgents = combinedList.filter(a => 
-    a.name.toLowerCase().includes(search.toLowerCase()) || 
-    a.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredAgents = combinedList.filter(a => {
+    const matchesSearch = a.name.toLowerCase().includes(search.toLowerCase()) || 
+                         a.email.toLowerCase().includes(search.toLowerCase());
+    
+    if (filterStatus === 'ALL') return matchesSearch;
+    if (filterStatus === 'ACCEPTED') return matchesSearch && a.type === 'USER';
+    if (filterStatus === 'PENDING') return matchesSearch && a.type === 'INVITE';
+    
+    return matchesSearch;
+  });
 
   return (
     <div className="space-y-10 pb-16">
@@ -183,18 +192,27 @@ const AdminAgents = () => {
          </div>
          
          <div className="flex gap-4">
-            <div className="px-8 bg-white border border-[#E2E8F0] rounded-3xl flex flex-col justify-center min-w-[140px] shadow-sm">
+            <button 
+               onClick={() => setFilterStatus('ALL')}
+               className={`px-8 bg-white border rounded-3xl flex flex-col justify-center min-w-[140px] shadow-sm transition-all text-left ${filterStatus === 'ALL' ? 'border-blue-600 ring-4 ring-blue-500/5' : 'border-[#E2E8F0] hover:border-blue-200'}`}
+            >
                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Sent</p>
                <p className="text-xl font-black text-[#0F172A]">{inviteStats?.total || 0}</p>
-            </div>
-            <div className="px-8 bg-white border border-[#E2E8F0] rounded-3xl flex flex-col justify-center min-w-[140px] shadow-sm">
+            </button>
+            <button 
+               onClick={() => setFilterStatus('ACCEPTED')}
+               className={`px-8 bg-white border rounded-3xl flex flex-col justify-center min-w-[140px] shadow-sm transition-all text-left ${filterStatus === 'ACCEPTED' ? 'border-emerald-500 ring-4 ring-emerald-500/5' : 'border-[#E2E8F0] hover:border-emerald-200'}`}
+            >
                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Joined</p>
                <p className="text-xl font-black text-[#0F172A]">{inviteStats?.accepted || 0}</p>
-            </div>
-            <div className="px-8 bg-white border border-[#E2E8F0] rounded-3xl flex flex-col justify-center min-w-[140px] shadow-sm">
+            </button>
+            <button 
+               onClick={() => setFilterStatus('PENDING')}
+               className={`px-8 bg-white border rounded-3xl flex flex-col justify-center min-w-[140px] shadow-sm transition-all text-left ${filterStatus === 'PENDING' ? 'border-amber-500 ring-4 ring-amber-500/5' : 'border-[#E2E8F0] hover:border-amber-200'}`}
+            >
                <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Pending</p>
                <p className="text-xl font-black text-[#0F172A]">{inviteStats?.pending || 0}</p>
-            </div>
+            </button>
          </div>
       </div>
 
@@ -220,7 +238,7 @@ const AdminAgents = () => {
                        <td className="px-10 py-8">
                           <div className="flex items-center gap-6">
                              <div className="w-14 h-14 rounded-full border-4 border-slate-50 bg-white overflow-hidden shadow-sm group-hover:scale-110 transition-transform">
-                                <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(agent.name)}&background=random&color=fff&bold=true`} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-all" />
+                                <img src={agent.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(agent.name)}&background=random&color=fff&bold=true`} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-all" />
                              </div>
                              <div>
                                 <p className="text-xl font-bold text-[#0F172A] tracking-tight">{agent.name}</p>
@@ -332,12 +350,19 @@ const AdminAgents = () => {
 
                  <form onSubmit={(e) => {
                     e.preventDefault();
-                    const payload = { ...formData };
-                    if (!payload.password) delete payload.password;
+                    const data = new FormData();
+                    data.append('name', formData.name);
+                    data.append('email', formData.email);
+                    data.append('phone', formData.phone);
+                    data.append('role', formData.role);
+                    data.append('teamId', formData.teamId);
+                    if (formData.password) data.append('password', formData.password);
+                    if (formData.image) data.append('image', formData.image);
+
                     if (editAgentId) {
-                      updateAgentMutation.mutate({ id: editAgentId, data: payload });
+                      updateAgentMutation.mutate({ id: editAgentId, data });
                     } else {
-                      createAgentMutation.mutate(payload);
+                      createAgentMutation.mutate(data);
                     }
                  }} className="space-y-8">
                     <div className="grid grid-cols-2 gap-8">
@@ -382,6 +407,14 @@ const AdminAgents = () => {
                              type="text" placeholder="+1 (555) 000-0000"
                              className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A]"
                              value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
+                          />
+                       </div>
+                       <div className="space-y-4 col-span-2">
+                          <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Profile Image (Mandatory)</label>
+                          <input 
+                             type="file" required={!editAgentId} accept="image/*"
+                             className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A] pt-4"
+                             onChange={e => setFormData({...formData, image: e.target.files[0]})}
                           />
                        </div>
                     </div>

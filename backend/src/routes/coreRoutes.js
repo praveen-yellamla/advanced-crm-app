@@ -19,9 +19,11 @@ router.get('/public/track/click/:id', trackingController.trackLinkClick);
 // ==================================================
 router.use(protect);
 
+const upload = require('../middleware/upload');
+
 // Lead Engine
 router.get('/leads', leadController.getLeads);
-router.post('/leads', leadController.createLead);
+router.post('/leads', upload.single('image'), leadController.createLead);
 router.post('/leads/merge', leadController.mergeLeads);
 router.post('/leads/reassign', authorize('ADMIN', 'MANAGER'), leadController.reassignLead);
 

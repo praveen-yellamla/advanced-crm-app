@@ -67,9 +67,17 @@ const getLeads = async (req, res) => {
 // ==================================================
 // 2. LEAD CREATION WITH DUPLICATE DETECTION
 // ==================================================
+const { uploadToCloudinary } = require('../utils/cloudinary');
+
 const createLead = async (req, res) => {
   try {
     const { phone, email, customerName, source, utmSource, utmMedium, utmCampaign } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Profile image is required' });
+    }
+
+    const imageUrl = await uploadToCloudinary(req.file.buffer);
 
     // Duplicate detection
     const existing = await prisma.lead.findFirst({
@@ -90,6 +98,7 @@ const createLead = async (req, res) => {
       data: {
         customerName, phone, email, source,
         utmSource, utmMedium, utmCampaign,
+        profileImage: imageUrl,
         status: 'NEW'
       }
     });

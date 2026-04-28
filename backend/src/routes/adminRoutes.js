@@ -35,9 +35,11 @@ router.route('/teams/:id')
   .put(updateTeam)
   .delete(deleteTeam);
 
+const upload = require('../middleware/upload');
+
 router.route('/agents')
   .get(getAgents)
-  .post(createAgent);
+  .post(upload.single('image'), createAgent);
 
 router.route('/agents/:id')
   .put(updateAgent)
