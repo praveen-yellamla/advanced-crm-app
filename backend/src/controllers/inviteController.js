@@ -4,7 +4,7 @@ const crypto = require('crypto');
 
 const inviteUser = async (req, res) => {
   try {
-    console.log("INVITE STARTED");
+    console.log("INVITE API HIT");
     const { email, role } = req.body;
 
     if (!email) {
@@ -35,17 +35,12 @@ const inviteUser = async (req, res) => {
 
     const result = await sendInviteEmail(email, inviteLink);
 
-    if (!result || (!result.id && !result.data?.id)) {
-      throw new Error("Resend did not return success");
-    }
-
     return res.json({
       success: true,
-      message: "Email sent",
       data: result
     });
   } catch (error) {
-    console.error("FINAL ERROR:", error);
+    console.error("FINAL BACKEND ERROR:", error);
     return res.status(500).json({
       success: false,
       message: error.message
