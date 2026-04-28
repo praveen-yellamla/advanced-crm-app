@@ -10,4 +10,5 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server started successfully at ${new Date().toISOString()}`);
   console.log(`Server running on port ${PORT}`);
+  console.log('CORS dynamically configured for Local & Render.');
 });
