@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import { 
   Users, 
@@ -24,6 +25,7 @@ const AdminTeams = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState('');
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: teams, isLoading } = useQuery({
     queryKey: ['adminTeams'],
@@ -33,10 +35,10 @@ const AdminTeams = () => {
     }
   });
 
-  const { data: managers } = useQuery({
+  const { data: managers, isLoading: managersLoading, isError: managersError } = useQuery({
     queryKey: ['managersList'],
     queryFn: async () => {
-      const res = await api.get('/admin/agents'); // Simplified for this request
+      const res = await api.get('/admin/agents');
       return res.data.data.filter(u => u.role === 'MANAGER' || u.role === 'ADMIN');
     }
   });
@@ -193,7 +195,7 @@ const AdminTeams = () => {
                 className="relative w-full max-w-2xl bg-white rounded-[40px] shadow-2xl overflow-hidden"
               >
                  <div className="p-12 border-b border-slate-50 bg-[#F8FAFC]">
-                    <h2 className="text-3xl font-bold text-[#0F172A] tracking-tight uppercase">Create Team</h2>
+                    <h2 className="text-3xl font-bold text-[#0F172A] tracking-tight">Create Team</h2>
                     <p className="text-sm font-medium text-[#64748B] mt-2">Deploy a new organizational structure</p>
                  </div>
                  
@@ -201,58 +203,79 @@ const AdminTeams = () => {
                     e.preventDefault();
                     createTeamMutation.mutate(formData);
                  }} className="p-12 space-y-8">
-                    <div className="grid grid-cols-2 gap-8">
-                       <div className="space-y-3">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Team Name</label>
-                          <input 
-                             type="text" required placeholder="Cluster Delta..."
-                             className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-12 focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-bold text-[#0F172A]"
-                             value={formData.teamName} onChange={e => setFormData({...formData, teamName: e.target.value})}
-                          />
-                       </div>
-                       <div className="space-y-3">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Commanding Officer</label>
-                          <select 
-                             required 
-                             className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-12 focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-bold text-[#0F172A] appearance-none"
-                             value={formData.managerId} onChange={e => setFormData({...formData, managerId: e.target.value})}
-                          >
-                             <option value="">Select Manager</option>
-                             {managers?.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                          </select>
-                       </div>
-                       <div className="space-y-3">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Monthly Rev Goal ($)</label>
-                          <input 
-                             type="number" required placeholder="e.g. 50000"
-                             className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-12 focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-bold text-[#0F172A]"
-                             value={formData.revenueGoal} onChange={e => setFormData({...formData, revenueGoal: e.target.value})}
-                          />
-                       </div>
-                       <div className="space-y-3">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Leads Target</label>
-                          <input 
-                             type="number" required placeholder="e.g. 500"
-                             className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-12 focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-bold text-[#0F172A]"
-                             value={formData.monthlyLeadsTarget} onChange={e => setFormData({...formData, monthlyLeadsTarget: e.target.value})}
-                          />
-                       </div>
-                    </div>
-                    
-                    <div className="flex gap-4 pt-6">
-                       <button 
-                          type="button" onClick={() => setIsModalOpen(false)}
-                          className="flex-1 h-16 bg-slate-100 text-slate-500 rounded-3xl font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all"
-                       >
-                          Cancel
-                       </button>
-                       <button 
-                          type="submit" disabled={createTeamMutation.isPending}
-                          className="flex-1 h-16 bg-[#0F172A] text-white rounded-3xl font-black uppercase tracking-widest text-[11px] shadow-2xl hover:brightness-125 transition-all flex items-center justify-center gap-3"
-                       >
-                          {createTeamMutation.isPending ? 'Loading...' : <>Create <ArrowRight size={18} /></>}
-                       </button>
-                    </div>
+                     <div className="grid grid-cols-2 gap-8">
+                        <div className="space-y-3">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Team Name</label>
+                           <input 
+                              type="text" required placeholder="Cluster Delta..."
+                              className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-12 focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-bold text-[#0F172A]"
+                              value={formData.teamName} onChange={e => setFormData({...formData, teamName: e.target.value})}
+                           />
+                        </div>
+                        <div className="space-y-3">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Manager</label>
+                           {managersLoading ? (
+                             <div className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl flex items-center text-slate-400 font-bold text-sm">
+                               Loading managers...
+                             </div>
+                           ) : managersError ? (
+                             <div className="w-full h-16 px-6 bg-red-50 border border-red-200 rounded-2xl flex items-center text-red-500 font-bold text-sm">
+                               Failed to load managers
+                             </div>
+                           ) : managers?.length === 0 ? (
+                             <div className="w-full h-16 px-6 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between">
+                               <span className="text-amber-700 font-bold text-sm">No managers available</span>
+                               <button 
+                                 type="button" 
+                                 onClick={() => navigate('/admin/agents')} 
+                                 className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-800 transition-colors"
+                               >
+                                 Create Manager First
+                               </button>
+                             </div>
+                           ) : (
+                             <select 
+                                required 
+                                className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-12 focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-bold text-[#0F172A] appearance-none"
+                                value={formData.managerId} onChange={e => setFormData({...formData, managerId: e.target.value})}
+                             >
+                                <option value="">Select Manager...</option>
+                                {managers?.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                             </select>
+                           )}
+                        </div>
+                        <div className="space-y-3">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Monthly Revenue Goal ($)</label>
+                           <input 
+                              type="number" required placeholder="e.g. 50000" min="0" step="0.01"
+                              className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-12 focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-bold text-[#0F172A]"
+                              value={formData.revenueGoal} onChange={e => setFormData({...formData, revenueGoal: e.target.value})}
+                           />
+                        </div>
+                        <div className="space-y-3">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lead Capacity</label>
+                           <input 
+                              type="number" required placeholder="e.g. 500" min="0"
+                              className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-12 focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-bold text-[#0F172A]"
+                              value={formData.monthlyLeadsTarget} onChange={e => setFormData({...formData, monthlyLeadsTarget: e.target.value})}
+                           />
+                        </div>
+                     </div>
+                     
+                     <div className="flex gap-4 pt-6">
+                        <button 
+                           type="button" onClick={() => setIsModalOpen(false)}
+                           className="flex-1 h-16 bg-slate-100 text-slate-500 rounded-3xl font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all"
+                        >
+                           Cancel
+                        </button>
+                        <button 
+                           type="submit" disabled={createTeamMutation.isPending || (managers && managers.length === 0)}
+                           className="flex-1 h-16 bg-[#0F172A] text-white rounded-3xl font-black uppercase tracking-widest text-[11px] shadow-2xl hover:brightness-125 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                           {createTeamMutation.isPending ? 'Loading...' : <>Create Team <ArrowRight size={18} /></>}
+                        </button>
+                     </div>
                  </form>
               </motion.div>
            </div>
