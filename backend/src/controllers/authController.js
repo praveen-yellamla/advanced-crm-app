@@ -227,6 +227,7 @@ const acceptInvite = async (req, res) => {
       data: {
         name,
         email: invite.email,
+        phone: invite.phone,
         password: hashedPassword,
         role: invite.role,
         isActive: true

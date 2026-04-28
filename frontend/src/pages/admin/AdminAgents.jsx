@@ -61,6 +61,22 @@ const AdminAgents = () => {
     }
   });
 
+  const { data: invites } = useQuery({
+    queryKey: ['adminInvites'],
+    queryFn: async () => {
+      const res = await api.get('/admin/invites');
+      return res.data.data;
+    }
+  });
+
+  const { data: inviteStats } = useQuery({
+    queryKey: ['inviteStats'],
+    queryFn: async () => {
+      const res = await api.get('/admin/invite-stats');
+      return res.data.data;
+    }
+  });
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -109,7 +125,20 @@ const AdminAgents = () => {
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to send invite')
   });
 
-  const filteredAgents = agents?.filter(a => 
+  const combinedList = [
+    ...(agents?.map(a => ({ ...a, type: 'USER', status: a.isActive ? 'Active' : 'Joined' })) || []),
+    ...(invites?.filter(i => i.status !== 'ACCEPTED').map(i => ({ 
+        id: `invite-${i.id}`, 
+        name: 'Pending User', 
+        email: i.email, 
+        phone: i.phone,
+        role: i.role,
+        type: 'INVITE',
+        status: 'Pending'
+    })) || [])
+  ];
+
+  const filteredAgents = combinedList.filter(a => 
     a.name.toLowerCase().includes(search.toLowerCase()) || 
     a.email.toLowerCase().includes(search.toLowerCase())
   );
@@ -213,7 +242,12 @@ const AdminAgents = () => {
                           </div>
                        </td>
                        <td className="px-10 py-8">
-                          {agent.isActive ? (
+                          {agent.type === 'INVITE' ? (
+                            <div className="flex items-center gap-3 text-amber-600 font-bold italic">
+                               <Mail size={16} />
+                               <span className="text-[10px] font-black uppercase tracking-widest">Pending</span>
+                            </div>
+                          ) : agent.isActive ? (
                             <div className="flex items-center gap-3 text-emerald-600 font-bold italic">
                                <CheckCircle2 size={16} />
                                <span className="text-[10px] font-black uppercase tracking-widest">Active</span>
@@ -230,34 +264,37 @@ const AdminAgents = () => {
                               {/* Toggle Status */}
                               <div className="flex items-center gap-2" title="Toggle agent status">
                                  <button 
+                                   disabled={agent.type === 'INVITE'}
                                    onClick={() => {
                                       if (!agent.isActive || confirm('Deactivate this agent?')) {
                                          updateAgentMutation.mutate({ id: agent.id, data: { isActive: !agent.isActive } });
                                       }
                                    }}
-                                   className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${agent.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}
+                                   className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${agent.type === 'INVITE' ? 'bg-slate-50 text-slate-200' : agent.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}
                                  >
                                     {agent.isActive ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
                                  </button>
                                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden lg:block">
-                                   {agent.isActive ? 'Active' : 'Suspended'}
+                                   {agent.type === 'INVITE' ? 'Invited' : agent.isActive ? 'Active' : 'Suspended'}
                                  </span>
                               </div>
 
                               {/* Edit Button */}
                               <button 
+                                disabled={agent.type === 'INVITE'}
                                 onClick={() => handleEdit(agent)}
                                 title="Edit Agent Details"
-                                className="w-12 h-12 bg-white border border-[#E2E8F0] text-slate-400 rounded-xl flex items-center justify-center hover:border-blue-600 hover:text-blue-600 transition-all shadow-sm"
+                                className={`w-12 h-12 border rounded-xl flex items-center justify-center transition-all shadow-sm ${agent.type === 'INVITE' ? 'bg-slate-50 border-slate-100 text-slate-200' : 'bg-white border-[#E2E8F0] text-slate-400 hover:border-blue-600 hover:text-blue-600'}`}
                               >
                                  <Edit3 size={18} />
                               </button>
 
                               {/* Terminate Button */}
                               <button 
+                                disabled={agent.type === 'INVITE'}
                                 onClick={() => { if(confirm('Are you sure you want to disable this agent? This action cannot be easily undone.')) deleteAgentMutation.mutate(agent.id); }}
                                 title="Deactivate Agent"
-                                className="w-12 h-12 bg-white border border-[#E2E8F0] text-slate-400 rounded-xl flex items-center justify-center hover:border-red-600 hover:text-red-600 hover:bg-red-50 transition-all shadow-sm focus:outline-none"
+                                className={`w-12 h-12 border rounded-xl flex items-center justify-center transition-all shadow-sm focus:outline-none ${agent.type === 'INVITE' ? 'bg-slate-50 border-slate-100 text-slate-200' : 'bg-white border-[#E2E8F0] text-slate-400 hover:border-red-600 hover:text-red-600 hover:bg-red-50'}`}
                               >
                                  <UserX size={18} />
                               </button>
@@ -366,7 +403,7 @@ const AdminAgents = () => {
 
                  <form onSubmit={(e) => {
                     e.preventDefault();
-                    inviteUserMutation.mutate({ email: formData.email, role: formData.role });
+                    inviteUserMutation.mutate({ email: formData.email, role: formData.role, phone: formData.phone });
                  }} className="space-y-8">
                     <div className="space-y-4">
                        <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Email Address</label>
@@ -377,7 +414,16 @@ const AdminAgents = () => {
                        />
                     </div>
                     <div className="space-y-4">
-                       <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Role Configuration</label>
+                       <div className="space-y-4">
+                        <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Phone Number (Optional)</label>
+                        <input 
+                           type="text" placeholder="+1 (555) 000-0000"
+                           className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A]"
+                           value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
+                        />
+                     </div>
+                     <div className="space-y-4">
+                        <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Role Configuration</label>
                        <select 
                           required 
                           className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A] appearance-none"

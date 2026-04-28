@@ -4,26 +4,55 @@ const { sendInviteEmail } = require("../services/emailService");
 
 const inviteUser = async (req, res) => {
   try {
-    const { email, role } = req.body;
+    const { email, role, phone } = req.body;
 
     if (!email) {
       return res.status(400).json({ error: "Email required" });
     }
 
-    const token = crypto.randomBytes(32).toString("hex");
+    // 1. Check if user already exists (Email or Phone)
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: email },
+          ...(phone ? [{ phone: phone }] : [])
+        ]
+      }
+    });
 
-    // Save token to DB to ensure system integrity
+    if (existingUser) {
+      return res.status(400).json({ 
+        error: `User with this ${existingUser.email === email ? 'email' : 'phone'} already exists` 
+      });
+    }
+
+    // 2. Check if active invite already exists
+    const existingInvite = await prisma.invite.findFirst({
+      where: {
+        OR: [
+          { email: email },
+          ...(phone ? [{ phone: phone }] : [])
+        ],
+        status: { in: ['PENDING', 'SENT'] }
+      }
+    });
+
+    if (existingInvite) {
+      return res.status(400).json({ 
+        error: "An invite has already been sent to this user and is pending" 
+      });
+    }
+
+    // 3. Generate token
+    const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
 
-    const existingInvite = await prisma.invite.findUnique({ where: { email } });
-    if (existingInvite) {
-      await prisma.invite.delete({ where: { email } });
-    }
-
+    // 4. Create Invite
     await prisma.invite.create({
       data: {
         email,
+        phone,
         role: role || 'AGENT',
         token: token,
         expiresAt,
@@ -33,9 +62,10 @@ const inviteUser = async (req, res) => {
 
     const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${token}&email=${email}`;
 
+    // 5. Send Email
     await sendInviteEmail(email, inviteLink);
 
-    // Update status to SENT after successful SMTP dispatch
+    // 6. Update status to SENT
     await prisma.invite.update({
       where: { email },
       data: { 
@@ -51,7 +81,6 @@ const inviteUser = async (req, res) => {
 
   } catch (error) {
     console.error("INVITE ERROR:", error);
-
     return res.status(500).json({
       error: error.message || "Failed to send invite",
     });
@@ -61,7 +90,7 @@ const inviteUser = async (req, res) => {
 const getInviteStats = async (req, res) => {
   try {
     const total = await prisma.invite.count();
-    const pending = await prisma.invite.count({ where: { status: 'SENT' } });
+    const pending = await prisma.invite.count({ where: { status: { in: ['PENDING', 'SENT'] } } });
     const accepted = await prisma.invite.count({ where: { status: 'ACCEPTED' } });
     
     res.json({

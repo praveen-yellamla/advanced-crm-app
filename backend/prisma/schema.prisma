@@ -11,7 +11,7 @@ model User {
   name          String
   email         String   @unique
   password      String
-  phone         String?
+  phone         String?  @unique
   role          Role     @default(AGENT)
   region        String?
   language      String?
@@ -429,6 +429,7 @@ model SystemSetting {
 model Invite {
   id        Int      @id @default(autoincrement())
   email     String   @unique
+  phone     String?
   role      String
   token     String   @unique
   status    String   @default("PENDING") // PENDING, SENT, ACCEPTED, EXPIRED
