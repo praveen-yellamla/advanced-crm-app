@@ -10,37 +10,24 @@ const transporter = nodemailer.createTransport({
 
 const sendInviteEmail = async (email, inviteLink) => {
   try {
-    console.log("Preparing to send email via Gmail SMTP to:", email);
-    
     const info = await transporter.sendMail({
-      from: `"CRM Platform" <${process.env.EMAIL_USER}>`,
+      from: process.env.EMAIL_USER,
       to: email,
       subject: "You're invited to CRM",
       html: `
-        <div style="font-family: sans-serif; padding: 20px;">
-          <h2>Welcome to CRM</h2>
-          <p>Click below to join and set up your account:</p>
-          <a href="${inviteLink}" style="
-            display: inline-block;
-            padding: 10px 20px;
-            background: #2563eb;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-          ">Accept Invite</a>
-          <p style="margin-top: 20px;">If the button doesn't work, use this link:</p>
-          <p>${inviteLink}</p>
-        </div>
+        <h2>Welcome to CRM</h2>
+        <p>Click below to join:</p>
+        <a href="${inviteLink}">Accept Invite</a>
+        <p>${inviteLink}</p>
       `,
     });
 
-    console.log("Email sent successfully:", info.response);
+    console.log("SUCCESS EMAIL:", info);
     return true;
 
   } catch (error) {
-    console.error("EMAIL ERROR:", error);
-    throw error;
+    console.error("EMAIL ERROR FULL:", error);
+    throw new Error(error.message);
   }
 };
 

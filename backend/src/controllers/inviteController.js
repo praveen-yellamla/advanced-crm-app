@@ -1,22 +1,21 @@
 const prisma = require('../config/prisma');
-const { sendInviteEmail } = require('../services/emailService');
-const crypto = require('crypto');
+const crypto = require("crypto");
+const { sendInviteEmail } = require("../services/emailService");
 
 const inviteUser = async (req, res) => {
   try {
-    console.log("INVITE STARTED (SMTP)");
     const { email, role } = req.body;
 
     if (!email) {
-      return res.status(400).json({ error: "Email is required" });
+      return res.status(400).json({ error: "Email required" });
     }
 
-    // Generate token
-    const token = crypto.randomBytes(32).toString('hex');
+    const token = crypto.randomBytes(32).toString("hex");
+
+    // Save token to DB to ensure system integrity
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
 
-    // Store in DB
     const existingInvite = await prisma.invite.findUnique({ where: { email } });
     if (existingInvite) {
       await prisma.invite.delete({ where: { email } });
@@ -33,16 +32,20 @@ const inviteUser = async (req, res) => {
     });
 
     const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${token}&email=${email}`;
-    
-    console.log("Generated Invite Link:", inviteLink);
 
     await sendInviteEmail(email, inviteLink);
 
-    res.json({ message: "Invite sent successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Invite sent successfully",
+    });
 
   } catch (error) {
-    console.error("INVITE CONTROLLER ERROR:", error);
-    res.status(500).json({ error: "Failed to send email", details: error.message });
+    console.error("INVITE ERROR:", error);
+
+    return res.status(500).json({
+      error: error.message || "Failed to send invite",
+    });
   }
 };
 
@@ -57,7 +60,7 @@ const getInvites = async (req, res) => {
   }
 };
 
-module.exports = {
+module.exports = { 
   inviteUser,
   getInvites
 };
