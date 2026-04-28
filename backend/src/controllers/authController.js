@@ -162,10 +162,94 @@ const logout = (req, res) => {
   res.status(200).json({ message: 'Successfully logged out' });
 };
 
+/**
+ * @desc    Verify Invite Token
+ * @route   GET /api/auth/invite/:token
+ * @access  Public
+ */
+const verifyInvite = async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    const invite = await prisma.invite.findUnique({
+      where: { token }
+    });
+
+    if (!invite) {
+      return res.status(400).json({ success: false, message: 'Invalid invite link' });
+    }
+
+    if (invite.status !== 'PENDING') {
+      return res.status(400).json({ success: false, message: 'This invite has already been accepted or expired' });
+    }
+
+    if (new Date() > invite.expiresAt) {
+      await prisma.invite.update({
+        where: { id: invite.id },
+        data: { status: 'EXPIRED' }
+      });
+      return res.status(400).json({ success: false, message: 'This invite link has expired' });
+    }
+
+    res.json({ success: true, data: { email: invite.email, role: invite.role } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * @desc    Accept Invite
+ * @route   POST /api/auth/accept-invite
+ * @access  Public
+ */
+const acceptInvite = async (req, res) => {
+  try {
+    const { token, name, password } = req.body;
+    
+    const invite = await prisma.invite.findUnique({
+      where: { token }
+    });
+
+    if (!invite || invite.status !== 'PENDING' || new Date() > invite.expiresAt) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired invite link' });
+    }
+
+    // Ensure user doesn't already exist somehow
+    const existingUser = await prisma.user.findUnique({ where: { email: invite.email } });
+    if (existingUser) {
+       return res.status(400).json({ success: false, message: 'User with this email already exists' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email: invite.email,
+        password: hashedPassword,
+        role: invite.role,
+        isActive: true
+      }
+    });
+
+    await prisma.invite.update({
+      where: { id: invite.id },
+      data: { status: 'ACCEPTED' }
+    });
+
+    res.json({ success: true, message: 'Account created successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
   getMe,
   changePassword,
-  logout
+  logout,
+  verifyInvite,
+  acceptInvite
 };

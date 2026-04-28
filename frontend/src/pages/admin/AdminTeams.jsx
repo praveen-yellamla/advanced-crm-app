@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
@@ -23,9 +23,24 @@ import toast from 'react-hot-toast';
 
 const AdminTeams = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editTeamId, setEditTeamId] = useState(null);
   const [search, setSearch] = useState('');
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  const handleEdit = (team) => {
+    console.log("Edit clicked", team);
+    setEditTeamId(team.id);
+    setFormData({
+      teamName: team.teamName || '',
+      managerId: team.managerId || '',
+      monthlyLeadsTarget: team.monthlyLeadsTarget || '',
+      monthlySalesTarget: team.monthlySalesTarget || '',
+      conversionTarget: team.conversionTarget || '',
+      revenueGoal: team.revenueGoal || ''
+    });
+    setIsModalOpen(true);
+  };
 
   const { data: teams, isLoading } = useQuery({
     queryKey: ['adminTeams'],
@@ -35,13 +50,26 @@ const AdminTeams = () => {
     }
   });
 
-  const { data: managers, isLoading: managersLoading, isError: managersError } = useQuery({
-    queryKey: ['managersList'],
-    queryFn: async () => {
-      const res = await api.get('/admin/agents');
-      return res.data.data.filter(u => u.role === 'MANAGER' || u.role === 'ADMIN');
-    }
-  });
+  const [managers, setManagers] = useState([]);
+  const [managersLoading, setManagersLoading] = useState(true);
+  const [managersError, setManagersError] = useState(false);
+
+  useEffect(() => {
+    const fetchManagers = async () => {
+      try {
+        setManagersLoading(true);
+        const res = await api.get('/admin/managers');
+        setManagers(res.data.data);
+        setManagersError(false);
+      } catch (err) {
+        setManagersError(true);
+        toast.error('Unable to load managers');
+      } finally {
+        setManagersLoading(false);
+      }
+    };
+    fetchManagers();
+  }, []);
 
   const createTeamMutation = useMutation({
     mutationFn: (newTeam) => api.post('/admin/teams', newTeam),
@@ -51,6 +79,17 @@ const AdminTeams = () => {
       setIsModalOpen(false);
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Initialization failed')
+  });
+
+  const updateTeamMutation = useMutation({
+    mutationFn: (data) => api.put(`/admin/teams/${editTeamId}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['adminTeams']);
+      toast.success('Team Updated');
+      setIsModalOpen(false);
+      setEditTeamId(null);
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to update team')
   });
 
   const [formData, setFormData] = useState({
@@ -83,7 +122,14 @@ const AdminTeams = () => {
            <p className="text-[#64748B] font-medium text-sm mt-1">Manage Organization & Departmental Structures</p>
         </div>
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setEditTeamId(null);
+            setFormData({
+              teamName: '', managerId: '', monthlyLeadsTarget: '',
+              monthlySalesTarget: '', conversionTarget: '', revenueGoal: ''
+            });
+            setIsModalOpen(true);
+          }}
           className="h-14 px-8 bg-blue-600 text-white rounded-2xl font-bold uppercase tracking-widest text-[10px] shadow-xl shadow-blue-500/20 hover:scale-105 transition-all flex items-center gap-4"
         >
            <Plus size={20} /> Create New Team
@@ -163,7 +209,10 @@ const AdminTeams = () => {
                        </td>
                        <td className="px-10 py-8">
                           <div className="flex gap-3">
-                             <button className="w-12 h-12 rounded-xl bg-white border border-[#E2E8F0] shadow-sm hover:border-blue-600 hover:text-blue-600 transition-all flex items-center justify-center">
+                             <button 
+                               onClick={() => handleEdit(team)}
+                               className="w-12 h-12 rounded-xl bg-white border border-[#E2E8F0] shadow-sm hover:border-blue-600 hover:text-blue-600 transition-all flex items-center justify-center"
+                             >
                                 <Edit3 size={18} />
                              </button>
                              <button 
@@ -188,20 +237,42 @@ const AdminTeams = () => {
               <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 className="absolute inset-0 bg-[#0F172A]/80 backdrop-blur-xl"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => { setIsModalOpen(false); setEditTeamId(null); }}
               />
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 className="relative w-full max-w-2xl bg-white rounded-[40px] shadow-2xl overflow-hidden"
               >
                  <div className="p-12 border-b border-slate-50 bg-[#F8FAFC]">
-                    <h2 className="text-3xl font-bold text-[#0F172A] tracking-tight">Create Team</h2>
-                    <p className="text-sm font-medium text-[#64748B] mt-2">Deploy a new organizational structure</p>
+                    <h2 className="text-3xl font-bold text-[#0F172A] tracking-tight">{editTeamId ? 'Edit Team' : 'Create Team'}</h2>
+                    <p className="text-sm font-medium text-[#64748B] mt-2">{editTeamId ? 'Modify existing team details' : 'Deploy a new organizational structure'}</p>
                  </div>
                  
                  <form onSubmit={(e) => {
                     e.preventDefault();
-                    createTeamMutation.mutate(formData);
+                    
+                    const payload = { ...formData };
+                    
+                    if (payload.managerId === '') delete payload.managerId;
+                    else payload.managerId = Number(payload.managerId);
+                    
+                    if (payload.monthlyLeadsTarget === '') delete payload.monthlyLeadsTarget;
+                    else payload.monthlyLeadsTarget = Number(payload.monthlyLeadsTarget);
+
+                    if (payload.monthlySalesTarget === '') delete payload.monthlySalesTarget;
+                    else payload.monthlySalesTarget = Number(payload.monthlySalesTarget);
+
+                    if (payload.conversionTarget === '') delete payload.conversionTarget;
+                    else payload.conversionTarget = Number(payload.conversionTarget);
+
+                    if (payload.revenueGoal === '') delete payload.revenueGoal;
+                    else payload.revenueGoal = Number(payload.revenueGoal);
+
+                    if (editTeamId) {
+                      updateTeamMutation.mutate(payload);
+                    } else {
+                      createTeamMutation.mutate(payload);
+                    }
                  }} className="p-12 space-y-8">
                      <div className="grid grid-cols-2 gap-8">
                         <div className="space-y-3">
@@ -215,7 +286,8 @@ const AdminTeams = () => {
                         <div className="space-y-3">
                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Manager</label>
                            {managersLoading ? (
-                             <div className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl flex items-center text-slate-400 font-bold text-sm">
+                             <div className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-3 text-slate-400 font-bold text-sm">
+                               <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
                                Loading managers...
                              </div>
                            ) : managersError ? (
@@ -264,16 +336,17 @@ const AdminTeams = () => {
                      
                      <div className="flex gap-4 pt-6">
                         <button 
-                           type="button" onClick={() => setIsModalOpen(false)}
+                           type="button" onClick={() => { setIsModalOpen(false); setEditTeamId(null); }}
                            className="flex-1 h-16 bg-slate-100 text-slate-500 rounded-3xl font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all"
                         >
                            Cancel
                         </button>
                         <button 
-                           type="submit" disabled={createTeamMutation.isPending || (managers && managers.length === 0)}
+                           type="submit" disabled={(editTeamId ? updateTeamMutation.isPending : createTeamMutation.isPending) || (managers && managers.length === 0)}
                            className="flex-1 h-16 bg-[#0F172A] text-white rounded-3xl font-black uppercase tracking-widest text-[11px] shadow-2xl hover:brightness-125 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                           {createTeamMutation.isPending ? 'Loading...' : <>Create Team <ArrowRight size={18} /></>}
+                           {editTeamId ? (updateTeamMutation.isPending ? 'Updating...' : <>Update Team <ArrowRight size={18} /></>) 
+                                       : (createTeamMutation.isPending ? 'Loading...' : <>Create Team <ArrowRight size={18} /></>)}
                         </button>
                      </div>
                  </form>

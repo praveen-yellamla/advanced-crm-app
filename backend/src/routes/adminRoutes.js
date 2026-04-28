@@ -10,7 +10,8 @@ const {
   createAgent,
   updateAgent,
   deleteAgent,
-  getAuditLogs
+  getAuditLogs,
+  getManagers
 } = require('../controllers/adminController');
 const { 
   getInvoices, 
@@ -43,6 +44,9 @@ router.route('/agents/:id')
   .delete(deleteAgent);
 
 router.get('/audit-logs', getAuditLogs);
+
+router.get('/managers', getManagers);
+
 
 router.route('/invites')
   .get(getInvites)

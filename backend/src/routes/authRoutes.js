@@ -4,7 +4,9 @@ const {
   login,
   getMe,
   changePassword,
-  logout
+  logout,
+  verifyInvite,
+  acceptInvite
 } = require('../controllers/authController');
 const {
   registerValidationRules,
@@ -21,6 +23,8 @@ const router = express.Router();
  */
 router.post('/register', registerValidationRules(), validate, register);
 router.post('/login', loginValidationRules(), validate, login);
+router.get('/invite/:token', verifyInvite);
+router.post('/accept-invite', acceptInvite);
 
 /**
  * Private Routes

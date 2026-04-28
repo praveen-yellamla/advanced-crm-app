@@ -58,6 +58,18 @@ const getDashboardStats = async (req, res) => {
 // ==================================================
 // 2. TEAM MANAGEMENT
 // ==================================================
+const getManagers = async (req, res) => {
+  try {
+    const managers = await prisma.user.findMany({
+      where: { role: 'MANAGER', isActive: true },
+      select: { id: true, name: true, email: true }
+    });
+    res.json({ success: true, data: managers });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const getTeams = async (req, res) => {
   try {
     const teams = await prisma.team.findMany({
@@ -97,17 +109,60 @@ const createTeam = async (req, res) => {
 
 const updateTeam = async (req, res) => {
   try {
+    console.log('Update Team Request Body:', req.body);
     const { id } = req.params;
-    const oldTeam = await prisma.team.findUnique({ where: { id: parseInt(id) } });
     
+    const oldTeam = await prisma.team.findUnique({ where: { id: parseInt(id) } });
+    if (!oldTeam) {
+      return res.status(404).json({ success: false, message: 'Team not found' });
+    }
+
+    const updateData = { ...req.body };
+
+    // Remove nested objects or unwanted fields
+    delete updateData.manager;
+    delete updateData.agents;
+    delete updateData._count;
+    delete updateData.id;
+
+    if (updateData.managerId !== undefined && updateData.managerId !== null && updateData.managerId !== '') {
+      const managerId = Number(updateData.managerId);
+      if (isNaN(managerId)) return res.status(400).json({ success: false, message: 'Invalid Manager ID' });
+      
+      const managerExists = await prisma.user.findUnique({
+        where: { id: managerId }
+      });
+      
+      if (!managerExists) {
+        return res.status(400).json({ success: false, message: 'Invalid Manager ID: User not found' });
+      }
+      updateData.managerId = managerId;
+    } else {
+      delete updateData.managerId;
+    }
+    
+    const numericFields = ['monthlyLeadsTarget', 'monthlySalesTarget', 'conversionTarget', 'revenueGoal'];
+    for (const field of numericFields) {
+      if (updateData[field] !== undefined && updateData[field] !== null && updateData[field] !== '') {
+        const val = Number(updateData[field]);
+        if (isNaN(val)) {
+          return res.status(400).json({ success: false, message: `Invalid numeric value for ${field}` });
+        }
+        updateData[field] = val;
+      } else {
+        delete updateData[field]; // Omit if empty to let Prisma ignore it
+      }
+    }
+
     const team = await prisma.team.update({
       where: { id: parseInt(id) },
-      data: req.body
+      data: updateData
     });
 
     await createAuditLog(req.user.id, 'UPDATE', 'TEAM', oldTeam, team);
     res.json({ success: true, data: team });
   } catch (error) {
+    console.error('Update team error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -246,5 +301,6 @@ module.exports = {
   createAgent,
   updateAgent,
   deleteAgent,
-  getAuditLogs
+  getAuditLogs,
+  getManagers
 };

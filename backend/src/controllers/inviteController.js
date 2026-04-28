@@ -1,64 +1,55 @@
 const prisma = require('../config/prisma');
-const sendEmail = require('../utils/sendEmail');
+const { sendInviteEmail } = require('../services/emailService');
 const crypto = require('crypto');
-
-/**
- * Institutional Invitation Engine.
- * Orchestrates token-based identity provisioning for external business nodes.
- */
 
 const inviteUser = async (req, res) => {
   try {
-    const { email, role, teamId } = req.body;
+    console.log('Dispatching invite request:', req.body);
+    const { email, role } = req.body;
+
+    if (!email) return res.status(400).json({ success: false, message: 'Email is required.' });
 
     // 1. Verify existence
     const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) return res.status(400).json({ success: false, message: 'Identity already present in local registry.' });
+    if (existing) return res.status(400).json({ success: false, message: 'User already exists with this email.' });
 
-    // 2. Clear stale tokens if any
-    await prisma.userInvite.deleteMany({ where: { email } });
+    // 2. Clear stale invites for this email
+    const existingInvite = await prisma.invite.findUnique({ where: { email } });
+    if (existingInvite) {
+      await prisma.invite.delete({ where: { email } });
+    }
 
     // 3. Generate secure token
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 48); // 48-hour expiration
+    expiresAt.setHours(expiresAt.getHours() + 24); // 24-hour expiration
 
-    await prisma.userInvite.create({
+    const invite = await prisma.invite.create({
       data: {
         email,
         role: role || 'AGENT',
-        teamId: teamId ? parseInt(teamId) : null,
         token,
-        expiresAt
+        expiresAt,
+        status: 'PENDING'
       }
     });
 
     // 4. Initialize communication dispatch
-    const inviteUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register?token=${token}`;
+    const clientUrl = process.env.FRONTEND_URL || req.headers.origin || 'https://advanced-crm-frontend.onrender.com';
+    const inviteLink = `${clientUrl}/accept-invite/${token}`;
     
-    await sendEmail({
-      email,
-      subject: 'Institutional Invite: Advanced CRM Gateway',
-      message: `You have been authorized to join the Advanced CRM grid. Initialize your session: ${inviteUrl}`,
-      html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #0F172A;">
-          <h2 style="text-transform: uppercase; letter-spacing: 2px;">Identity Authorization</h2>
-          <p>You have been officially invited to join Advanced CRM as a <strong>${role}</strong>.</p>
-          <a href="${inviteUrl}" style="display:inline-block; padding: 14px 28px; background: #2563EB; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0;">Initialize Account</a>
-          <p style="font-size: 11px; color: #64748B;">This invitation token expires in 48 hours for security compliance.</p>
-        </div>
-      `
-    });
+    await sendInviteEmail(email, inviteLink);
 
-    res.json({ success: true, message: 'Institutional invite dispatched.' });
+    res.json({ success: true, message: 'Invitation sent successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Invite Error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Internal Server Error' });
   }
 };
 
 const getInvites = async (req, res) => {
   try {
-    const invites = await prisma.userInvite.findMany({
+    const invites = await prisma.invite.findMany({
       orderBy: { createdAt: 'desc' }
     });
     res.json({ success: true, data: invites });

@@ -7,6 +7,7 @@ import RoleBasedRoute from '../components/common/RoleBasedRoute';
 
 // Auth Pages
 import PortalSelection from '../pages/auth/PortalSelection';
+import AcceptInvite from '../pages/auth/AcceptInvite';
 
 // Admin Pages
 import AdminDashboard from '../pages/admin/AdminDashboard';
@@ -54,6 +55,8 @@ const AppRoutes = () => {
       {/* Public Routes */}
       <Route path="/select-portal" element={<PortalSelection />} />
       <Route path="/login/:portal" element={<Login />} />
+      <Route path="/login" element={<Navigate to="/select-portal" replace />} />
+      <Route path="/accept-invite/:token" element={<AcceptInvite />} />
       
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>

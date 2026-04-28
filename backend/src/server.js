@@ -7,6 +7,7 @@ initSocket(server);
 
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-  console.log(`Enterprise Core Platform synchronized on port ${PORT}`);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server started successfully at ${new Date().toISOString()}`);
+  console.log(`Server running on port ${PORT}`);
 });

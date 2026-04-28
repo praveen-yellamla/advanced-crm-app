@@ -425,3 +425,13 @@ model SystemSetting {
 
   @@map("system_settings")
 }
+
+model Invite {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  role      String
+  token     String   @unique
+  status    String   @default("PENDING")
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}

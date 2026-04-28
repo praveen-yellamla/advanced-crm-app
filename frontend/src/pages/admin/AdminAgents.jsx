@@ -18,7 +18,9 @@ import {
   Key,
   Briefcase,
   ArrowRight,
-  Filter
+  Filter,
+  Edit3,
+  UserX
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -26,8 +28,22 @@ import toast from 'react-hot-toast';
 const AdminAgents = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [editAgentId, setEditAgentId] = useState(null);
   const [search, setSearch] = useState('');
   const queryClient = useQueryClient();
+
+  const handleEdit = (agent) => {
+    setEditAgentId(agent.id);
+    setFormData({
+      name: agent.name || '',
+      email: agent.email || '',
+      password: '',
+      phone: agent.phone || '',
+      teamId: agent.teamId || '',
+      role: agent.role || 'AGENT'
+    });
+    setIsModalOpen(true);
+  };
 
   const { data: agents, isLoading } = useQuery({
     queryKey: ['adminAgents'],
@@ -68,8 +84,11 @@ const AdminAgents = () => {
     mutationFn: ({ id, data }) => api.put(`/admin/agents/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['adminAgents']);
-      toast.success('Agent Schema Synchronized');
-    }
+      toast.success('Agent Details Updated');
+      setIsModalOpen(false);
+      setEditAgentId(null);
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Update failed')
   });
 
   const deleteAgentMutation = useMutation({
@@ -78,6 +97,16 @@ const AdminAgents = () => {
       queryClient.invalidateQueries(['adminAgents']);
       toast.success('Agents Terminated');
     }
+  });
+
+  const inviteUserMutation = useMutation({
+    mutationFn: (data) => api.post('/admin/invites', data),
+    onSuccess: () => {
+      toast.success('Invitation Sent Successfully');
+      setIsInviteModalOpen(false);
+      setFormData({ name: '', email: '', password: '', phone: '', teamId: '', role: 'AGENT' });
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to send invite')
   });
 
   const filteredAgents = agents?.filter(a => 
@@ -101,7 +130,11 @@ const AdminAgents = () => {
               <Mail size={18} /> Invite by Email
            </button>
            <button 
-             onClick={() => setIsModalOpen(true)}
+             onClick={() => {
+               setEditAgentId(null);
+               setFormData({ name: '', email: '', password: '', phone: '', teamId: '', role: 'AGENT' });
+               setIsModalOpen(true);
+             }}
              className="h-14 px-10 bg-[#0F172A] text-white rounded-2xl font-bold uppercase tracking-widest text-[10px] shadow-2xl hover:scale-105 transition-all flex items-center gap-4"
            >
               <Plus size={20} /> Add New Agent
@@ -193,18 +226,40 @@ const AdminAgents = () => {
                           )}
                        </td>
                         <td className="px-10 py-8">
-                           <div className="flex gap-3">
+                           <div className="flex items-center gap-3">
+                              {/* Toggle Status */}
+                              <div className="flex items-center gap-2" title="Toggle agent status">
+                                 <button 
+                                   onClick={() => {
+                                      if (!agent.isActive || confirm('Deactivate this agent?')) {
+                                         updateAgentMutation.mutate({ id: agent.id, data: { isActive: !agent.isActive } });
+                                      }
+                                   }}
+                                   className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${agent.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}
+                                 >
+                                    {agent.isActive ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
+                                 </button>
+                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden lg:block">
+                                   {agent.isActive ? 'Active' : 'Suspended'}
+                                 </span>
+                              </div>
+
+                              {/* Edit Button */}
                               <button 
-                                onClick={() => updateAgentMutation.mutate({ id: agent.id, data: { isActive: !agent.isActive } })}
-                                className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${agent.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}
+                                onClick={() => handleEdit(agent)}
+                                title="Edit Agent Details"
+                                className="w-12 h-12 bg-white border border-[#E2E8F0] text-slate-400 rounded-xl flex items-center justify-center hover:border-blue-600 hover:text-blue-600 transition-all shadow-sm"
                               >
-                                 {agent.isActive ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
+                                 <Edit3 size={18} />
                               </button>
+
+                              {/* Terminate Button */}
                               <button 
-                                onClick={() => { if(confirm('Terminate agent?')) deleteAgentMutation.mutate(agent.id); }}
-                                className="w-12 h-12 bg-white border border-[#E2E8F0] text-slate-400 rounded-xl flex items-center justify-center hover:border-red-600 hover:text-red-600 transition-all shadow-sm"
+                                onClick={() => { if(confirm('Are you sure you want to disable this agent? This action cannot be easily undone.')) deleteAgentMutation.mutate(agent.id); }}
+                                title="Deactivate Agent"
+                                className="w-12 h-12 bg-white border border-[#E2E8F0] text-slate-400 rounded-xl flex items-center justify-center hover:border-red-600 hover:text-red-600 hover:bg-red-50 transition-all shadow-sm focus:outline-none"
                               >
-                                 <MoreHorizontal size={18} />
+                                 <UserX size={18} />
                               </button>
                            </div>
                         </td>
@@ -219,16 +274,22 @@ const AdminAgents = () => {
       <AnimatePresence>
          {isModalOpen && (
            <div className="fixed inset-0 z-50 flex items-center justify-center p-8">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#0F172A]/90 backdrop-blur-3xl" onClick={() => setIsModalOpen(false)}/>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#0F172A]/90 backdrop-blur-3xl" onClick={() => { setIsModalOpen(false); setEditAgentId(null); }}/>
               <motion.div initial={{ opacity: 0, scale: 0.95, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 30 }} className="relative w-full max-w-2xl bg-white rounded-[48px] shadow-2xl overflow-hidden p-16">
                  <div className="mb-12">
-                    <h2 className="text-4xl font-bold text-[#0F172A] tracking-tight uppercase">Add Agent</h2>
-                    <p className="text-sm font-medium text-slate-400 mt-2">Initialize a new organizational Agents</p>
+                    <h2 className="text-4xl font-bold text-[#0F172A] tracking-tight uppercase">{editAgentId ? 'Edit Agent' : 'Add Agent'}</h2>
+                    <p className="text-sm font-medium text-slate-400 mt-2">{editAgentId ? 'Update agent configuration' : 'Initialize a new organizational Agent'}</p>
                  </div>
 
                  <form onSubmit={(e) => {
                     e.preventDefault();
-                    createAgentMutation.mutate(formData);
+                    const payload = { ...formData };
+                    if (!payload.password) delete payload.password;
+                    if (editAgentId) {
+                      updateAgentMutation.mutate({ id: editAgentId, data: payload });
+                    } else {
+                      createAgentMutation.mutate(payload);
+                    }
                  }} className="space-y-8">
                     <div className="grid grid-cols-2 gap-8">
                        <div className="space-y-4">
@@ -250,7 +311,7 @@ const AdminAgents = () => {
                        <div className="space-y-4">
                           <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Password</label>
                           <input 
-                             type="password" required placeholder="Password Phrase"
+                             type="password" required={!editAgentId} placeholder={editAgentId ? "Leave blank to keep unchanged" : "Password Phrase"}
                              className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A]"
                              value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})}
                           />
@@ -277,12 +338,63 @@ const AdminAgents = () => {
                     </div>
 
                     <div className="flex gap-6 pt-10">
-                       <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-18 rounded-full bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all">Abort</button>
+                       <button type="button" onClick={() => { setIsModalOpen(false); setEditAgentId(null); }} className="flex-1 h-18 rounded-full bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all">Abort</button>
                        <button 
-                          type="submit" disabled={createAgentMutation.isPending}
+                          type="submit" disabled={editAgentId ? updateAgentMutation.isPending : createAgentMutation.isPending}
                           className="flex-3 h-18 rounded-full bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-4"
                        >
-                          {createAgentMutation.isPending ? 'DEPLOYING NODE...' : <>Initialize Agent <ArrowRight size={20}/></>}
+                          {editAgentId ? (updateAgentMutation.isPending ? 'UPDATING...' : <>Update Agent <ArrowRight size={20}/></>) 
+                                       : (createAgentMutation.isPending ? 'DEPLOYING NODE...' : <>Initialize Agent <ArrowRight size={20}/></>)}
+                       </button>
+                    </div>
+                 </form>
+              </motion.div>
+           </div>
+         )}
+      </AnimatePresence>
+
+      {/* INVITE AGENT MODAL */}
+      <AnimatePresence>
+         {isInviteModalOpen && (
+           <div className="fixed inset-0 z-50 flex items-center justify-center p-8">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#0F172A]/90 backdrop-blur-3xl" onClick={() => setIsInviteModalOpen(false)}/>
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 30 }} className="relative w-full max-w-xl bg-white rounded-[48px] shadow-2xl overflow-hidden p-16">
+                 <div className="mb-12">
+                    <h2 className="text-4xl font-bold text-[#0F172A] tracking-tight uppercase">Invite User</h2>
+                    <p className="text-sm font-medium text-slate-400 mt-2">Send an onboarding invitation link</p>
+                 </div>
+
+                 <form onSubmit={(e) => {
+                    e.preventDefault();
+                    inviteUserMutation.mutate({ email: formData.email, role: formData.role });
+                 }} className="space-y-8">
+                    <div className="space-y-4">
+                       <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Email Address</label>
+                       <input 
+                          type="email" required placeholder="name@company.com"
+                          className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A]"
+                          value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
+                       />
+                    </div>
+                    <div className="space-y-4">
+                       <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Role Configuration</label>
+                       <select 
+                          required 
+                          className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A] appearance-none"
+                          value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}
+                       >
+                          <option value="AGENT">Agent (Standard)</option>
+                          <option value="MANAGER">Manager (Elevated)</option>
+                       </select>
+                    </div>
+
+                    <div className="flex gap-6 pt-10">
+                       <button type="button" onClick={() => setIsInviteModalOpen(false)} className="flex-1 h-18 rounded-full bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all">Cancel</button>
+                       <button 
+                          type="submit" disabled={inviteUserMutation.isPending}
+                          className="flex-3 h-18 rounded-full bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-4"
+                       >
+                          {inviteUserMutation.isPending ? 'SENDING...' : <>Dispatch Invite <Mail size={20}/></>}
                        </button>
                     </div>
                  </form>

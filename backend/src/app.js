@@ -7,7 +7,10 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'https://advanced-crm-frontend.onrender.com',
+  credentials: true
+}));
 app.use(express.json());
 
 // Routes
@@ -33,23 +36,9 @@ app.use('/api/settings', settingsRoutes);
 const prisma = require('./config/prisma');
 
 // Health route with DB check
-app.get('/api/health', async (req, res) => {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    res.status(200).json({
-      status: 'success',
-      message: 'Backend server and Database are healthy',
-      database: 'Connected',
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      message: 'Backend server is up, but Database is DISCONNECTED',
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
+app.get('/api/health', (req, res) => {
+  console.log('Health check hit at:', new Date().toISOString());
+  res.status(200).json({ status: "OK" });
 });
 
 // Basic error handler
