@@ -23,9 +23,13 @@ const upload = require('../middleware/upload');
 
 // Lead Engine
 router.get('/leads', leadController.getLeads);
+router.get('/leads/:id', leadController.getLeadDetails);
 router.post('/leads', upload.single('image'), leadController.createLead);
+router.put('/leads/:id', leadController.updateLead);
+router.patch('/leads/:id/status', leadController.updateLeadStatus);
+router.patch('/leads/:id/assign', authorize('ADMIN', 'MANAGER'), leadController.assignLead);
+router.delete('/leads/:id', leadController.deleteLead);
 router.post('/leads/merge', leadController.mergeLeads);
-router.post('/leads/reassign', authorize('ADMIN', 'MANAGER'), leadController.reassignLead);
 
 // Task Orchestration
 router.get('/tasks', taskController.getTasks);
@@ -38,6 +42,6 @@ router.get('/invoices/:id/pdf', invoiceController.generatePDF);
 
 // Integrations & Bulk Operations
 router.get('/integrations', authorize('ADMIN'), integrationController.getIntegrations);
-router.post('/imports/csv', authorize('ADMIN', 'MANAGER'), integrationController.uploadCSV);
+router.post('/imports/csv', authorize('ADMIN', 'MANAGER'), upload.single('file'), integrationController.uploadCSV);
 
 module.exports = router;

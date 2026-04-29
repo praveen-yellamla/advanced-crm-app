@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import { ShieldCheck, ArrowRight, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const AcceptInvite = () => {
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
-  const emailFromUrl = searchParams.get('email');
+  const { token } = useParams();
   const navigate = useNavigate();
   
   const [loading, setLoading] = useState(true);

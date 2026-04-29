@@ -219,11 +219,16 @@ const acceptInvite = async (req, res) => {
       });
     }
 
-    // Ensure user doesn't already exist
+    // Check if user already exists (Allow if it's the shadow user created during invite)
     const existingUser = await prisma.user.findUnique({ where: { email: invite.email } });
+    
+    if (existingUser && existingUser.inviteStatus === 'ACCEPTED') {
+       console.log(`ACCEPT FAILED: User already exists and is active for email ${invite.email}`);
+       return res.status(400).json({ message: 'User with this email is already active' });
+    }
+
     if (existingUser) {
-       console.log(`ACCEPT FAILED: User already exists for email ${invite.email}`);
-       return res.status(400).json({ message: 'User with this email already exists' });
+      console.log(`[AUTH] Activating shadow user node for: ${invite.email}`);
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -234,16 +239,29 @@ const acceptInvite = async (req, res) => {
       imageUrl = await uploadToCloudinary(req.file.buffer);
     }
 
-    // Create agent
-    await prisma.user.create({
-      data: {
+    // Upsert agent (Update shadow user or create new if not found)
+    await prisma.user.upsert({
+      where: { email: invite.email },
+      update: {
+        name,
+        phone: phone.trim(),
+        password: hashedPassword,
+        profileImage: imageUrl,
+        role: invite.role,
+        isActive: true,
+        agentType: 'INVITED',
+        inviteStatus: 'ACCEPTED'
+      },
+      create: {
         name,
         email: invite.email,
         phone: phone.trim(),
         password: hashedPassword,
         profileImage: imageUrl,
         role: invite.role,
-        isActive: true
+        isActive: true,
+        agentType: 'INVITED',
+        inviteStatus: 'ACCEPTED'
       }
     });
 

@@ -85,6 +85,7 @@ const DashboardLayout = () => {
       { name: 'Teams', icon: Layers, path: '/admin/teams' },
       { name: 'Agents', icon: Users, path: '/admin/agents' },
       { name: 'Leads', icon: Target, path: '/admin/leads' },
+      { name: 'Lead Pipeline', icon: TrendingUp, path: '/admin/pipeline' },
       { name: 'Integrations', icon: Globe, path: '/admin/integrations' },
       { name: 'Bulk Import', icon: Zap, path: '/admin/import' },
       { name: 'Tasks', icon: ClipboardCheck, path: '/admin/tasks' },

@@ -25,7 +25,8 @@ import {
   EyeOff,
   Search,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -53,6 +54,24 @@ const AdminSettings = () => {
   const filteredCategories = CATEGORIES.filter(c => 
     c.label.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const integration = params.get('integration');
+    const status = params.get('status');
+
+    if (integration === 'google') {
+      if (status === 'success') {
+        toast.success('Google Ads Integration Established Successfully.');
+        setActiveCategory('ADS');
+      } else if (status === 'error') {
+        toast.error('Google Ads Integration Failed.');
+        setActiveCategory('ADS');
+      }
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   return (
     <div className="flex flex-col xl:flex-row gap-10 pb-24 min-h-screen">
@@ -141,6 +160,7 @@ const DynamicContent = ({ category }) => {
     case 'TELEPHONY': return <TelephonySettings />;
     case 'AI': return <AISettings />;
     case 'Billing': return <BillingSettings />;
+    case 'ADS': return <AdsSettings />;
     default: return <PlaceholderSettings category={category} />;
   }
 };
@@ -296,6 +316,153 @@ const BillingSettings = () => (
         </div>
     </div>
 );
+
+const AdsSettings = () => {
+  const queryClient = useQueryClient();
+  const { data: status, isLoading } = useQuery({
+    queryKey: ['googleStatus'],
+    queryFn: async () => {
+      const res = await api.get('/auth/google/status');
+      return res.data;
+    }
+  });
+
+  const disconnectMutation = useMutation({
+    mutationFn: () => api.delete('/auth/google/disconnect'),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['googleStatus']);
+      toast.success('Google Ads Protocol Disconnected.');
+    },
+    onError: () => toast.error('Termination Failed.')
+  });
+
+  const handleConnect = () => {
+    // Redirect to backend auth route
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;
+  };
+
+  const fetchLeadsMutation = useMutation({
+    mutationFn: () => api.get('/auth/google/fetch-leads'),
+    onSuccess: (res) => {
+      toast.success(`${res.data.inserted} leads imported from Google Ads!`);
+      queryClient.invalidateQueries(['leads']);
+    },
+    onError: () => toast.error('Failed to synchronize leads.')
+  });
+
+  if (isLoading) return <PlaceholderSettings category="Google Ads" />;
+
+  return (
+    <div className="space-y-12 relative z-10">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Ad Intelligence.</h3>
+          <p className="text-sm font-bold text-slate-400 mt-2">Connect external marketing engines to the CRM core.</p>
+        </div>
+        {status?.connected && (
+          <button 
+            onClick={() => fetchLeadsMutation.mutate()}
+            disabled={fetchLeadsMutation.isPending}
+            className="h-14 px-8 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:scale-105 transition-all flex items-center gap-3"
+          >
+            {fetchLeadsMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <Database size={16} />}
+            Fetch Google Leads
+          </button>
+        )}
+      </div>
+
+      <div className="p-12 bg-white border border-slate-100 rounded-[48px] shadow-sm space-y-10 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:rotate-12 transition-transform duration-1000">
+          <Globe size={120} />
+        </div>
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+                <Globe size={32} />
+              </div>
+              <div>
+                <h4 className="text-2xl font-black text-[#0F172A] tracking-tighter uppercase italic">Google Ads Integration</h4>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className={`w-2 h-2 rounded-full animate-pulse ${status?.connected ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'bg-rose-500'}`} />
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${status?.connected ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {status?.connected ? 'Protocol Active' : 'Offline / Not Connected'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {status?.connected && (
+              <div className="bg-slate-50 px-6 py-4 rounded-2xl border border-slate-100 flex items-center gap-4">
+                <Mail size={16} className="text-slate-400" />
+                <span className="text-xs font-black text-[#0F172A] uppercase tracking-wider">{status.email}</span>
+                <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[9px] font-black uppercase tracking-widest ml-auto">Verified Admin</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-4">
+            {!status?.connected ? (
+              <button 
+                onClick={handleConnect}
+                className="h-18 px-12 bg-[#0F172A] text-white rounded-[24px] font-black uppercase text-[11px] tracking-[0.2em] shadow-2xl hover:scale-105 transition-all flex items-center gap-4"
+              >
+                Establish Connection <Plus size={20} />
+              </button>
+            ) : (
+              <button 
+                onClick={() => {
+                  console.log('Attempting to disconnect Google...');
+                  if (window.confirm('Are you sure you want to terminate the Google Ads protocol? This will stop all real-time ingestion.')) {
+                    disconnectMutation.mutate();
+                  }
+                }}
+                disabled={disconnectMutation.isPending}
+                className="h-20 px-10 bg-rose-600 text-white rounded-[28px] font-black uppercase text-[11px] tracking-[0.2em] shadow-xl shadow-rose-500/20 hover:scale-105 transition-all flex items-center gap-4 relative z-50 cursor-pointer"
+              >
+                {disconnectMutation.isPending ? (
+                  <Loader2 className="animate-spin" size={20} />
+                ) : (
+                  <>
+                    <span className="whitespace-nowrap">Terminate Protocol</span>
+                    <Trash2 size={18} />
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="pt-8 border-t border-slate-50 grid grid-cols-1 md:grid-cols-2 gap-8">
+           <div className="flex gap-4 p-6 bg-slate-50/50 rounded-3xl border border-slate-50">
+              <CheckCircle2 className="text-emerald-500 mt-1" size={18} />
+              <div className="space-y-1">
+                 <p className="text-[11px] font-black text-[#0F172A] uppercase tracking-widest">Real-time Lead Ingestion</p>
+                 <p className="text-[10px] font-medium text-slate-400 leading-relaxed uppercase italic">Sync GCLID and UTM data directly into the CRM core.</p>
+              </div>
+           </div>
+           <div className="flex gap-4 p-6 bg-slate-50/50 rounded-3xl border border-slate-50">
+              <CheckCircle2 className="text-emerald-500 mt-1" size={18} />
+              <div className="space-y-1">
+                 <p className="text-[11px] font-black text-[#0F172A] uppercase tracking-widest">Conversion Tracking</p>
+                 <p className="text-[10px] font-medium text-slate-400 leading-relaxed uppercase italic">Push offline conversions back to Google Ads for optimization.</p>
+              </div>
+           </div>
+        </div>
+      </div>
+
+      <div className="bg-blue-600 p-10 rounded-[48px] shadow-2xl shadow-blue-500/20 text-white relative overflow-hidden">
+         <div className="absolute top-0 right-0 p-10 opacity-20"><BrainCircuit size={100} /></div>
+         <div className="relative z-10 space-y-4 max-w-lg">
+            <h4 className="text-3xl font-black tracking-tighter uppercase italic italic">Neural Ad Optimization</h4>
+            <p className="text-sm font-medium opacity-80 leading-relaxed uppercase tracking-widest">Leverage Cognitive Engine to analyze Google Ads keywords and automate lead score adjustments based on search intent.</p>
+            <button className="h-14 px-8 bg-white text-blue-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">Launch AI Audit</button>
+         </div>
+      </div>
+    </div>
+  );
+};
 
 const PlaceholderSettings = ({ category }) => (
     <div className="flex flex-col items-center justify-center h-[500px] text-center space-y-6">

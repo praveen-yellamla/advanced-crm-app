@@ -55,8 +55,23 @@ model User {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
+  // Agent Tracking (Refactor 2026-04-29)
+  agentType     AgentType? @default(MANUAL) @map("agent_type")
+  inviteStatus  AgentInviteStatus? @map("invite_status")
+
   @@index([email])
   @@map("users")
+}
+
+enum AgentType {
+  MANUAL
+  INVITED
+}
+
+enum AgentInviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
 }
 
 model Team {
@@ -104,8 +119,8 @@ model Company {
 model Lead {
   id              Int        @id @default(autoincrement())
   customerName    String     @map("customer_name")
-  email           String?
-  phone           String
+  email           String?    @unique
+  phone           String     @unique
   alternatePhone  String?    @map("alternate_phone")
   profileImage    String?    @map("profile_image")
   company         String?
@@ -146,6 +161,7 @@ model Lead {
   calls           Call[]
   emails          Email[]
   tasks           Task[]     @relation("LeadTasks")
+  activities      LeadActivity[]
   
   notes           String?    @db.Text
   
@@ -385,6 +401,7 @@ enum LeadStatus {
   NEW
   CONTACTED
   INTERESTED
+  QUALIFIED
   WON
   LOST
 }
@@ -434,11 +451,36 @@ enum InviteStatus {
 }
 
 model Invite {
-  id     Int          @id @default(autoincrement())
-  email  String       @unique
-  role   String
-  token  String       @unique
-  status InviteStatus @default(PENDING)
+  id        Int          @id @default(autoincrement())
+  email     String       @unique
+  role      String
+  token     String       @unique
+  status    InviteStatus @default(PENDING)
+  createdAt DateTime     @default(now())
 }
 
 
+model GoogleAccount {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  name           String?
+  accessToken    String   @map("access_token")
+  refreshToken   String   @map("refresh_token")
+  expiresAt      DateTime @map("expires_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("google_accounts")
+}
+
+model LeadActivity {
+  id        Int      @id @default(autoincrement())
+  leadId    Int      @map("lead_id")
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  action    String   // CREATE, UPDATE, STAGE_CHANGE, ASSIGNMENT
+  oldValue  String?  @map("old_value")
+  newValue  String?  @map("new_value")
+  userId    Int?     @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("lead_activities")
+}

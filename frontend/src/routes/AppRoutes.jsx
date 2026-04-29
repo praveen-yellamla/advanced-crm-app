@@ -14,6 +14,7 @@ import AdminDashboard from '../pages/admin/AdminDashboard';
 import AdminTeams from '../pages/admin/AdminTeams';
 import AdminAgents from '../pages/admin/AdminAgents';
 import LeadManagement from '../pages/admin/LeadManagement';
+import LeadPipeline from '../pages/admin/LeadPipeline';
 import SystemIntegrations from '../pages/admin/SystemIntegrations';
 import LeadImportWizard from '../pages/admin/LeadImportWizard';
 import UnifiedTasks from '../pages/admin/UnifiedTasks';
@@ -56,7 +57,7 @@ const AppRoutes = () => {
       <Route path="/select-portal" element={<PortalSelection />} />
       <Route path="/login/:portal" element={<Login />} />
       <Route path="/login" element={<Navigate to="/select-portal" replace />} />
-      <Route path="/accept-invite" element={<AcceptInvite />} />
+      <Route path="/accept-invite/:token" element={<AcceptInvite />} />
       
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
@@ -69,6 +70,7 @@ const AppRoutes = () => {
             <Route path="teams" element={<AdminTeams />} />
             <Route path="agents" element={<AdminAgents />} />
             <Route path="leads" element={<LeadManagement />} />
+            <Route path="pipeline" element={<LeadPipeline />} />
             <Route path="integrations" element={<SystemIntegrations />} />
             <Route path="import" element={<LeadImportWizard />} />
             <Route path="tasks" element={<UnifiedTasks />} />

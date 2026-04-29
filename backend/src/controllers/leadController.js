@@ -1,8 +1,5 @@
 const prisma = require('../config/prisma');
 
-// ==================================================
-// 1. UNIFIED LEAD FETCHING
-// ==================================================
 const getLeads = async (req, res) => {
   try {
     const { 
@@ -10,33 +7,65 @@ const getLeads = async (req, res) => {
       status, 
       source, 
       assignedTo, 
+      startDate,
+      endDate,
       page = 1, 
       limit = 20 
     } = req.query;
 
     const skip = (page - 1) * limit;
 
-    const where = {};
-    if (status) where.status = status;
-    if (source) where.source = source;
-    if (assignedTo) where.assignedToId = parseInt(assignedTo);
+    const andConditions = [];
+
+    if (status) andConditions.push({ status });
+    if (source) andConditions.push({ source });
     
-    if (search) {
-      where.OR = [
-        { customerName: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { company: { contains: search, mode: 'insensitive' } }
-      ];
+    if (startDate && endDate) {
+      andConditions.push({
+        createdAt: {
+          gte: new Date(startDate),
+          lte: new Date(endDate)
+        }
+      });
+    } else if (startDate) {
+      andConditions.push({ createdAt: { gte: new Date(startDate) } });
     }
 
-    // Role-based scoping
-    if (req.user.role === 'MANAGER') {
-       // Only leads assigned to their team
-       where.assignedTo = { teamId: req.user.teamId };
-    } else if (req.user.role === 'AGENT') {
-       where.assignedToId = req.user.id;
+    if (search) {
+      const searchInt = parseInt(search);
+      const searchOR = [
+        { customerName: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search } },
+        { email: { contains: search, mode: 'insensitive' } }
+      ];
+      if (!isNaN(searchInt)) {
+        searchOR.push({ id: searchInt });
+      }
+      andConditions.push({ OR: searchOR });
     }
+
+    // Role-based scoping (Standard CRM logic but allows unassigned for Pipeline transparency)
+    if (req.user.role === 'MANAGER' && !assignedTo) {
+       andConditions.push({
+         OR: [
+           { assignedTo: { teamId: req.user.teamId } },
+           { assignedToId: null }
+         ]
+       });
+    } else if (req.user.role === 'AGENT' && !assignedTo) {
+       andConditions.push({
+         OR: [
+           { assignedToId: req.user.id },
+           { assignedToId: null }
+         ]
+       });
+    }
+
+    if (assignedTo) {
+      andConditions.push({ assignedToId: parseInt(assignedTo) });
+    }
+
+    const where = andConditions.length > 0 ? { AND: andConditions } : {};
 
     const [leads, total] = await Promise.all([
       prisma.lead.findMany({
@@ -64,8 +93,24 @@ const getLeads = async (req, res) => {
   }
 };
 
+const createActivity = async (leadId, action, oldValue, newValue, userId) => {
+  try {
+    await prisma.leadActivity.create({
+      data: {
+        leadId,
+        action,
+        oldValue: oldValue ? String(oldValue) : null,
+        newValue: newValue ? String(newValue) : null,
+        userId
+      }
+    });
+  } catch (err) {
+    console.error('Activity logging failed:', err);
+  }
+};
+
 // ==================================================
-// 2. LEAD CREATION WITH DUPLICATE DETECTION
+// 2. LEAD CREATION WITH ACTIVITY TRACKING
 // ==================================================
 const { uploadToCloudinary } = require('../utils/cloudinary');
 
@@ -73,11 +118,11 @@ const createLead = async (req, res) => {
   try {
     const { phone, email, customerName, source, utmSource, utmMedium, utmCampaign } = req.body;
 
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: 'Profile image is required' });
+    // Check if image is present
+    let imageUrl = null;
+    if (req.file) {
+      imageUrl = await uploadToCloudinary(req.file.buffer);
     }
-
-    const imageUrl = await uploadToCloudinary(req.file.buffer);
 
     // Duplicate detection
     const existing = await prisma.lead.findFirst({
@@ -89,22 +134,21 @@ const createLead = async (req, res) => {
     if (existing) {
       return res.status(409).json({ 
         success: false, 
-        message: 'A lead with this phone/email already exists within the organizational ledger.',
+        message: 'A lead with this phone/email already exists.',
         duplicateOf: existing.id
       });
     }
 
     const lead = await prisma.lead.create({
       data: {
-        customerName, phone, email, source,
+        customerName, phone, email, source: source || 'WEBSITE',
         utmSource, utmMedium, utmCampaign,
         profileImage: imageUrl,
         status: 'NEW'
       }
     });
 
-    // Strategy: Trigger Smart Assignment Engine (Async)
-    // processAssignment(lead.id); 
+    await createActivity(lead.id, 'CREATE', null, 'Lead Created', req.user.id);
 
     res.status(201).json({ success: true, data: lead });
   } catch (error) {
@@ -112,37 +156,105 @@ const createLead = async (req, res) => {
   }
 };
 
-// ==================================================
-// 3. MERGE PROTOCOL
-// ==================================================
+const getLeadDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const lead = await prisma.lead.findUnique({
+      where: { id: parseInt(id) },
+      include: { 
+        assignedTo: { select: { id: true, name: true } },
+        activities: {
+          orderBy: { createdAt: 'desc' }
+        }
+      }
+    });
+    if (!lead) return res.status(404).json({ success: false, message: 'Lead not found' });
+    res.json({ success: true, data: lead });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const updateLead = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const oldLead = await prisma.lead.findUnique({ where: { id: parseInt(id) } });
+    
+    const lead = await prisma.lead.update({
+      where: { id: parseInt(id) },
+      data: req.body
+    });
+
+    if (req.body.assignedToId && req.body.assignedToId !== oldLead.assignedToId) {
+      await createActivity(lead.id, 'ASSIGNMENT', oldLead.assignedToId, req.body.assignedToId, req.user.id);
+    } else {
+      await createActivity(lead.id, 'UPDATE', JSON.stringify(oldLead), JSON.stringify(lead), req.user.id);
+    }
+
+    res.json({ success: true, data: lead });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const updateLeadStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const oldLead = await prisma.lead.findUnique({ where: { id: parseInt(id) } });
+    
+    const lead = await prisma.lead.update({
+      where: { id: parseInt(id) },
+      data: { status }
+    });
+
+    await createActivity(lead.id, 'STAGE_CHANGE', oldLead.status, status, req.user.id);
+
+    res.json({ success: true, data: lead });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const deleteLead = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.lead.delete({ where: { id: parseInt(id) } });
+    res.json({ success: true, message: 'Lead identity purged.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const mergeLeads = async (req, res) => {
   try {
     const { primaryId, secondaryId } = req.body;
-
-    // In a real production system, transfer communications/tasks
     await prisma.$transaction([
        prisma.call.updateMany({ where: { leadId: secondaryId }, data: { leadId: primaryId } }),
        prisma.task.updateMany({ where: { leadId: secondaryId }, data: { leadId: primaryId } }),
        prisma.email.updateMany({ where: { leadId: secondaryId }, data: { leadId: primaryId } }),
+       prisma.leadActivity.updateMany({ where: { leadId: secondaryId }, data: { leadId: primaryId } }),
        prisma.lead.delete({ where: { id: secondaryId } })
     ]);
-
     res.json({ success: true, message: 'Lead identity merged successfully.' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// ==================================================
-// 4. ASSIGNMENT OVERRIDE
-// ==================================================
-const reassignLead = async (req, res) => {
+const assignLead = async (req, res) => {
   try {
-    const { leadId, agentId } = req.body;
+    const { id } = req.params;
+    const { agentId } = req.body;
+    const oldLead = await prisma.lead.findUnique({ where: { id: parseInt(id) } });
+    
     const lead = await prisma.lead.update({
-      where: { id: parseInt(leadId) },
+      where: { id: parseInt(id) },
       data: { assignedToId: parseInt(agentId) }
     });
+
+    await createActivity(lead.id, 'ASSIGNMENT', oldLead.assignedToId, agentId, req.user.id);
+
     res.json({ success: true, data: lead });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -153,5 +265,9 @@ module.exports = {
   getLeads,
   createLead,
   mergeLeads,
-  reassignLead
+  updateLead,
+  updateLeadStatus,
+  deleteLead,
+  getLeadDetails,
+  assignLead
 };

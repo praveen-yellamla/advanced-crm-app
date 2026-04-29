@@ -7,10 +7,9 @@ dotenv.config();
 const app = express();
 
 // Middleware
-const allowedOrigins = [
-"http://localhost:5173",
-"https://advanced-crm-frontend.onrender.com"
-];
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',') 
+  : ["http://localhost:5173", "https://advanced-crm-frontend.onrender.com"];
 
 const corsOptions = {
 origin: function (origin, callback) {
@@ -39,6 +38,7 @@ const clientRoutes = require('./routes/clientRoutes');
 const coreRoutes = require('./routes/coreRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const googleRoutes = require('./routes/googleRoutes');
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
@@ -49,6 +49,7 @@ app.use('/api/client', clientRoutes);
 app.use('/api/core', coreRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/auth/google', googleRoutes);
 
 const prisma = require('./config/prisma');
 

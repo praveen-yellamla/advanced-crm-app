@@ -11,7 +11,8 @@ const getDashboardStats = async (req, res) => {
     const [
       totalLeads,
       todayLeads,
-      activeAgents,
+      manualAgents,
+      invitedAgents,
       callsToday,
       totalRevenue,
       leadsByStatus,
@@ -19,7 +20,20 @@ const getDashboardStats = async (req, res) => {
     ] = await Promise.all([
       prisma.lead.count(),
       prisma.lead.count({ where: { createdAt: { gte: today } } }),
-      prisma.user.count({ where: { role: 'AGENT', isActive: true } }),
+      prisma.user.count({ 
+        where: { 
+          role: 'AGENT', 
+          isActive: true,
+          OR: [
+            { agentType: 'MANUAL' },
+            { agentType: null }
+          ]
+        } 
+      }),
+      prisma.user.findMany({ 
+        where: { role: 'AGENT', agentType: 'INVITED' },
+        select: { inviteStatus: true }
+      }),
       prisma.call.count({ where: { createdAt: { gte: today } } }),
       prisma.invoice.aggregate({
         _sum: { amount: true },
@@ -35,13 +49,21 @@ const getDashboardStats = async (req, res) => {
       })
     ]);
 
+    const invitedTotal = invitedAgents.length;
+    const invitedJoined = invitedAgents.filter(a => a.inviteStatus === 'ACCEPTED').length;
+    const invitedPending = invitedAgents.filter(a => a.inviteStatus === 'PENDING').length;
+
     res.json({
       success: true,
       data: {
         cards: {
           totalLeads,
           todayLeads,
-          activeAgents,
+          activeAgents: manualAgents + invitedJoined, // Accurate Joined Count
+          manualAgents,
+          invitedTotal,
+          invitedJoined,
+          invitedPending,
           callsToday,
           revenueMTD: totalRevenue._sum.amount || 0,
           conversionRate: totalLeads > 0 ? ((leadsByStatus.find(l => l.status === 'WON')?._count || 0) / totalLeads) * 100 : 0
@@ -212,7 +234,9 @@ const createAgent = async (req, res) => {
         profileImage: imageUrl,
         role: 'AGENT',
         teamId: teamId ? parseInt(teamId) : null,
-        isActive: true
+        isActive: true,
+        agentType: 'MANUAL',
+        inviteStatus: 'ACCEPTED'
       }
     });
 
@@ -224,25 +248,48 @@ const createAgent = async (req, res) => {
 };
 
 const updateAgent = async (req, res) => {
+  console.log("Incoming update data for agent:", req.params.id, req.body);
   try {
     const { id } = req.params;
     const oldAgent = await prisma.user.findUnique({ where: { id: parseInt(id) } });
     
+    if (!oldAgent) {
+      return res.status(404).json({ success: false, message: "Agent not found" });
+    }
+
     const data = { ...req.body };
+    
+    // Handle nested data from FormData if necessary (strings to numbers)
+    if (data.teamId) data.teamId = parseInt(data.teamId);
+    
     if (data.password) {
       const salt = await bcrypt.genSalt(10);
       data.password = await bcrypt.hash(data.password, salt);
+    } else {
+      delete data.password; // Don't overwrite with empty string
     }
-    if (data.teamId) data.teamId = parseInt(data.teamId);
+
+    // Handle Image Update
+    if (req.file) {
+      console.log("Detected new image for agent, uploading...");
+      data.profileImage = await uploadToCloudinary(req.file.buffer);
+    }
 
     const agent = await prisma.user.update({
       where: { id: parseInt(id) },
       data
     });
 
+    console.log("AGENT UPDATED IN DB:", agent.name);
+
     await createAuditLog(req.user.id, 'UPDATE', 'AGENT', oldAgent, agent);
-    res.json({ success: true, data: agent });
+    res.json({ 
+      success: true, 
+      message: "Agent updated successfully",
+      data: agent 
+    });
   } catch (error) {
+    console.error("UPDATE AGENT ERROR:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

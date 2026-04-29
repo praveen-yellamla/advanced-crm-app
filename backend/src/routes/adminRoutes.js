@@ -18,7 +18,13 @@ const {
   createInvoice, 
   getCalls 
 } = require('../controllers/adminExtraController');
-const { inviteUser, getInvites, getInviteStats } = require('../controllers/inviteController');
+const { 
+  inviteUser, 
+  getInvites, 
+  getInviteStats, 
+  deleteInvite, 
+  bulkDeleteInvites 
+} = require('../controllers/inviteController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // All routes here are protected and require ADMIN role
@@ -42,7 +48,7 @@ router.route('/agents')
   .post(upload.single('image'), createAgent);
 
 router.route('/agents/:id')
-  .put(updateAgent)
+  .put(upload.single('image'), updateAgent)
   .delete(deleteAgent);
 
 router.get('/audit-logs', getAuditLogs);
@@ -51,9 +57,12 @@ router.get('/managers', getManagers);
 
 
 router.get('/invite-stats', getInviteStats);
+router.post('/invites/bulk-delete', bulkDeleteInvites);
 router.route('/invites')
   .get(getInvites)
   .post(inviteUser);
+
+router.delete('/invites/:id', deleteInvite);
 
 router.route('/invoices')
   .get(getInvoices)

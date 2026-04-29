@@ -17,16 +17,79 @@ import {
   Mail,
   Zap,
   Globe,
-  Database
+  Database,
+  Pencil,
+  Trash2,
+  Eye,
+  UserPlus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import LeadModal from '../../components/admin/LeadModal';
+import LeadDetailModal from '../../components/admin/LeadDetailModal';
+import AssignAgentModal from '../../components/admin/AssignAgentModal';
 
 const LeadManagement = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [activeSource, setActiveSource] = useState('ALL');
+  
+  // New UI States
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [selectedLeadId, setSelectedLeadId] = useState(null);
+  const [isAssignOpen, setIsAssignOpen] = useState(false);
+  const [assigningLeadId, setAssigningLeadId] = useState(null);
+  const [currentAgentId, setCurrentAgentId] = useState(null);
+
   const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => api.delete(`/core/leads/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['globalLeads']);
+      toast.success('Lead identity purged successfully');
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Purge failed')
+  });
+
+  const handleDelete = (id) => {
+    if (window.confirm('Are you sure you want to permanently delete this lead from the organizational ledger?')) {
+      deleteMutation.mutate(id);
+    }
+  };
+
+  const handleAssignClick = (lead) => {
+    setAssigningLeadId(lead.id);
+    setCurrentAgentId(lead.assignedToId);
+    setIsAssignOpen(true);
+  };
+
+  const handleViewDetails = (id) => {
+    setSelectedLeadId(id);
+    setIsDetailOpen(true);
+  };
+
+  const location = useLocation();
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('create') === 'true') {
+      setIsModalOpen(true);
+    }
+  }, [location.search]);
+
+  const handleEdit = (lead) => {
+    setSelectedLead(lead);
+    setIsModalOpen(true);
+  };
+
+  const handleCreate = () => {
+    setSelectedLead(null);
+    setIsModalOpen(true);
+  };
 
   const { data: leadResponse, isLoading } = useQuery({
     queryKey: ['globalLeads', page, search, activeSource],
@@ -44,15 +107,22 @@ const LeadManagement = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
            <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Lead Intelligence Engine</h1>
-           <p className="text-[#64748B] font-medium text-sm mt-1">Universal cross-channel lead ingestion & lifecycle management</p>
+           <p className="text-[#64748B] font-medium text-sm mt-1 italic uppercase tracking-widest">Universal cross-channel lead ingestion & lifecycle management</p>
         </div>
         <div className="flex gap-4">
-           <button className="h-14 px-8 bg-white border border-[#E2E8F0] text-[#0F172A] rounded-2xl font-bold text-xs shadow-sm hover:bg-slate-50 transition-all flex items-center gap-3">
-              <Download size={18} /> Export Results
-           </button>
-           <button className="h-14 px-8 bg-blue-600 text-white rounded-2xl font-bold text-xs shadow-xl shadow-blue-500/20 hover:scale-105 transition-all flex items-center gap-3">
-              <Plus size={20} /> Create Manual Lead
-           </button>
+            <button 
+              title="Download current lead list as CSV"
+              className="h-14 px-8 bg-white border border-[#E2E8F0] text-[#0F172A] rounded-2xl font-bold text-xs shadow-sm hover:bg-slate-50 transition-all flex items-center gap-3"
+            >
+               <Download size={18} /> Export Results
+            </button>
+            <button 
+              onClick={handleCreate}
+              title="Initialize new manual lead identity"
+              className="h-14 px-8 bg-blue-600 text-white rounded-2xl font-bold text-xs shadow-xl shadow-blue-500/20 hover:scale-105 transition-all flex items-center gap-3"
+            >
+               <Plus size={20} /> Create Lead
+            </button>
         </div>
       </div>
 
@@ -66,10 +136,10 @@ const LeadManagement = () => {
 
       {/* SEARCH/FILTERS */}
       <div className="flex flex-col xl:flex-row gap-6">
-         <div className="flex-1 relative group">
+         <div className="flex-1 relative group" title="Search leads by name, email, phone, or unique ID">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
             <input 
-               type="text" placeholder="Search by customer name, phone, email, or UTM parameters..." 
+               type="text" placeholder="Search by customer name, phone, email, or ID..." 
                className="w-full h-18 pl-16 pr-6 bg-white border border-[#E2E8F0] rounded-2xl focus:ring-[12px] focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-semibold text-[#0F172A] shadow-sm"
                value={search} onChange={e => setSearch(e.target.value)}
             />
@@ -83,7 +153,7 @@ const LeadManagement = () => {
                    activeSource === s ? 'bg-[#0F172A] text-white shadow-xl' : 'bg-white text-slate-400 border border-[#E2E8F0] hover:bg-slate-50'
                  }`}
                >
-                  {s.replace('_', ' ')}
+                  {s === 'ALL' ? 'All Sources' : s.replace('_', ' ')}
                </button>
             ))}
          </div>
@@ -99,7 +169,7 @@ const LeadManagement = () => {
                      <th className="px-10 py-8">Ingestion Source</th>
                      <th className="px-10 py-8">Marketing Attribution</th>
                      <th className="px-10 py-8">Ownership</th>
-                     <th className="px-10 py-8">Actions</th>
+                     <th className="px-10 py-8 text-right">Actions</th>
                   </tr>
                </thead>
                <tbody>
@@ -142,12 +212,34 @@ const LeadManagement = () => {
                           </div>
                        </td>
                        <td className="px-10 py-8">
-                          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                             <button className="w-12 h-12 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-blue-600 hover:text-blue-600 transition-all flex items-center justify-center">
-                                <Search size={18} />
+                          <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-4 group-hover:translate-x-0">
+                             <button 
+                                onClick={() => handleViewDetails(lead.id)}
+                                title="View Intelligence Details"
+                                className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-600 hover:text-indigo-600 transition-all flex items-center justify-center"
+                             >
+                                <Eye size={16} />
                              </button>
-                             <button className="w-12 h-12 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-violet-600 hover:text-violet-600 transition-all flex items-center justify-center">
-                                <Share2 size={18} />
+                             <button 
+                                onClick={() => handleAssignClick(lead)}
+                                title="Assign Agent Owner"
+                                className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-blue-600 hover:text-blue-600 transition-all flex items-center justify-center"
+                             >
+                                <UserPlus size={16} />
+                             </button>
+                             <button 
+                                onClick={() => handleEdit(lead)}
+                                title="Edit Lead Identity"
+                                className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-emerald-600 hover:text-emerald-600 transition-all flex items-center justify-center"
+                             >
+                                <Pencil size={16} />
+                             </button>
+                             <button 
+                                onClick={() => handleDelete(lead.id)}
+                                title="Purge Lead Identity"
+                                className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-rose-600 hover:text-rose-600 transition-all flex items-center justify-center"
+                             >
+                                <Trash2 size={16} />
                              </button>
                           </div>
                        </td>
@@ -157,6 +249,25 @@ const LeadManagement = () => {
             </table>
          </div>
       </div>
+
+      <LeadModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        lead={selectedLead} 
+      />
+
+      <LeadDetailModal
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        leadId={selectedLeadId}
+      />
+
+      <AssignAgentModal
+        isOpen={isAssignOpen}
+        onClose={() => setIsAssignOpen(false)}
+        leadId={assigningLeadId}
+        currentAgentId={currentAgentId}
+      />
     </div>
   );
 };
