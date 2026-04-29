@@ -179,16 +179,8 @@ const verifyInvite = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid invite link' });
     }
 
-    if (!['PENDING', 'SENT'].includes(invite.status)) {
-      return res.status(400).json({ success: false, message: 'This invite has already been accepted or expired' });
-    }
-
-    if (new Date() > invite.expiresAt) {
-      await prisma.invite.update({
-        where: { id: invite.id },
-        data: { status: 'EXPIRED' }
-      });
-      return res.status(400).json({ success: false, message: 'This invite link has expired' });
+    if (invite.status !== 'PENDING') {
+      return res.status(400).json({ success: false, message: 'This invite has already been accepted' });
     }
 
     res.json({ success: true, data: { email: invite.email, role: invite.role } });
@@ -220,19 +212,11 @@ const acceptInvite = async (req, res) => {
       where: { token }
     });
 
-    if (!invite || invite.status !== "SENT") {
+    if (!invite || invite.status !== "PENDING") {
       console.log("ACCEPT FAILED: Invalid or non-active invite");
       return res.status(400).json({
-        message: "Invalid or expired invite"
+        message: "Invalid or already used invite"
       });
-    }
-
-    if (new Date() > invite.expiresAt) {
-      await prisma.invite.update({
-        where: { token },
-        data: { status: 'EXPIRED' }
-      });
-      return res.status(400).json({ message: "Invite link has expired" });
     }
 
     // Ensure user doesn't already exist
@@ -267,8 +251,7 @@ const acceptInvite = async (req, res) => {
     await prisma.invite.update({
       where: { token },
       data: {
-        status: "JOINED",
-        acceptedAt: new Date()
+        status: "JOINED"
       }
     });
 

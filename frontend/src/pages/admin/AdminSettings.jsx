@@ -34,7 +34,6 @@ const CATEGORIES = [
   { id: 'COMPANY', label: 'Company Profile', icon: Building2 },
   { id: 'USERS', label: 'User & Role Mgmt', icon: Users },
   { id: 'TELEPHONY', label: 'Telephony', icon: PhoneCall },
-  { id: 'EMAIL', label: 'Mail Infrastructure', icon: Mail },
   { id: 'ADS', label: 'Ad Intelligence', icon: Globe },
   { id: 'WEBHOOKS', label: 'Webhooks & APIs', icon: Database },
   { id: 'Billing', label: 'Fiscal Protocol', icon: CreditCard },

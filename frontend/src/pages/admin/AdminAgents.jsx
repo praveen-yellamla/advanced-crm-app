@@ -31,6 +31,7 @@ const AdminAgents = () => {
   const [editAgentId, setEditAgentId] = useState(null);
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [search, setSearch] = useState('');
+  const [generatedInviteLink, setGeneratedInviteLink] = useState('');
   const queryClient = useQueryClient();
 
   const handleEdit = (agent) => {
@@ -118,14 +119,14 @@ const AdminAgents = () => {
 
   const inviteUserMutation = useMutation({
     mutationFn: (data) => api.post('/admin/invites', data),
-    onSuccess: () => {
-      toast.success('Invitation Sent Successfully');
-      setIsInviteModalOpen(false);
+    onSuccess: (res) => {
+      setGeneratedInviteLink(res.data.inviteLink);
+      toast.success('Invite link generated');
       setFormData({ name: '', email: '', password: '', phone: '', teamId: '', role: 'AGENT' });
       queryClient.invalidateQueries(['adminInvites']);
       queryClient.invalidateQueries(['inviteStats']);
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to send invite')
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to generate invite')
   });
 
   const combinedList = [
@@ -136,9 +137,8 @@ const AdminAgents = () => {
     })) || []),
     ...(invites?.filter(i => i.status !== 'JOINED').map(i => ({ 
         id: `invite-${i.id}`, 
-        name: 'Invitation Sent', 
+        name: 'Invite Generated', 
         email: i.email, 
-        phone: i.phone,
         role: i.role,
         type: 'INVITE',
         status: i.status
@@ -167,10 +167,13 @@ const AdminAgents = () => {
         </div>
         <div className="flex gap-4">
            <button 
-             onClick={() => setIsInviteModalOpen(true)}
+             onClick={() => {
+               setGeneratedInviteLink('');
+               setIsInviteModalOpen(true);
+             }}
              className="h-14 px-8 bg-white border border-[#E2E8F0] rounded-3xl flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#0F172A] shadow-sm hover:bg-slate-50 transition-all"
            >
-              <Mail size={18} /> Invite by Email
+              <Key size={18} /> Invite User
            </button>
            <button 
              onClick={() => {
@@ -279,7 +282,7 @@ const AdminAgents = () => {
                        <td className="px-10 py-8">
                           {agent.type === 'INVITE' ? (
                             <div className="flex items-center gap-3 text-amber-600 font-bold italic">
-                               <Mail size={16} />
+                               <Key size={16} />
                                <span className="text-[10px] font-black uppercase tracking-widest">{agent.status}</span>
                             </div>
                           ) : agent.isActive ? (
@@ -446,59 +449,91 @@ const AdminAgents = () => {
            <div className="fixed inset-0 z-50 flex items-center justify-center p-8">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#0F172A]/90 backdrop-blur-3xl" onClick={() => setIsInviteModalOpen(false)}/>
               <motion.div initial={{ opacity: 0, scale: 0.95, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 30 }} className="relative w-full max-w-xl bg-white rounded-[48px] shadow-2xl overflow-hidden p-16">
-                 <div className="mb-12">
-                    <h2 className="text-4xl font-bold text-[#0F172A] tracking-tight uppercase">Invite User</h2>
-                    <p className="text-sm font-medium text-slate-400 mt-2">Send an onboarding invitation link</p>
-                 </div>
- 
-                 <form onSubmit={(e) => {
-                    e.preventDefault();
-                    inviteUserMutation.mutate({ 
-                       email: formData.email.trim(), 
-                       phone: formData.phone ? formData.phone.trim() : null, 
-                       role: "AGENT" 
-                    });
-                 }} className="space-y-8">
-                    <div className="space-y-4">
-                       <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Email Address</label>
-                       <input 
-                          type="email" required placeholder="name@company.com"
-                          className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A]"
-                          value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
-                       />
-                    </div>
-                    
-                    <div className="space-y-4">
-                       <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Phone Number (Optional)</label>
-                       <input 
-                          type="text" placeholder="+1 (555) 000-0000"
-                          className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A]"
-                          value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
-                       />
-                    </div>
+                 {generatedInviteLink ? (
+                   <div className="space-y-10">
+                      <div className="text-center">
+                         <div className="w-20 h-20 bg-emerald-50 rounded-3xl flex items-center justify-center mx-auto mb-6 transform rotate-6 border-4 border-white shadow-xl">
+                            <CheckCircle2 className="text-emerald-500" size={32} />
+                         </div>
+                         <h2 className="text-3xl font-black text-[#0F172A] uppercase tracking-tight">Invite Created</h2>
+                         <p className="text-slate-400 font-medium mt-2 italic">Share this secure link with the candidate</p>
+                      </div>
 
-                    <div className="space-y-4">
-                       <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Role Configuration</label>
-                       <select 
-                          required 
-                          className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A] appearance-none"
-                          value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}
-                       >
-                          <option value="AGENT">Agent (Standard)</option>
-                          <option value="MANAGER">Manager (Elevated)</option>
-                       </select>
-                    </div>
- 
-                    <div className="flex gap-6 pt-10">
-                       <button type="button" onClick={() => setIsInviteModalOpen(false)} className="flex-1 h-18 rounded-full bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all">Cancel</button>
-                       <button 
-                          type="submit" disabled={inviteUserMutation.isPending}
-                          className="flex-3 h-18 rounded-full bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-4"
-                       >
-                          {inviteUserMutation.isPending ? 'SENDING...' : <>Dispatch Invite <Mail size={20}/></>}
-                       </button>
-                    </div>
-                 </form>
+                      <div className="p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[32px] relative group">
+                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-2">Secure Link</p>
+                         <div className="bg-white p-4 rounded-2xl border border-slate-200 font-mono text-xs text-blue-600 break-all select-all">
+                            {generatedInviteLink}
+                         </div>
+                      </div>
+
+                      <div className="flex gap-4">
+                         <button 
+                            onClick={() => {
+                               navigator.clipboard.writeText(generatedInviteLink);
+                               toast.success('Link copied to clipboard');
+                            }}
+                            className="flex-1 h-18 rounded-full bg-[#0F172A] text-white font-black uppercase tracking-widest text-[11px] shadow-2xl hover:scale-[1.02] transition-all flex items-center justify-center gap-4"
+                         >
+                            <FileUp size={18} /> Copy Link
+                         </button>
+                         <button 
+                            onClick={() => {
+                               setIsInviteModalOpen(false);
+                               setGeneratedInviteLink('');
+                            }}
+                            className="h-18 px-10 rounded-full bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all"
+                         >
+                            Done
+                         </button>
+                      </div>
+                   </div>
+                 ) : (
+                   <>
+                     <div className="mb-12">
+                        <h2 className="text-4xl font-bold text-[#0F172A] tracking-tight uppercase">Invite User</h2>
+                        <p className="text-sm font-medium text-slate-400 mt-2">Generate a secure onboarding link</p>
+                     </div>
+  
+                     <form onSubmit={(e) => {
+                        e.preventDefault();
+                        inviteUserMutation.mutate({ 
+                           email: formData.email.trim(), 
+                           role: formData.role 
+                        });
+                     }} className="space-y-8">
+                        <div className="space-y-4">
+                           <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Email Address</label>
+                           <input 
+                              type="email" required placeholder="name@company.com"
+                              className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A]"
+                              value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
+                           />
+                        </div>
+
+                        <div className="space-y-4">
+                           <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Role Configuration</label>
+                           <select 
+                              required 
+                              className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A] appearance-none"
+                              value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}
+                           >
+                              <option value="AGENT">Agent (Standard)</option>
+                              <option value="MANAGER">Manager (Elevated)</option>
+                           </select>
+                        </div>
+  
+                        <div className="flex gap-6 pt-10">
+                           <button type="button" onClick={() => setIsInviteModalOpen(false)} className="flex-1 h-18 rounded-full bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all">Cancel</button>
+                           <button 
+                              type="submit" disabled={inviteUserMutation.isPending}
+                              className="flex-3 h-18 rounded-full bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-4"
+                           >
+                              {inviteUserMutation.isPending ? 'GENERATING...' : <>Generate Link <ArrowRight size={20}/></>}
+                           </button>
+                        </div>
+                     </form>
+                   </>
+                 )}
               </motion.div>
            </div>
          )}

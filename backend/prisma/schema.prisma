@@ -430,22 +430,15 @@ model SystemSetting {
 
 enum InviteStatus {
   PENDING
-  SENT
   JOINED
-  FAILED
-  EXPIRED
 }
 
 model Invite {
-  id         Int          @id @default(autoincrement())
-  email      String       @unique
-  phone      String?
-  role       String
-  token      String       @unique
-  status     InviteStatus @default(PENDING)
-  expiresAt  DateTime
-  sentAt     DateTime?
-  acceptedAt DateTime?
-  createdAt  DateTime     @default(now())
+  id     Int          @id @default(autoincrement())
+  email  String       @unique
+  role   String
+  token  String       @unique
+  status InviteStatus @default(PENDING)
 }
+
 
