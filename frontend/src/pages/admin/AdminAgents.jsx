@@ -129,15 +129,19 @@ const AdminAgents = () => {
   });
 
   const combinedList = [
-    ...(agents?.map(a => ({ ...a, type: 'USER', status: a.isActive ? 'Active' : 'Joined' })) || []),
-    ...(invites?.filter(i => i.status !== 'ACCEPTED').map(i => ({ 
+    ...(agents?.map(a => ({ 
+        ...a, 
+        type: 'USER', 
+        displayStatus: a.isActive ? 'Active' : 'Suspended' 
+    })) || []),
+    ...(invites?.filter(i => i.status !== 'JOINED').map(i => ({ 
         id: `invite-${i.id}`, 
-        name: 'Pending User', 
+        name: 'Invitation Sent', 
         email: i.email, 
         phone: i.phone,
         role: i.role,
         type: 'INVITE',
-        status: 'Pending'
+        status: i.status
     })) || [])
   ];
 
@@ -146,11 +150,12 @@ const AdminAgents = () => {
                          a.email.toLowerCase().includes(search.toLowerCase());
     
     if (filterStatus === 'ALL') return matchesSearch;
-    if (filterStatus === 'ACCEPTED') return matchesSearch && a.type === 'USER';
-    if (filterStatus === 'PENDING') return matchesSearch && a.type === 'INVITE';
+    if (filterStatus === 'JOINED') return matchesSearch && a.type === 'USER';
+    if (filterStatus === 'INVITED') return matchesSearch && a.type === 'INVITE';
     
     return matchesSearch;
   });
+
 
   return (
     <div className="space-y-10 pb-16">
@@ -200,18 +205,18 @@ const AdminAgents = () => {
                <p className="text-xl font-black text-[#0F172A]">{inviteStats?.total || 0}</p>
             </button>
             <button 
-               onClick={() => setFilterStatus('ACCEPTED')}
-               className={`px-8 bg-white border rounded-3xl flex flex-col justify-center min-w-[140px] shadow-sm transition-all text-left ${filterStatus === 'ACCEPTED' ? 'border-emerald-500 ring-4 ring-emerald-500/5' : 'border-[#E2E8F0] hover:border-emerald-200'}`}
+               onClick={() => setFilterStatus('JOINED')}
+               className={`px-8 bg-white border rounded-3xl flex flex-col justify-center min-w-[140px] shadow-sm transition-all text-left ${filterStatus === 'JOINED' ? 'border-emerald-500 ring-4 ring-emerald-500/5' : 'border-[#E2E8F0] hover:border-emerald-200'}`}
             >
                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Joined</p>
-               <p className="text-xl font-black text-[#0F172A]">{inviteStats?.accepted || 0}</p>
+               <p className="text-xl font-black text-[#0F172A]">{inviteStats?.joined || 0}</p>
             </button>
             <button 
-               onClick={() => setFilterStatus('PENDING')}
-               className={`px-8 bg-white border rounded-3xl flex flex-col justify-center min-w-[140px] shadow-sm transition-all text-left ${filterStatus === 'PENDING' ? 'border-amber-500 ring-4 ring-amber-500/5' : 'border-[#E2E8F0] hover:border-amber-200'}`}
+               onClick={() => setFilterStatus('INVITED')}
+               className={`px-8 bg-white border rounded-3xl flex flex-col justify-center min-w-[140px] shadow-sm transition-all text-left ${filterStatus === 'INVITED' ? 'border-amber-500 ring-4 ring-amber-500/5' : 'border-[#E2E8F0] hover:border-amber-200'}`}
             >
-               <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Pending</p>
-               <p className="text-xl font-black text-[#0F172A]">{inviteStats?.pending || 0}</p>
+               <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Invited</p>
+               <p className="text-xl font-black text-[#0F172A]">{inviteStats?.sent || 0}</p>
             </button>
          </div>
       </div>
@@ -275,7 +280,7 @@ const AdminAgents = () => {
                           {agent.type === 'INVITE' ? (
                             <div className="flex items-center gap-3 text-amber-600 font-bold italic">
                                <Mail size={16} />
-                               <span className="text-[10px] font-black uppercase tracking-widest">Pending</span>
+                               <span className="text-[10px] font-black uppercase tracking-widest">{agent.status}</span>
                             </div>
                           ) : agent.isActive ? (
                             <div className="flex items-center gap-3 text-emerald-600 font-bold italic">
@@ -285,7 +290,7 @@ const AdminAgents = () => {
                           ) : (
                             <div className="flex items-center gap-3 text-slate-300 font-bold italic">
                                <XCircle size={16} />
-                               <span className="text-[10px] font-black uppercase tracking-widest">Deactivated</span>
+                               <span className="text-[10px] font-black uppercase tracking-widest">Suspended</span>
                             </div>
                           )}
                        </td>

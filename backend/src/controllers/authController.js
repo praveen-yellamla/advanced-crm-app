@@ -220,11 +220,19 @@ const acceptInvite = async (req, res) => {
       where: { token }
     });
 
-    if (!invite || invite.status !== "PENDING") {
-      console.log("ACCEPT FAILED: Invalid or non-pending invite");
+    if (!invite || invite.status !== "SENT") {
+      console.log("ACCEPT FAILED: Invalid or non-active invite");
       return res.status(400).json({
         message: "Invalid or expired invite"
       });
+    }
+
+    if (new Date() > invite.expiresAt) {
+      await prisma.invite.update({
+        where: { token },
+        data: { status: 'EXPIRED' }
+      });
+      return res.status(400).json({ message: "Invite link has expired" });
     }
 
     // Ensure user doesn't already exist
@@ -255,11 +263,11 @@ const acceptInvite = async (req, res) => {
       }
     });
 
-    // Update invite
+    // Update invite status to JOINED
     await prisma.invite.update({
       where: { token },
       data: {
-        status: "ACCEPTED",
+        status: "JOINED",
         acceptedAt: new Date()
       }
     });
