@@ -207,53 +207,69 @@ const { uploadToCloudinary } = require('../utils/cloudinary');
 const acceptInvite = async (req, res) => {
   try {
     const { token, name, password } = req.body;
-    
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: 'Profile image is required' });
+
+    if (!token || !name || !password) {
+      return res.status(400).json({
+        error: "All fields required"
+      });
     }
 
     const invite = await prisma.invite.findUnique({
       where: { token }
     });
 
-    if (!invite || !['PENDING', 'SENT'].includes(invite.status) || new Date() > invite.expiresAt) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired invite link' });
+    if (!invite || invite.status !== "PENDING") {
+      return res.status(400).json({
+        error: "Invalid or expired invite"
+      });
     }
 
-    const imageUrl = await uploadToCloudinary(req.file.buffer);
-
-    // Ensure user doesn't already exist somehow
+    // Ensure user doesn't already exist
     const existingUser = await prisma.user.findUnique({ where: { email: invite.email } });
     if (existingUser) {
-       return res.status(400).json({ success: false, message: 'User with this email already exists' });
+       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    let imageUrl = null;
+    if (req.file) {
+      imageUrl = await uploadToCloudinary(req.file.buffer);
+    }
+
+    // Create agent
     await prisma.user.create({
       data: {
         name,
         email: invite.email,
         phone: invite.phone,
-        profileImage: imageUrl,
         password: hashedPassword,
+        profileImage: imageUrl,
         role: invite.role,
         isActive: true
       }
     });
 
+    // Update invite
     await prisma.invite.update({
-      where: { id: invite.id },
-      data: { 
-        status: 'ACCEPTED',
+      where: { token },
+      data: {
+        status: "ACCEPTED",
         acceptedAt: new Date()
       }
     });
 
-    res.json({ success: true, message: 'Account created successfully' });
+    return res.json({
+      success: true,
+      message: "Account created successfully"
+    });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("ACCEPT ERROR:", error);
+    return res.status(500).json({
+      error: "Failed to register user"
+    });
   }
 };
 

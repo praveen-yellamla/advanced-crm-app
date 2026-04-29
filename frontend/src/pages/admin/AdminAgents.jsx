@@ -448,7 +448,11 @@ const AdminAgents = () => {
  
                  <form onSubmit={(e) => {
                     e.preventDefault();
-                    inviteUserMutation.mutate({ email: formData.email, role: formData.role, phone: formData.phone });
+                    inviteUserMutation.mutate({ 
+                       email: formData.email.trim(), 
+                       phone: formData.phone ? formData.phone.trim() : null, 
+                       role: formData.role 
+                    });
                  }} className="space-y-8">
                     <div className="space-y-4">
                        <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Email Address</label>

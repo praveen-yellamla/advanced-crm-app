@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
 
 const sendInviteEmail = async (email, inviteLink) => {
   try {
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
       subject: "You're invited to CRM",
@@ -22,12 +22,9 @@ const sendInviteEmail = async (email, inviteLink) => {
       `,
     });
 
-    console.log("SUCCESS EMAIL:", info);
-    return true;
-
   } catch (error) {
-    console.error("EMAIL ERROR FULL:", error);
-    throw new Error(error.message);
+    console.error("EMAIL ERROR:", error);
+    throw error;
   }
 };
 
