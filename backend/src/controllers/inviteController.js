@@ -51,6 +51,7 @@ const inviteUser = async (req, res) => {
 
     // 5. TRY sending email FIRST
     try {
+      console.log("Sending email to:", email);
       await sendInviteEmail(email, inviteLink);
       console.log(`INVITE EMAIL SENT SUCCESS: ${email}`);
     } catch (emailError) {
