@@ -215,7 +215,7 @@ const AdminAgents = () => {
              }}
              className="h-14 px-8 bg-white border border-[#E2E8F0] rounded-3xl flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#0F172A] shadow-sm hover:bg-slate-50 transition-all"
            >
-              <Key size={18} /> Invite Node
+              <Mail size={18} /> Invite Agent
            </button>
            <button 
              onClick={() => {
@@ -545,8 +545,8 @@ const AdminAgents = () => {
                  ) : (
                     <>
                         <div className="mb-12">
-                           <h2 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase">Invite New Node</h2>
-                           <p className="text-xs font-bold text-slate-400 mt-2 uppercase tracking-widest italic">Asynchronous onboarding pipeline via SMTP</p>
+                           <h2 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase">Invite Agent</h2>
+                           <p className="text-xs font-bold text-slate-400 mt-2 uppercase tracking-widest italic">Send an email invitation to a new agent</p>
                         </div>
                         <form onSubmit={(e) => {
                            e.preventDefault();
@@ -557,7 +557,7 @@ const AdminAgents = () => {
                            });
                         }} className="space-y-6">
                            <div className="space-y-3">
-                              <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Candidate Name</label>
+                              <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Agent Name</label>
                               <input 
                                  type="text" required placeholder="Full Name"
                                  className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl focus:border-blue-600 focus:ring-8 focus:ring-blue-600/5 transition-all outline-none font-bold"
@@ -565,15 +565,15 @@ const AdminAgents = () => {
                               />
                            </div>
                            <div className="space-y-3">
-                              <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Candidate Email</label>
+                              <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Agent Email</label>
                               <input 
-                                 type="email" required placeholder="candidate@company.com"
+                                 type="email" required placeholder="name@example.com"
                                  className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl focus:border-blue-600 focus:ring-8 focus:ring-blue-600/5 transition-all outline-none font-bold"
                                  value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
                               />
                            </div>
                            <div className="space-y-3">
-                              <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Designated Role</label>
+                              <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Role</label>
                               <select 
                                  required className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl focus:border-blue-600 focus:ring-8 focus:ring-blue-600/5 transition-all outline-none font-bold appearance-none"
                                  value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}
@@ -583,13 +583,13 @@ const AdminAgents = () => {
                               </select>
                            </div>
                            <div className="flex gap-4 pt-8">
-                              <button type="button" onClick={() => setIsInviteModalOpen(false)} className="flex-1 h-18 rounded-full bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px]">Abort</button>
+                              <button type="button" onClick={() => setIsInviteModalOpen(false)} className="flex-1 h-18 rounded-full bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px]">Cancel</button>
                               <button 
                                 type="submit" 
                                 disabled={inviteUserMutation.isPending}
                                 className="flex-2 h-18 rounded-full bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 disabled:opacity-50"
                               >
-                                 {inviteUserMutation.isPending ? 'DISPATCHING...' : 'Dispatch Invite'}
+                                 {inviteUserMutation.isPending ? 'SENDING...' : 'Send Invite'}
                               </button>
                            </div>
                         </form>

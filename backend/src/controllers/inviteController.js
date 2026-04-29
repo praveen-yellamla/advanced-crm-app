@@ -1,17 +1,18 @@
+const { v4: uuidv4 } = require('uuid');
 const prisma = require('../config/prisma');
 const sendInviteEmail = require('../utils/emailService');
 const getFrontendUrl = require('../utils/getFrontendUrl');
 
 const inviteUser = async (req, res) => {
   try {
-    const { email, role, name } = req.body;
+    const { name, email, role } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+    if (!email || !name) {
+      return res.status(400).json({ message: "Name and Email are required" });
     }
 
-    // Generate unique invite token
-    const token = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+    // Generate unique invite token (UUID)
+    const token = uuidv4();
 
     // Save or Update invite in DB
     const invite = await prisma.invite.upsert({
@@ -30,40 +31,34 @@ const inviteUser = async (req, res) => {
       }
     });
 
-    // Resolve dynamic frontend URL
-    const frontendUrl = getFrontendUrl(req);
+    // Resolve environment-based frontend URL
+    const frontendUrl = getFrontendUrl();
     const inviteLink = `${frontendUrl}/accept-invite/${token}`;
 
-    console.log(`[INVITE] Node sequence initiated for ${email}`);
-    console.log("[INVITE] Secure Link generated:", inviteLink);
+    console.log(`[INVITE] Generating link for ${invite.email}: ${inviteLink}`);
 
-    // 🔥 Send Production Email
-    const emailSent = await sendInviteEmail(invite.email, inviteLink, name || "Agent");
+    // Send Email
+    const emailSent = await sendInviteEmail(invite.email, inviteLink, name, invite.role);
 
     if (!emailSent) {
-       console.error("[SMTP FAILURE] Message delivery aborted.");
-       // We still keep the invite in DB so it can be manually shared if needed
-       return res.status(500).json({ 
-         success: false, 
-         message: "Email protocol failure. SMTP credentials might be missing.",
-         inviteLink 
-       });
+      return res.status(500).json({ message: "Failed to send email. Check SMTP settings." });
     }
 
-    // Also create a "Shadow User" for tracking in Agent list
-    if (invite.role === 'AGENT') {
+    // Upsert shadow user for visibility in Agent List
+    if (invite.role !== 'CLIENT') {
       await prisma.user.upsert({
         where: { email: invite.email },
         update: {
+          name,
           agentType: 'INVITED',
           inviteStatus: 'PENDING',
           isActive: false
         },
         create: {
-          name: name || 'Invited Agent',
+          name,
           email: invite.email,
-          password: 'PENDING_INVITE_' + Math.random(),
-          role: 'AGENT',
+          password: 'PENDING_INVITE_' + uuidv4(),
+          role: invite.role,
           agentType: 'INVITED',
           inviteStatus: 'PENDING',
           isActive: false
@@ -71,15 +66,15 @@ const inviteUser = async (req, res) => {
       });
     }
 
-    return res.json({
-      success: true,
-      message: "Security invite dispatched successfully via SMTP.",
+    return res.json({ 
+      success: true, 
+      message: "Invite sent successfully",
       inviteLink 
     });
 
   } catch (error) {
-    console.error("[CRITICAL] Invite sequence failure:", error);
-    return res.status(500).json({ message: "System failure during invite generation." });
+    console.error("Invite Error:", error);
+    return res.status(500).json({ message: "Internal server error during invite generation" });
   }
 };
 

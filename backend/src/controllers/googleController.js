@@ -75,10 +75,10 @@ const googleCallback = async (req, res) => {
       }
     });
 
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5174'}/admin/settings?integration=google&status=success`);
+    res.redirect(`${process.env.FRONTEND_URL}/admin/settings?integration=google&status=success`);
   } catch (error) {
     console.error('Google OAuth Error:', error.response?.data || error.message);
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5174'}/admin/settings?integration=google&status=error`);
+    res.redirect(`${process.env.FRONTEND_URL}/admin/settings?integration=google&status=error`);
   }
 };
 

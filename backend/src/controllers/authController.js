@@ -199,12 +199,11 @@ const { uploadToCloudinary } = require('../utils/cloudinary');
 const acceptInvite = async (req, res) => {
   console.log("ACCEPT INVITE BODY RECEIVED:", req.body);
   try {
-    const { token, name, password, phone } = req.body;
+    const { token, password, name: nameFromRequest, phone } = req.body;
 
-    if (!token || !name || !password || !phone) {
-      console.log("ACCEPT FAILED: Missing fields");
+    if (!token || !password) {
       return res.status(400).json({
-        message: "All fields required (name, password, phone)"
+        message: "Token and Password are required"
       });
     }
 
@@ -239,12 +238,15 @@ const acceptInvite = async (req, res) => {
       imageUrl = await uploadToCloudinary(req.file.buffer);
     }
 
+    const finalName = nameFromRequest || existingUser?.name || 'Agent';
+    const finalPhone = phone ? phone.trim() : existingUser?.phone || null;
+
     // Upsert agent (Update shadow user or create new if not found)
     await prisma.user.upsert({
       where: { email: invite.email },
       update: {
-        name,
-        phone: phone.trim(),
+        name: finalName,
+        phone: finalPhone,
         password: hashedPassword,
         profileImage: imageUrl,
         role: invite.role,
@@ -253,9 +255,9 @@ const acceptInvite = async (req, res) => {
         inviteStatus: 'ACCEPTED'
       },
       create: {
-        name,
+        name: finalName,
         email: invite.email,
-        phone: phone.trim(),
+        phone: finalPhone,
         password: hashedPassword,
         profileImage: imageUrl,
         role: invite.role,
@@ -273,7 +275,7 @@ const acceptInvite = async (req, res) => {
       }
     });
 
-    console.log(`ACCEPT SUCCESS: User ${name} registered`);
+    console.log(`ACCEPT SUCCESS: User ${finalName} registered`);
     return res.json({
       success: true,
       message: "Account created successfully"

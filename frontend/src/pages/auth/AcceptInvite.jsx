@@ -24,7 +24,7 @@ const AcceptInvite = () => {
   useEffect(() => {
     const verifyToken = async () => {
       try {
-        const res = await api.get(`/auth/invite/${token}`);
+        const res = await api.get(`/invite/${token}`);
         setInviteData(res.data.data);
       } catch (err) {
         setError(err.response?.data?.message || 'Invalid or expired invite link.');
@@ -43,17 +43,12 @@ const AcceptInvite = () => {
     if (formData.password.length < 6) {
       return toast.error("Password must be at least 6 characters");
     }
-    if (!formData.phone) {
-      return toast.error("Phone number is required");
-    }
 
     setSubmitting(true);
     try {
-      await api.post('/auth/accept-invite', {
+      await api.post('/invite/accept', {
         token,
-        name: formData.name,
-        password: formData.password,
-        phone: formData.phone
+        password: formData.password
       });
       toast.success('Account created successfully! Please login.');
       navigate('/login');
@@ -66,7 +61,7 @@ const AcceptInvite = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0F172A] flex items-center justify-center p-6">
-        <div className="text-white text-sm font-bold uppercase tracking-widest animate-pulse">Verifying Security Token...</div>
+        <div className="text-white text-sm font-bold uppercase tracking-widest animate-pulse">Verifying Invitation...</div>
       </div>
     );
   }
@@ -78,7 +73,7 @@ const AcceptInvite = () => {
            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-8">
              <XCircle className="text-red-500" size={32} />
            </div>
-           <h2 className="text-2xl font-black text-[#0F172A] uppercase tracking-widest mb-4">Verification Failed</h2>
+           <h2 className="text-2xl font-black text-[#0F172A] uppercase tracking-widest mb-4">Link Expired</h2>
            <p className="text-slate-500 font-medium mb-10">{error}</p>
            <button 
              onClick={() => navigate('/login')}
@@ -101,31 +96,20 @@ const AcceptInvite = () => {
                <ShieldCheck className="text-blue-600" size={32} />
              </div>
              <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight uppercase">Setup Account</h1>
-             <p className="text-slate-500 font-medium mt-3">You have been invited to join as <strong className="text-blue-600">{inviteData?.role}</strong></p>
-             <div className="mt-4 inline-flex items-center justify-center px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl">
-               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{inviteData?.email}</span>
+             <p className="text-slate-500 font-medium mt-3">You're joining as <strong className="text-blue-600">{inviteData?.role}</strong></p>
+             
+             <div className="mt-8 p-6 bg-slate-50 rounded-[32px] border border-slate-100 space-y-2">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-left ml-1">Identity Details</p>
+                <div className="flex flex-col gap-1 text-left px-4">
+                   <p className="text-lg font-black text-[#0F172A]">{inviteData?.name || 'New Agent'}</p>
+                   <p className="text-xs font-bold text-slate-500">{inviteData?.email}</p>
+                </div>
              </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
              <div className="space-y-3">
-                <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Full Name</label>
-                <input 
-                   type="text" required placeholder="John Doe"
-                   className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A]"
-                   value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
-                />
-             </div>
-             <div className="space-y-3">
-                <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Phone Number</label>
-                <input 
-                   type="text" required placeholder="+1 (555) 000-0000"
-                   className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A]"
-                   value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
-                />
-             </div>
-             <div className="space-y-3">
-                <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Secure Password</label>
+                <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Choose Password</label>
                 <input 
                    type="password" required placeholder="Minimum 6 characters" minLength={6}
                    className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A]"
@@ -145,7 +129,7 @@ const AcceptInvite = () => {
                 type="submit" disabled={submitting}
                 className="w-full h-16 mt-8 rounded-full bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-4 disabled:opacity-50 disabled:hover:scale-100"
              >
-                {submitting ? 'Initializing Account...' : <>Complete Setup <ArrowRight size={20}/></>}
+                {submitting ? 'Creating Account...' : <>Create Account <ArrowRight size={20}/></>}
              </button>
           </form>
        </div>

@@ -62,6 +62,8 @@ router.route('/invites')
   .get(getInvites)
   .post(inviteUser);
 
+router.post('/invite-agent', inviteUser);
+
 router.delete('/invites/:id', deleteInvite);
 
 router.route('/invoices')

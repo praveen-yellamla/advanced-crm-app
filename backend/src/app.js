@@ -9,7 +9,7 @@ const app = express();
 // Middleware
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',') 
-  : ["http://localhost:5173", "https://advanced-crm-frontend.onrender.com"];
+  : [process.env.FRONTEND_URL];
 
 const corsOptions = {
 origin: function (origin, callback) {
@@ -39,6 +39,7 @@ const coreRoutes = require('./routes/coreRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const googleRoutes = require('./routes/googleRoutes');
+const inviteRoutes = require('./routes/inviteRoutes');
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
@@ -50,6 +51,7 @@ app.use('/api/core', coreRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/auth/google', googleRoutes);
+app.use('/api/invite', inviteRoutes);
 
 const prisma = require('./config/prisma');
 

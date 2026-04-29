@@ -1,55 +1,50 @@
 const nodemailer = require("nodemailer");
 
-// Initialize transporter with Gmail SMTP
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // Use Gmail App Password
-  },
+    pass: process.env.EMAIL_PASS
+  }
 });
 
 /**
- * Sends a production-grade invite email to a new agent.
+ * Sends a clean, user-friendly invite email to a new agent.
  * @param {string} toEmail - Recipient email
  * @param {string} inviteLink - The unique /accept-invite/:token URL
- * @param {string} userName - Optional: Name of the person being invited
+ * @param {string} name - Name of the person being invited
+ * @param {string} role - Role they are being invited for
  */
-const sendInviteEmail = async (toEmail, inviteLink, userName = "Agent") => {
+const sendInviteEmail = async (toEmail, inviteLink, name = "Agent", role = "Agent") => {
   try {
-    console.log(`[SMTP] Initializing invite sequence for: ${toEmail}`);
+    console.log(`[SMTP] Sending invite to: ${toEmail}`);
     
-    const info = await transporter.sendMail({
-      from: `"Advanced CRM Platform" <${process.env.EMAIL_USER}>`,
+    await transporter.sendMail({
+      from: `"CRM Platform" <${process.env.EMAIL_USER}>`,
       to: toEmail,
-      subject: "Invitation to Join the Advanced CRM Ecosystem",
+      subject: "You're invited to join CRM",
       html: `
-        <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 24px;">
-          <div style="text-align: center; margin-bottom: 40px;">
-             <h1 style="color: #0f172a; font-weight: 900; letter-spacing: -0.05em; margin: 0;">ADV.CRM</h1>
-             <p style="color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em; margin-top: 10px;">Authority Portal Access</p>
-          </div>
-          
-          <h2 style="color: #0f172a; font-size: 24px; font-weight: 800; margin-bottom: 16px;">Welcome, ${userName}</h2>
-          <p style="color: #475569; line-height: 1.6; margin-bottom: 32px;">You have been officially invited to join the <strong>Advanced CRM</strong> operations team. Your credentials and secure node access are ready for activation.</p>
-          
-          <div style="text-align: center;">
-            <a href="${inviteLink}" style="display: inline-block; padding: 20px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; font-weight: 900; font-size: 12px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.1em; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);">
-              Initialize Secure Access
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+          <h2 style="color: #1e293b;">Hello ${name},</h2>
+          <p style="color: #475569; font-size: 16px; line-height: 1.5;">
+            You have been invited to join our CRM platform as <b>${role}</b>.
+          </p>
+          <p style="color: #475569; font-size: 16px;">Click below to accept:</p>
+          <div style="margin: 30px 0;">
+            <a href="${inviteLink}" style="padding: 12px 24px; background-color: #2563eb; color: white; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block;">
+              Accept Invitation
             </a>
           </div>
-          
-          <p style="color: #94a3b8; font-size: 11px; margin-top: 40px; text-align: center; font-style: italic;">
-            This link is valid for 24 hours. If you did not expect this invite, please ignore this transmission.
+          <p style="color: #94a3b8; font-size: 12px;">
+            This link expires in 24 hours. If you did not expect this, please ignore this email.
           </p>
         </div>
-      `,
+      `
     });
 
-    console.log(`[SMTP] Success: Message delivered to ${toEmail} | ID: ${info.messageId}`);
     return true;
   } catch (error) {
-    console.error("[SMTP ERROR] Connection Failure or Authentication Denied:", error);
+    console.error("Email Error:", error);
     return false;
   }
 };
