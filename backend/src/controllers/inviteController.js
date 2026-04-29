@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const { sendInviteEmail } = require("../services/emailService");
 
 const inviteUser = async (req, res) => {
+  console.log("INVITE BODY:", req.body);
   try {
     let { email, phone, role } = req.body;
 
@@ -75,7 +76,8 @@ const inviteUser = async (req, res) => {
   } catch (error) {
     console.error("INVITE ERROR:", error);
     return res.status(500).json({
-      error: error.message || "Failed to send invite"
+      error: "Failed to send invite",
+      details: error.message
     });
   }
 };

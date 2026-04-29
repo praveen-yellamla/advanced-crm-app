@@ -205,12 +205,13 @@ const verifyInvite = async (req, res) => {
 const { uploadToCloudinary } = require('../utils/cloudinary');
 
 const acceptInvite = async (req, res) => {
+  console.log("ACCEPT INVITE BODY:", req.body);
   try {
-    const { token, name, password } = req.body;
+    const { token, name, password, phone } = req.body;
 
-    if (!token || !name || !password) {
+    if (!token || !name || !password || !phone) {
       return res.status(400).json({
-        error: "All fields required"
+        error: "All fields required (name, password, phone)"
       });
     }
 
@@ -243,7 +244,7 @@ const acceptInvite = async (req, res) => {
       data: {
         name,
         email: invite.email,
-        phone: invite.phone,
+        phone: phone.trim(),
         password: hashedPassword,
         profileImage: imageUrl,
         role: invite.role,
@@ -268,7 +269,8 @@ const acceptInvite = async (req, res) => {
   } catch (error) {
     console.error("ACCEPT ERROR:", error);
     return res.status(500).json({
-      error: "Failed to register user"
+      error: "Failed to register user",
+      details: error.message
     });
   }
 };

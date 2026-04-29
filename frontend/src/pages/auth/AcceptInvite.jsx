@@ -16,6 +16,7 @@ const AcceptInvite = () => {
 
   const [formData, setFormData] = useState({
     name: '',
+    phone: '',
     password: '',
     confirmPassword: '',
     image: null
@@ -44,13 +45,17 @@ const AcceptInvite = () => {
     if (formData.password.length < 6) {
       return toast.error("Password must be at least 6 characters");
     }
+    if (!formData.phone) {
+      return toast.error("Phone number is required");
+    }
 
     setSubmitting(true);
     try {
       await api.post('/auth/accept-invite', {
         token,
         name: formData.name,
-        password: formData.password
+        password: formData.password,
+        phone: formData.phone
       });
       toast.success('Account created successfully! Please login.');
       navigate('/login');
@@ -114,6 +119,14 @@ const AcceptInvite = () => {
                 />
              </div>
              <div className="space-y-3">
+                <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Phone Number</label>
+                <input 
+                   type="text" required placeholder="+1 (555) 000-0000"
+                   className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-12 focus:ring-blue-600/5 focus:border-blue-600 transition-all font-bold text-[#0F172A]"
+                   value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
+                />
+             </div>
+             <div className="space-y-3">
                 <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Secure Password</label>
                 <input 
                    type="password" required placeholder="Minimum 6 characters" minLength={6}
@@ -129,8 +142,6 @@ const AcceptInvite = () => {
                    value={formData.confirmPassword} onChange={e => setFormData({...formData, confirmPassword: e.target.value})}
                 />
              </div>
-
-
 
              <button 
                 type="submit" disabled={submitting}

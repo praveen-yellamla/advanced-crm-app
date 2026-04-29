@@ -451,7 +451,7 @@ const AdminAgents = () => {
                     inviteUserMutation.mutate({ 
                        email: formData.email.trim(), 
                        phone: formData.phone ? formData.phone.trim() : null, 
-                       role: formData.role 
+                       role: "AGENT" 
                     });
                  }} className="space-y-8">
                     <div className="space-y-4">
