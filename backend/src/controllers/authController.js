@@ -205,13 +205,14 @@ const verifyInvite = async (req, res) => {
 const { uploadToCloudinary } = require('../utils/cloudinary');
 
 const acceptInvite = async (req, res) => {
-  console.log("ACCEPT INVITE BODY:", req.body);
+  console.log("ACCEPT INVITE BODY RECEIVED:", req.body);
   try {
     const { token, name, password, phone } = req.body;
 
     if (!token || !name || !password || !phone) {
+      console.log("ACCEPT FAILED: Missing fields");
       return res.status(400).json({
-        error: "All fields required (name, password, phone)"
+        message: "All fields required (name, password, phone)"
       });
     }
 
@@ -220,15 +221,17 @@ const acceptInvite = async (req, res) => {
     });
 
     if (!invite || invite.status !== "PENDING") {
+      console.log("ACCEPT FAILED: Invalid or non-pending invite");
       return res.status(400).json({
-        error: "Invalid or expired invite"
+        message: "Invalid or expired invite"
       });
     }
 
     // Ensure user doesn't already exist
     const existingUser = await prisma.user.findUnique({ where: { email: invite.email } });
     if (existingUser) {
-       return res.status(400).json({ error: 'User with this email already exists' });
+       console.log(`ACCEPT FAILED: User already exists for email ${invite.email}`);
+       return res.status(400).json({ message: 'User with this email already exists' });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -261,15 +264,16 @@ const acceptInvite = async (req, res) => {
       }
     });
 
+    console.log(`ACCEPT SUCCESS: User ${name} registered`);
     return res.json({
       success: true,
       message: "Account created successfully"
     });
 
   } catch (error) {
-    console.error("ACCEPT ERROR:", error);
+    console.error("ACCEPT SERVER ERROR:", error);
     return res.status(500).json({
-      error: "Failed to register user",
+      message: "Failed to register user",
       details: error.message
     });
   }

@@ -3,12 +3,13 @@ const crypto = require("crypto");
 const { sendInviteEmail } = require("../services/emailService");
 
 const inviteUser = async (req, res) => {
-  console.log("INVITE BODY:", req.body);
+  console.log("INVITE BODY RECEIVED:", req.body);
   try {
     let { email, phone, role } = req.body;
 
     if (!email) {
-      return res.status(400).json({ error: "Email is required" });
+      console.log("INVITE FAILED: Email is missing");
+      return res.status(400).json({ message: "Email is required" });
     }
 
     // Normalize values
@@ -26,8 +27,9 @@ const inviteUser = async (req, res) => {
     });
 
     if (existingAgent) {
+      console.log(`INVITE FAILED: Agent already exists with email: ${email} or phone: ${phone}`);
       return res.status(400).json({
-        error: "Agent already exists with this email or phone"
+        message: "Agent already exists with this email or phone"
       });
     }
 
@@ -40,8 +42,9 @@ const inviteUser = async (req, res) => {
     });
 
     if (existingInvite) {
+      console.log(`INVITE FAILED: Pending invite already exists for email: ${email}`);
       return res.status(400).json({
-        error: "Invite already sent and pending"
+        message: "Invite already sent and pending"
       });
     }
 
@@ -68,15 +71,16 @@ const inviteUser = async (req, res) => {
     // Send email
     await sendInviteEmail(email, inviteLink);
 
+    console.log(`INVITE SUCCESS: Sent to ${email}`);
     return res.status(200).json({
       success: true,
       message: "Invite sent successfully"
     });
 
   } catch (error) {
-    console.error("INVITE ERROR:", error);
+    console.error("INVITE SERVER ERROR:", error);
     return res.status(500).json({
-      error: "Failed to send invite",
+      message: "Failed to send invite",
       details: error.message
     });
   }
