@@ -1,6 +1,7 @@
 const prisma = require('../config/prisma');
 const csv = require('csv-parser');
 const stream = require('stream');
+const { assignLeadRoundRobin } = require('../utils/assignmentService');
 
 // ==================================================
 // 1. PUBLIC WEBHOOK (WEBSITE LEAD INGESTION)
@@ -24,6 +25,9 @@ const handleWebLead = async (req, res) => {
     const existing = await prisma.lead.findFirst({ where: { phone } });
     if (existing) return res.json({ success: true, message: 'Lead already synchronized' });
 
+    // Auto-assignment
+    const assignedToId = await assignLeadRoundRobin();
+
     const lead = await prisma.lead.create({
       data: {
         customerName: name || 'Web User',
@@ -35,12 +39,12 @@ const handleWebLead = async (req, res) => {
         utmMedium: utm_medium,
         utmCampaign: utm_campaign,
         gclid,
-        status: 'NEW'
+        status: 'NEW',
+        assignedToId
       }
     });
 
-    // In production, execute assignment logic here
-    res.json({ success: true, leadId: lead.id });
+    res.json({ success: true, leadId: lead.id, assignedToId });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -78,16 +82,15 @@ const uploadCSV = async (req, res) => {
         .on('error', reject);
     });
 
-    console.log("Total rows:", allRows.length);
-
     if (allRows.length === 0) {
       return res.status(400).json({ success: false, message: 'No valid rows found' });
     }
 
-    // Phase 2: Fetch existing identities for deduplication
-    const existingLeads = await prisma.lead.findMany({
-      select: { email: true, phone: true }
-    });
+    // Phase 2: Fetch existing identities & agents for round-robin
+    const [existingLeads, agents] = await Promise.all([
+      prisma.lead.findMany({ select: { email: true, phone: true } }),
+      prisma.user.findMany({ where: { role: 'AGENT', isActive: true }, select: { id: true } })
+    ]);
     
     const existingEmails = new Set(existingLeads.map(l => l.email?.toLowerCase().trim()).filter(Boolean));
     const existingPhones = new Set(existingLeads.map(l => l.phone?.trim()).filter(Boolean));
@@ -135,16 +138,22 @@ const uploadCSV = async (req, res) => {
         return;
       }
 
-      // 3. NEW LEAD
+      // 3. ASSIGNMENT CALCULATION
+      let assignedToId = null;
+      if (agents.length > 0) {
+        assignedToId = agents[index % agents.length].id;
+      }
+
+      // 4. NEW LEAD
       newLeads.push({
         customerName: name,
         email: email || null,
         phone: phone,
         source: "CSV",
-        status: "NEW"
+        status: "NEW",
+        assignedToId: assignedToId
       });
 
-      // Optimistically add to sets to catch duplicates within the same CSV
       if (email) existingEmails.add(email);
       if (phone) existingPhones.add(phone);
     });

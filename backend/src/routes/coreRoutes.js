@@ -28,6 +28,7 @@ router.post('/leads', upload.single('image'), leadController.createLead);
 router.put('/leads/:id', leadController.updateLead);
 router.patch('/leads/:id/status', leadController.updateLeadStatus);
 router.patch('/leads/:id/assign', authorize('ADMIN', 'MANAGER'), leadController.assignLead);
+router.put('/leads/:id/assign', authorize('ADMIN', 'MANAGER'), leadController.assignLead);
 router.delete('/leads/:id', leadController.deleteLead);
 router.post('/leads/merge', leadController.mergeLeads);
 

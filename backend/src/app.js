@@ -40,6 +40,7 @@ const aiRoutes = require('./routes/aiRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const googleRoutes = require('./routes/googleRoutes');
 const inviteRoutes = require('./routes/inviteRoutes');
+const webhookRoutes = require('./routes/webhookRoutes');
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
@@ -52,6 +53,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/auth/google', googleRoutes);
 app.use('/api/invite', inviteRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 const prisma = require('./config/prisma');
 

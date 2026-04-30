@@ -112,11 +112,12 @@ const createActivity = async (leadId, action, oldValue, newValue, userId) => {
 // ==================================================
 // 2. LEAD CREATION WITH ACTIVITY TRACKING
 // ==================================================
+const { assignLeadRoundRobin } = require('../utils/assignmentService');
 const { uploadToCloudinary } = require('../utils/cloudinary');
 
 const createLead = async (req, res) => {
   try {
-    const { phone, email, customerName, source, utmSource, utmMedium, utmCampaign } = req.body;
+    const { phone, email, customerName, source, utmSource, utmMedium, utmCampaign, assignedToId: manualAssignedId } = req.body;
 
     // Check if image is present
     let imageUrl = null;
@@ -139,16 +140,20 @@ const createLead = async (req, res) => {
       });
     }
 
+    // Auto-assignment if not manual
+    const assignedToId = manualAssignedId ? parseInt(manualAssignedId) : await assignLeadRoundRobin();
+
     const lead = await prisma.lead.create({
       data: {
         customerName, phone, email, source: source || 'WEBSITE',
         utmSource, utmMedium, utmCampaign,
         profileImage: imageUrl,
-        status: 'NEW'
+        status: 'NEW',
+        assignedToId: assignedToId
       }
     });
 
-    await createActivity(lead.id, 'CREATE', null, 'Lead Created', req.user.id);
+    await createActivity(lead.id, 'CREATE', null, 'Lead Created & Assigned', req.user.id);
 
     res.status(201).json({ success: true, data: lead });
   } catch (error) {

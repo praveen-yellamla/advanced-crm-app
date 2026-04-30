@@ -26,7 +26,7 @@ const AssignAgentModal = ({ isOpen, onClose, leadId, currentAgentId }) => {
   });
 
   const mutation = useMutation({
-    mutationFn: (agentId) => api.patch(`/core/leads/${leadId}/assign`, { agentId }),
+    mutationFn: (agentId) => api.put(`/core/leads/${leadId}/assign`, { agentId }),
     onSuccess: () => {
       queryClient.invalidateQueries(['globalLeads']);
       queryClient.invalidateQueries(['leads-pipeline']);

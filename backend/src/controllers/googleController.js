@@ -1,6 +1,7 @@
 const prisma = require('../config/prisma');
 const axios = require('axios');
 const { google } = require('googleapis');
+const { assignLeadRoundRobin } = require('../utils/assignmentService');
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -176,8 +177,7 @@ const fetchGoogleLeads = async (req, res) => {
       });
     }
 
-    // SIMULATION: In a real scenario, we would call the Google Ads API /googleAds/v17/customers/...
-    // Here we simulate 5 leads that appear to come from Google Ads
+    // SIMULATION: In a real scenario, we would call the Google Ads API
     const mockLeads = [
       { name: 'John Google', email: 'john.g@example.com', phone: '+1555111222', source: 'GOOGLE_ADS', status: 'NEW' },
       { name: 'Sarah Search', email: 'sarah.s@example.com', phone: '+1555333444', source: 'GOOGLE_ADS', status: 'NEW' },
@@ -186,13 +186,26 @@ const fetchGoogleLeads = async (req, res) => {
       { name: 'Emma Engel', email: 'emma.e@example.com', phone: '+49176123456', source: 'GOOGLE_ADS', status: 'NEW' }
     ];
 
-    // Filter out existing emails to avoid Prisma unique constraint errors
+    // Fetch agents for distribution
+    const agents = await prisma.user.findMany({ where: { role: 'AGENT', isActive: true }, select: { id: true } });
+
+    // Filter out existing emails
     const existingLeads = await prisma.lead.findMany({
       where: { email: { in: mockLeads.map(l => l.email) } },
       select: { email: true }
     });
     const existingEmails = new Set(existingLeads.map(l => l.email));
-    const newLeads = mockLeads.filter(l => !existingEmails.has(l.email));
+    
+    const newLeads = mockLeads
+      .filter(l => !existingEmails.has(l.email))
+      .map((l, index) => ({
+        customerName: l.name,
+        email: l.email,
+        phone: l.phone,
+        source: l.source,
+        status: l.status,
+        assignedToId: agents.length > 0 ? agents[index % agents.length].id : null
+      }));
 
     if (newLeads.length > 0) {
       await prisma.lead.createMany({ data: newLeads });
@@ -202,7 +215,7 @@ const fetchGoogleLeads = async (req, res) => {
       success: true, 
       inserted: newLeads.length,
       skipped: mockLeads.length - newLeads.length,
-      message: `${newLeads.length} new leads synchronized from Google Ads.` 
+      message: `${newLeads.length} new leads synchronized and assigned.` 
     });
   } catch (error) {
     console.error('Fetch Leads Error:', error.message);

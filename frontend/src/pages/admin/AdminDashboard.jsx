@@ -16,6 +16,7 @@ import {
   BarChart2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell
@@ -143,6 +144,68 @@ const AdminDashboard = () => {
               </div>
            </div>
         </div>
+      </div>
+
+      {/* WEBHOOK SECTION */}
+      <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm space-y-8">
+         <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+               <div className="w-16 h-16 rounded-[24px] bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-inner">
+                  <Zap size={32} />
+               </div>
+               <div>
+                  <h3 className="text-2xl font-black text-[#0F172A] tracking-tighter uppercase">Lead Ingestion Webhook</h3>
+                  <p className="text-[#64748B] font-medium text-xs mt-1 italic uppercase tracking-widest">Universal strategic ingestion architecture</p>
+               </div>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-full text-emerald-600 text-[10px] font-black uppercase tracking-widest">
+               <Globe size={14} /> Global Entry Active
+            </div>
+         </div>
+
+         <div className="p-8 bg-slate-900 rounded-[32px] space-y-6">
+            <div className="space-y-3">
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Webhook Endpoint URL</label>
+               <div className="flex gap-4">
+                  <div className="flex-1 h-14 bg-slate-800/50 border border-slate-700 rounded-2xl flex items-center px-6 overflow-hidden">
+                     <code className="text-emerald-400 font-mono text-sm truncate">
+                        {`${window.location.origin.replace('5174', '5000')}/api/webhooks/leads`}
+                     </code>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      const url = `${window.location.origin.replace('5174', '5000')}/api/webhooks/leads`;
+                      navigator.clipboard.writeText(url);
+                      toast.success('Webhook URL Copied!');
+                    }}
+                    className="h-14 px-8 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-900/40 hover:scale-[1.02] transition-all"
+                  >
+                     Copy URL
+                  </button>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-800">
+               <div className="space-y-2">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Integration Guide</p>
+                  <p className="text-slate-300 text-xs leading-relaxed">
+                     Use this endpoint to push leads from external systems like <b className="text-white">Meta Ads, Zapier, or custom landing pages</b>. 
+                     Every lead sent to this URL will be automatically assigned to an available agent using the Round-Robin engine.
+                  </p>
+               </div>
+               <div className="space-y-2">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Required Payload (JSON)</p>
+                  <pre className="text-[10px] text-emerald-500/80 font-mono bg-slate-800/30 p-4 rounded-xl border border-slate-700/50">
+                     {`{
+  "name": "Customer Name",
+  "phone": "9988776655",
+  "email": "customer@email.com",
+  "source": "WEBSITE"
+}`}
+                  </pre>
+               </div>
+            </div>
+         </div>
       </div>
     </div>
   );
