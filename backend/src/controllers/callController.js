@@ -97,6 +97,8 @@ const handleVoiceWebhook = (req, res) => {
 
     const dial = twiml.dial({
       callerId: process.env.TWILIO_PHONE_NUMBER,
+      record: 'record-from-answer',
+      recordingStatusCallback: `${process.env.BACKEND_URL}/api/call/webhook/recording`
     });
 
     dial.number(to);
@@ -170,10 +172,20 @@ const handleRecordingWebhook = async (req, res) => {
 const tagCall = async (req, res) => {
   const { callSid, tags, notes } = req.body;
   try {
-    await prisma.call.update({
+    const updatedCall = await prisma.call.update({
       where: { sid: callSid },
-      data: { tags, notes }
+      data: { tags, notes },
+      include: { lead: true }
     });
+
+    // If the call is linked to a lead, update the lead's status too
+    if (updatedCall.leadId) {
+      await prisma.lead.update({
+        where: { id: updatedCall.leadId },
+        data: { status: tags } // Sync lead status with call disposition
+      });
+    }
+
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
