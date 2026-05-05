@@ -126,6 +126,23 @@ export const TelephonyProvider = ({ children }) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const monitorActiveCall = async (phoneNumber) => {
+    if (!device) return toast.error('Telephony not initialized');
+    try {
+      const formattedTo = formatPhoneNumber(phoneNumber);
+      setCallState('ringing');
+      const params = { To: formattedTo, isMonitor: 'true' };
+      const monitoringCall = await device.connect({ params });
+      
+      setCall(monitoringCall);
+      monitoringCall.on('accept', () => setCallState('in-progress'));
+      monitoringCall.on('disconnect', () => endCall());
+    } catch (error) {
+      toast.error('Failed to join monitor session');
+      setCallState('idle');
+    }
+  };
+
   return (
     <TelephonyContext.Provider value={{
       callState,
@@ -136,7 +153,8 @@ export const TelephonyProvider = ({ children }) => {
       endCall,
       toggleMute,
       activeCall: call,
-      lastCallSid
+      lastCallSid,
+      monitorActiveCall
     }}>
       {children}
     </TelephonyContext.Provider>

@@ -7,7 +7,9 @@ const {
   handleStatusWebhook, 
   handleRecordingWebhook,
   tagCall,
-  getCallHistory
+  getCallHistory,
+  monitorCall,
+  getActiveCalls
 } = require('../controllers/callController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -24,5 +26,7 @@ router.get('/token', getCallToken);
 router.post('/outgoing', initiateOutgoingCall);
 router.post('/tag', tagCall);
 router.get('/history/:agentId', getCallHistory);
+router.get('/monitor', monitorCall);
+router.get('/active', getActiveCalls);
 
 module.exports = router;

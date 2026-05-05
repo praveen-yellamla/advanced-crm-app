@@ -24,6 +24,8 @@ import {
   BarChart, Bar, Cell
 } from 'recharts';
 
+import LiveCallMonitor from '../../components/admin/LiveCallMonitor';
+
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
   const { data: statsData, isLoading } = useQuery({
@@ -204,6 +206,8 @@ const AdminDashboard = () => {
            </div>
         </div>
       </div>
+
+      <LiveCallMonitor />
 
       {/* WEBHOOK SECTION */}
       <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm space-y-8">

@@ -95,13 +95,22 @@ const handleVoiceWebhook = (req, res) => {
       to = `+91${to}`;
     }
 
+    const isMonitor = req.body.isMonitor === 'true' || req.query.isMonitor === 'true';
+
     const dial = twiml.dial({
       callerId: process.env.TWILIO_PHONE_NUMBER,
-      record: 'record-from-answer',
-      recordingStatusCallback: `${process.env.BACKEND_URL}/api/call/webhook/recording`
+      record: isMonitor ? false : 'record-from-answer', // Don't double record if monitoring
+      recordingStatusCallback: isMonitor ? null : `${process.env.BACKEND_URL}/api/call/webhook/recording`
     });
 
-    dial.number(to);
+    // Use a unique Conference room per call for monitoring support
+    dial.conference({
+      muted: isMonitor, // SILENT LISTEN if manager
+      startConferenceOnEnter: !isMonitor,
+      endConferenceOnExit: !isMonitor,
+      statusCallback: `${process.env.BACKEND_URL}/api/call/webhook/status`,
+      statusCallbackEvent: 'start end join leave',
+    }, `call_${to.replace('+', '')}`);
 
     res.set("Content-Type", "text/xml");
     return res.status(200).send(twiml.toString());
@@ -207,6 +216,45 @@ const getCallHistory = async (req, res) => {
   }
 };
 
+// 7.5 GET ACTIVE CALLS (FOR MANAGERS)
+const getActiveCalls = async (req, res) => {
+  try {
+    const activeCalls = await prisma.call.findMany({
+      where: {
+        status: { in: ['ringing', 'in-progress'] }
+      },
+      include: { 
+        agent: { select: { name: true } },
+        lead: { select: { customerName: true } }
+      }
+    });
+    res.json({ success: true, data: activeCalls });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 8. LIVE MONITORING (SILENT LISTEN)
+const monitorCall = (req, res) => {
+  const { phone } = req.query; // The number of the active call to monitor
+  try {
+    const VoiceResponse = twilio.twiml.VoiceResponse;
+    const twiml = new VoiceResponse();
+
+    const dial = twiml.dial();
+    dial.conference({
+      muted: true, // SILENT LISTEN
+      startConferenceOnEnter: false,
+      endConferenceOnExit: false
+    }, `call_${phone.replace('+', '')}`);
+
+    res.set("Content-Type", "text/xml");
+    res.status(200).send(twiml.toString());
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
+
 module.exports = {
   getCallToken,
   initiateOutgoingCall,
@@ -214,5 +262,7 @@ module.exports = {
   handleStatusWebhook,
   handleRecordingWebhook,
   tagCall,
-  getCallHistory
+  getCallHistory,
+  monitorCall,
+  getActiveCalls
 };
