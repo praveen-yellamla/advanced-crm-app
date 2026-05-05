@@ -40,7 +40,7 @@ const LiveCallMonitor = () => {
             </div>
             <div>
                <h3 className="text-2xl font-black text-[#0F172A] tracking-tighter uppercase">Active Calls</h3>
-               <p className-[#64748B] font-medium text-xs mt-1 italic uppercase tracking-widest">Monitor team calls in real-time</p>
+               <p className="text-[#64748B] font-medium text-xs mt-1 italic uppercase tracking-widest">Monitor team calls in real-time</p>
             </div>
          </div>
          <div className="flex items-center gap-3 px-6 py-3 bg-slate-900 rounded-full text-white text-[10px] font-black uppercase tracking-widest border border-slate-800">
