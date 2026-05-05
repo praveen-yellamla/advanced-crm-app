@@ -62,6 +62,8 @@ export const TelephonyProvider = ({ children }) => {
     
     try {
       const formattedTo = formatPhoneNumber(phoneNumber);
+      console.log("Dialing number (Frontend):", formattedTo);
+      
       setCallState('ringing');
       const params = { To: formattedTo, leadId };
       const outgoingCall = await device.connect({ params });

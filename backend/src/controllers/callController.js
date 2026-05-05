@@ -68,33 +68,46 @@ const initiateOutgoingCall = async (req, res) => {
 
 // 3. VOICE WEBHOOK (TWIML GENERATOR)
 const handleVoiceWebhook = (req, res) => {
-  console.log("Incoming Twilio request:", req.body);
+  console.log("Incoming Twilio request body:", req.body);
+  console.log("Incoming Twilio query:", req.query);
   
   try {
     const VoiceResponse = twilio.twiml.VoiceResponse;
     const twiml = new VoiceResponse();
 
-    let to = req.body.To || req.body.to;
+    // Get number from ANY possible place
+    let to = 
+      req.body.To || 
+      req.body.to || 
+      req.query.To || 
+      req.query.to;
 
-    // Format number to E.164 (India fallback)
+    console.log("Extracted target number:", to);
+
+    // Fallback for testing as requested
+    if (!to) {
+      console.log("No number provided, using fallback: +919121605226");
+      to = "+919121605226"; 
+    }
+
+    // Ensure E.164 format
     if (to && !to.startsWith("+")) {
       to = `+91${to}`;
     }
 
-    if (!to) {
-      twiml.say("No number provided");
-    } else {
-      const dial = twiml.dial();
-      dial.number(to);
-    }
+    const dial = twiml.dial({
+      callerId: process.env.TWILIO_PHONE_NUMBER,
+    });
+
+    dial.number(to);
 
     res.set("Content-Type", "text/xml");
-    res.status(200).send(twiml.toString());
+    return res.status(200).send(twiml.toString());
   } catch (error) {
-    console.error("Twilio Voice Error:", error);
+    console.error("Voice webhook error:", error);
 
     res.set("Content-Type", "text/xml");
-    res.status(500).send(`
+    return res.status(500).send(`
       <Response>
         <Say>Application error occurred</Say>
       </Response>
