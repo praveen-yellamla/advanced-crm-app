@@ -6,26 +6,36 @@ dotenv.config();
 
 const app = express();
 
+// ==========================================
+// PRIORITY HEALTH CHECKS (For Deployment)
+// ==========================================
+app.get('/', (req, res) => {
+  res.status(200).send('ACRM Service Operational');
+});
+
+app.get('/api/health', (req, res) => {
+  console.log('Health check pulse detected at:', new Date().toISOString());
+  res.status(200).json({ status: "OK", service: "Advanced CRM" });
+});
+
 // Middleware
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',') 
   : [process.env.FRONTEND_URL];
 
 const corsOptions = {
-origin: function (origin, callback) {
-if (!origin) return callback(null, true);
-if (allowedOrigins.includes(origin)) {
-return callback(null, true);
-} else {
-return callback(new Error("CORS blocked: " + origin));
-}
-},
-credentials: true
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("CORS blocked: " + origin));
+    }
+  },
+  credentials: true
 };
 
 app.use(cors(corsOptions));
-// NOTE: Express 5.x uses path-to-regexp v8 which strictly rejects '*' as a route string.
-// Using native RegExp /.*/ intercepts all paths flawlessly without crashing the router.
 app.options(/.*/, cors(corsOptions));
 app.use(express.json());
 
@@ -58,17 +68,6 @@ app.use('/api/call', require('./routes/callRoutes'));
 
 const prisma = require('./config/prisma');
 
-// Root Health Check (for Render Default)
-app.get('/', (req, res) => {
-  res.status(200).send('ACRM Service Operational');
-});
-
-// API Health route with timestamp logging
-app.get('/api/health', (req, res) => {
-  console.log('Health check hit at:', new Date().toISOString());
-  res.status(200).json({ status: "OK", service: "Advanced CRM" });
-});
-
 // Basic error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -79,4 +78,3 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
-
