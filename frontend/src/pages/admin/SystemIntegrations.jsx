@@ -23,6 +23,13 @@ import toast from 'react-hot-toast';
 
 const SystemIntegrations = () => {
   const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
+  const [metaStatus, setMetaStatus] = useState('DISCONNECTED');
+
+  const handleMetaConfirm = () => {
+    setMetaStatus('AUTHENTICATED');
+    toast.success('Meta Marketing Protocol Active');
+    setIsMetaModalOpen(false);
+  };
 
   return (
     <div className="space-y-12 pb-16">
@@ -51,9 +58,10 @@ const SystemIntegrations = () => {
                platform="Meta Marketing"
                icon={<MessageCircle className="text-blue-600" />}
                desc="Capture leads directly from Facebook Forms & Instagram Messenger threads."
-               status="DISCONNECTED"
-               isWarning
+               status={metaStatus}
+               isWarning={metaStatus === 'DISCONNECTED'}
                onAction={() => setIsMetaModalOpen(true)}
+               connectedAccount={metaStatus === 'AUTHENTICATED' ? 'LeadGen Webhook Active' : null}
             />
          </div>
 
@@ -105,12 +113,16 @@ const SystemIntegrations = () => {
          </div>
       </div>
 
-      <MetaConnectModal isOpen={isMetaModalOpen} onClose={() => setIsMetaModalOpen(false)} />
+      <MetaConnectModal 
+        isOpen={isMetaModalOpen} 
+        onClose={() => setIsMetaModalOpen(false)} 
+        onConfirm={handleMetaConfirm}
+      />
     </div>
   );
 };
 
-const MetaConnectModal = ({ isOpen, onClose }) => {
+const MetaConnectModal = ({ isOpen, onClose, onConfirm }) => {
   const verifyToken = "meta_verify_token_123";
   // Use the backend API URL from environment variables for production accuracy
   const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -191,10 +203,7 @@ const MetaConnectModal = ({ isOpen, onClose }) => {
 
               <div className="pt-6 border-t border-slate-100">
                 <button 
-                  onClick={() => {
-                    toast.success('Configuration Protocol Acknowledged');
-                    onClose();
-                  }}
+                  onClick={onConfirm}
                   className="w-full h-16 bg-[#0F172A] text-white rounded-2xl font-bold uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-slate-900/20"
                 >
                   Confirm Configuration
