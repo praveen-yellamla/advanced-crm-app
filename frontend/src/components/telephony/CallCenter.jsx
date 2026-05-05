@@ -12,7 +12,8 @@ import {
   Clock,
   User,
   Tag,
-  FileText
+  FileText,
+  Delete
 } from 'lucide-react';
 import { useTelephony } from '../../context/TelephonyContext';
 import api from '../../utils/api';
@@ -25,6 +26,7 @@ const CallCenter = () => {
   const [disposition, setDisposition] = useState({ tags: 'Interested', notes: '' });
 
   const handleDial = (num) => setPhoneNumber(prev => prev + num);
+  const handleBackspace = () => setPhoneNumber(prev => prev.slice(0, -1));
   
   const handleCall = () => {
     if (phoneNumber) {
@@ -50,7 +52,7 @@ const CallCenter = () => {
   };
 
   return (
-    <div className="fixed bottom-10 right-10 z-[200]">
+    <div className="fixed bottom-10 right-32 z-[200]">
       {/* FLOATING TRIGGER */}
       <motion.button 
         whileHover={{ scale: 1.05 }}
@@ -89,7 +91,7 @@ const CallCenter = () => {
             <div className="p-8 space-y-8">
               {callState === 'idle' ? (
                 <div className="space-y-8">
-                  <div className="space-y-2">
+                  <div className="relative group">
                     <input 
                       type="text" 
                       value={phoneNumber}
@@ -97,6 +99,14 @@ const CallCenter = () => {
                       placeholder="Enter Destination"
                       className="w-full h-16 bg-slate-50 border-none rounded-2xl px-6 text-xl font-bold text-slate-900 text-center focus:ring-2 focus:ring-blue-500 transition-all"
                     />
+                    {phoneNumber && (
+                      <button 
+                        onClick={handleBackspace}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors"
+                      >
+                        <Delete size={20} />
+                      </button>
+                    )}
                   </div>
 
                   {/* DIAL PAD */}

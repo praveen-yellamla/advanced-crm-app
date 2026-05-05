@@ -243,7 +243,7 @@ const DashboardLayout = () => {
       <ErrorBoundary>
         <AIAssistant />
       </ErrorBoundary>
-      <CallCenter />
+      {location.pathname !== '/agent/dialer' && <CallCenter />}
     </div>
   );
 };
