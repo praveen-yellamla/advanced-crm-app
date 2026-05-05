@@ -112,11 +112,18 @@ const SystemIntegrations = () => {
 
 const MetaConnectModal = ({ isOpen, onClose }) => {
   const verifyToken = "meta_verify_token_123";
-  const callbackUrl = `${window.location.origin.replace('5173', '5000')}/api/webhooks/meta`;
+  // Use the backend API URL from environment variables for production accuracy
+  const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const callbackUrl = `${backendUrl}/webhooks/meta`;
 
   const copyToClipboard = (text, label) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copied!`);
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success(`${label} copied to clipboard!`);
+    }).catch(err => {
+      console.error('Copy failed', err);
+      toast.error('Failed to copy. Please select and copy manually.');
+    });
   };
 
   return (
@@ -162,14 +169,14 @@ const MetaConnectModal = ({ isOpen, onClose }) => {
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Callback URL</p>
                     <div className="flex items-center justify-between gap-4">
                       <code className="text-xs font-bold text-blue-600 truncate">{callbackUrl}</code>
-                      <button onClick={() => copyToClipboard(callbackUrl, 'URL')} className="text-slate-400 hover:text-blue-600 transition-colors"><Copy size={16} /></button>
+                      <button onClick={() => copyToClipboard(callbackUrl, 'URL')} className="w-10 h-10 rounded-xl hover:bg-white hover:shadow-sm transition-all flex items-center justify-center text-slate-400 hover:text-blue-600"><Copy size={16} /></button>
                     </div>
                   </div>
                   <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-3">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Verify Token</p>
                     <div className="flex items-center justify-between gap-4">
                       <code className="text-xs font-bold text-blue-600">{verifyToken}</code>
-                      <button onClick={() => copyToClipboard(verifyToken, 'Token')} className="text-slate-400 hover:text-blue-600 transition-colors"><Copy size={16} /></button>
+                      <button onClick={() => copyToClipboard(verifyToken, 'Verify Token')} className="w-10 h-10 rounded-xl hover:bg-white hover:shadow-sm transition-all flex items-center justify-center text-slate-400 hover:text-blue-600"><Copy size={16} /></button>
                     </div>
                   </div>
                 </div>
@@ -177,12 +184,17 @@ const MetaConnectModal = ({ isOpen, onClose }) => {
 
               <div className="space-y-4">
                 <h4 className="text-sm font-black text-[#0F172A] uppercase tracking-widest">Step 2: Subscription Fields</h4>
-                <p className="text-sm font-medium text-slate-500">Subscribe to the <span className="font-bold text-slate-900">leadgen</span> field under the <span className="font-bold text-slate-900">Page</span> object in your Facebook App Dashboard.</p>
+                <p className="text-sm font-medium text-slate-500 leading-relaxed">
+                  Subscribe to the <span className="font-bold text-slate-900">leadgen</span> field under the <span className="font-bold text-slate-900">Page</span> object in your Facebook App Dashboard.
+                </p>
               </div>
 
               <div className="pt-6 border-t border-slate-100">
                 <button 
-                  onClick={onClose}
+                  onClick={() => {
+                    toast.success('Configuration Protocol Acknowledged');
+                    onClose();
+                  }}
                   className="w-full h-16 bg-[#0F172A] text-white rounded-2xl font-bold uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-slate-900/20"
                 >
                   Confirm Configuration
