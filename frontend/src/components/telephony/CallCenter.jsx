@@ -16,6 +16,7 @@ import {
   Delete
 } from 'lucide-react';
 import { useTelephony } from '../../context/TelephonyContext';
+import { formatPhoneNumber } from '../../utils/phoneUtils';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
 
@@ -25,7 +26,7 @@ const CallCenter = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [disposition, setDisposition] = useState({ tags: 'Interested', notes: '' });
 
-  const handleDial = (num) => setPhoneNumber(prev => prev + num);
+  const handleDial = (num) => setPhoneNumber(prev => formatPhoneNumber(prev + num));
   const handleBackspace = () => setPhoneNumber(prev => prev.slice(0, -1));
   
   const handleCall = () => {
@@ -95,8 +96,8 @@ const CallCenter = () => {
                     <input 
                       type="text" 
                       value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      placeholder="Enter Destination"
+                      onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                      placeholder="+91 000 000 0000"
                       className="w-full h-16 bg-slate-50 border-none rounded-2xl px-6 text-xl font-bold text-slate-900 text-center focus:ring-2 focus:ring-blue-500 transition-all"
                     />
                     {phoneNumber && (

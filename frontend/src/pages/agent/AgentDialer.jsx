@@ -25,6 +25,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useTelephony } from '../../context/TelephonyContext';
+import { formatPhoneNumber } from '../../utils/phoneUtils';
 
 const AgentDialer = () => {
   const { 
@@ -68,7 +69,7 @@ const AgentDialer = () => {
     }
   });
 
-  const handleDial = (num) => setPhoneNumber(prev => prev + num);
+  const handleDial = (num) => setPhoneNumber(prev => formatPhoneNumber(prev + num));
   const handleBackspace = () => setPhoneNumber(prev => prev.slice(0, -1));
 
   const startCall = () => {
@@ -116,8 +117,8 @@ const AgentDialer = () => {
                     <input 
                       type="text" 
                       value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      placeholder="0000 000 000"
+                      onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                      placeholder="+91 000 000 0000"
                       className="w-full bg-transparent border-none text-3xl font-bold text-white tracking-tight focus:ring-0 placeholder:text-white/10"
                     />
                     {phoneNumber && callState === 'idle' && (

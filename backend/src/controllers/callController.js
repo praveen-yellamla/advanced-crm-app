@@ -1,5 +1,6 @@
 const prisma = require('../config/prisma');
 const twilio = require('twilio');
+const { formatToE164, isValidPhone } = require('../utils/phoneUtils');
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
@@ -33,12 +34,19 @@ const initiateOutgoingCall = async (req, res) => {
   const { phoneNumber, leadId } = req.body;
   const agentId = req.user.id;
 
+  if (!isValidPhone(phoneNumber)) {
+    return res.status(400).json({ success: false, message: "Invalid phone number format." });
+  }
+
+  const formattedTo = formatToE164(phoneNumber);
+  console.log("DIALING E.164 (Direct):", formattedTo);
+
   try {
     const call = await client.calls.create({
-      url: `${process.env.BACKEND_URL}/api/call/webhook/voice`, // TwiML instructions
-      to: phoneNumber,
+      url: `${process.env.BACKEND_URL}/api/call/voice`, // Aligned with your request
+      to: formattedTo,
       from: callerId,
-      record: true, // DAY 7: Enable Recording
+      record: true, 
     });
 
     // Save initial call record
@@ -68,8 +76,12 @@ const handleVoiceWebhook = (req, res) => {
   });
   
   // If we have a 'To' number in the request, dial it
-  if (req.body.To) {
-    dial.number(req.body.To);
+  let to = req.body.To;
+
+  if (to) {
+    const formattedTo = formatToE164(to);
+    console.log("DIALING E.164 (Webhook):", formattedTo);
+    dial.number(formattedTo);
   } else {
     response.say("Infrastructure Error: Destination missing.");
   }

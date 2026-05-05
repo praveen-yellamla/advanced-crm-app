@@ -3,6 +3,7 @@ import { Device } from '@twilio/voice-sdk';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
+import { formatPhoneNumber } from '../utils/phoneUtils';
 
 const TelephonyContext = createContext();
 
@@ -60,8 +61,9 @@ export const TelephonyProvider = ({ children }) => {
     if (!device) return toast.error('Telephony not initialized');
     
     try {
+      const formattedTo = formatPhoneNumber(phoneNumber);
       setCallState('ringing');
-      const params = { To: phoneNumber, leadId };
+      const params = { To: formattedTo, leadId };
       const outgoingCall = await device.connect({ params });
       
       setCall(outgoingCall);
