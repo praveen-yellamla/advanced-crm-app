@@ -57,10 +57,15 @@ app.use('/api/webhooks', webhookRoutes);
 
 const prisma = require('./config/prisma');
 
-// Health route with DB check
+// Root Health Check (for Render Default)
+app.get('/', (req, res) => {
+  res.status(200).send('ACRM Service Operational');
+});
+
+// API Health route with timestamp logging
 app.get('/api/health', (req, res) => {
   console.log('Health check hit at:', new Date().toISOString());
-  res.status(200).json({ status: "OK" });
+  res.status(200).json({ status: "OK", service: "Advanced CRM" });
 });
 
 // Basic error handler
