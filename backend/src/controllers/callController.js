@@ -68,26 +68,38 @@ const initiateOutgoingCall = async (req, res) => {
 
 // 3. VOICE WEBHOOK (TWIML GENERATOR)
 const handleVoiceWebhook = (req, res) => {
-  const response = new twilio.twiml.VoiceResponse();
-  const dial = response.dial({ 
-    callerId,
-    record: 'record-from-answer',
-    recordingStatusCallback: `${process.env.BACKEND_URL}/api/call/webhook/recording`
-  });
+  console.log("Incoming Twilio request:", req.body);
   
-  // If we have a 'To' number in the request, dial it
-  let to = req.body.To;
+  try {
+    const VoiceResponse = twilio.twiml.VoiceResponse;
+    const twiml = new VoiceResponse();
 
-  if (to) {
-    const formattedTo = formatToE164(to);
-    console.log("DIALING E.164 (Webhook):", formattedTo);
-    dial.number(formattedTo);
-  } else {
-    response.say("Infrastructure Error: Destination missing.");
+    let to = req.body.To || req.body.to;
+
+    // Format number to E.164 (India fallback)
+    if (to && !to.startsWith("+")) {
+      to = `+91${to}`;
+    }
+
+    if (!to) {
+      twiml.say("No number provided");
+    } else {
+      const dial = twiml.dial();
+      dial.number(to);
+    }
+
+    res.set("Content-Type", "text/xml");
+    res.status(200).send(twiml.toString());
+  } catch (error) {
+    console.error("Twilio Voice Error:", error);
+
+    res.set("Content-Type", "text/xml");
+    res.status(500).send(`
+      <Response>
+        <Say>Application error occurred</Say>
+      </Response>
+    `);
   }
-
-  res.type('text/xml');
-  res.send(response.toString());
 };
 
 // 4. STATUS CALLBACK WEBHOOK (STATE UPDATES)
