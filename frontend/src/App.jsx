@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import { TelephonyProvider } from './context/TelephonyContext';
 import AppRoutes from './routes/AppRoutes';
+import { Toaster } from 'react-hot-toast';
 
 // Initialize Query Client for caching and real-time data Refresh
 const queryClient = new QueryClient({
