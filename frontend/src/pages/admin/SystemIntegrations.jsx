@@ -18,18 +18,38 @@ import {
   Copy,
   CheckCircle2
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import toast from 'react-hot-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '../../utils/api';
 
 const SystemIntegrations = () => {
+  const queryClient = useQueryClient();
   const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
-  const [metaStatus, setMetaStatus] = useState('DISCONNECTED');
+
+  // Fetch real integration accounts from the database
+  const { data: integrations, isLoading } = useQuery({
+    queryKey: ['systemIntegrations'],
+    queryFn: async () => {
+      const res = await api.get('/admin/integrations');
+      return res.data.data;
+    }
+  });
+
+  // Persistent connection mutation
+  const connectMetaMutation = useMutation({
+    mutationFn: () => api.post('/admin/integrations/meta'),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['systemIntegrations']);
+      toast.success('Meta Marketing Synchronized with Database');
+      setIsMetaModalOpen(false);
+    },
+    onError: () => toast.error('Persistent Connection Failed')
+  });
 
   const handleMetaConfirm = () => {
-    setMetaStatus('AUTHENTICATED');
-    toast.success('Meta Marketing Protocol Active');
-    setIsMetaModalOpen(false);
+    connectMetaMutation.mutate();
   };
+
+  const isMetaConnected = integrations?.some(i => i.platform === 'META' && i.isActive);
 
   return (
     <div className="space-y-12 pb-16">
@@ -58,10 +78,10 @@ const SystemIntegrations = () => {
                platform="Meta Marketing"
                icon={<MessageCircle className="text-blue-600" />}
                desc="Capture leads directly from Facebook Forms & Instagram Messenger threads."
-               status={metaStatus}
-               isWarning={metaStatus === 'DISCONNECTED'}
+               status={isMetaConnected ? 'AUTHENTICATED' : 'DISCONNECTED'}
+               isWarning={!isMetaConnected}
                onAction={() => setIsMetaModalOpen(true)}
-               connectedAccount={metaStatus === 'AUTHENTICATED' ? 'LeadGen Webhook Active' : null}
+               connectedAccount={isMetaConnected ? 'Database Synchronization Active' : null}
             />
          </div>
 

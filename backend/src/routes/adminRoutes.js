@@ -25,6 +25,10 @@ const {
   deleteInvite, 
   bulkDeleteInvites 
 } = require('../controllers/inviteController');
+const {
+  getIntegrations,
+  connectMeta
+} = require('../controllers/integrationController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // All routes here are protected and require ADMIN role
@@ -71,5 +75,8 @@ router.route('/invoices')
   .post(createInvoice);
 
 router.get('/calls', getCalls);
+
+router.get('/integrations', getIntegrations);
+router.post('/integrations/meta', connectMeta);
 
 module.exports = router;
