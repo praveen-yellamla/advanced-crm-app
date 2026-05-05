@@ -99,8 +99,9 @@ const handleVoiceWebhook = (req, res) => {
 
     const dial = twiml.dial({
       callerId: process.env.TWILIO_PHONE_NUMBER,
-      record: isMonitor ? false : 'record-from-answer', // Don't double record if monitoring
-      recordingStatusCallback: isMonitor ? null : `${process.env.BACKEND_URL}/api/call/webhook/recording`
+      record: isMonitor ? false : 'record-from-answer',
+      recordingStatusCallback: isMonitor ? null : `${process.env.BACKEND_URL}/api/call/webhook/recording`,
+      statusCallback: `${process.env.BACKEND_URL}/api/call/webhook/status`
     });
 
     // Use a unique Conference room per call for monitoring support
@@ -140,18 +141,21 @@ const handleStatusWebhook = async (req, res) => {
     });
 
     // DAY 8: AUTO TASK CREATION FOR MISSED CALLS
-    if (CallStatus === 'no-answer' || CallStatus === 'failed') {
+    const missedStatuses = ['no-answer', 'failed', 'busy', 'canceled'];
+    if (missedStatuses.includes(CallStatus)) {
       const call = await prisma.call.findUnique({ where: { sid: CallSid } });
       if (call) {
         await prisma.task.create({
           data: {
             title: `Missed Call Follow-up: ${call.phone}`,
-            description: `Automated task created due to ${CallStatus} status.`,
+            description: `Automated task created due to ${CallStatus} status. Please retry at the earliest.`,
             type: 'MISSED_CALL',
+            priority: 'HIGH',
             userId: call.agentId,
             leadId: call.leadId
           }
         });
+        console.log(`AUTOMATION: Created follow-up task for ${call.phone} (Status: ${CallStatus})`);
       }
     }
 
