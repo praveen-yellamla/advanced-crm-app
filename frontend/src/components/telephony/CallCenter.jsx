@@ -21,7 +21,17 @@ import api from '../../utils/api';
 import toast from 'react-hot-toast';
 
 const CallCenter = () => {
-  const { callState, isMuted, duration, formatDuration, makeCall, endCall, toggleMute, activeCall } = useTelephony();
+  const { 
+    callState, 
+    isMuted, 
+    duration, 
+    formatDuration, 
+    makeCall, 
+    endCall, 
+    toggleMute, 
+    activeCall,
+    lastCallSid
+  } = useTelephony();
   const [isOpen, setIsOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [disposition, setDisposition] = useState({ tags: 'Interested', notes: '' });
@@ -41,7 +51,7 @@ const CallCenter = () => {
   const submitDisposition = async () => {
     try {
       await api.post('/call/tag', {
-        callSid: activeCall?.parameters?.CallSid || '', // Fallback for simulation
+        callSid: lastCallSid,
         ...disposition
       });
       toast.success('Call log synchronized');

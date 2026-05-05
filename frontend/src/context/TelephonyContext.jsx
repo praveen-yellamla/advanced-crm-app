@@ -11,6 +11,7 @@ export const TelephonyProvider = ({ children }) => {
   const { user } = useAuth();
   const [device, setDevice] = useState(null);
   const [call, setCall] = useState(null);
+  const [lastCallSid, setLastCallSid] = useState('');
   const [callState, setCallState] = useState('idle'); // idle, ringing, in-progress, completed
   const [isMuted, setIsMuted] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -72,6 +73,9 @@ export const TelephonyProvider = ({ children }) => {
 
       outgoingCall.on('accept', () => {
         setCallState('in-progress');
+        if (outgoingCall.parameters?.CallSid) {
+          setLastCallSid(outgoingCall.parameters.CallSid);
+        }
         startTimer();
       });
 
@@ -84,11 +88,16 @@ export const TelephonyProvider = ({ children }) => {
   };
 
   const endCall = () => {
-    if (call) call.disconnect();
+    if (call) {
+      if (call.parameters?.CallSid) setLastCallSid(call.parameters.CallSid);
+      call.disconnect();
+    }
     setCall(null);
     setCallState('completed');
     stopTimer();
-    setTimeout(() => setCallState('idle'), 3000);
+    setTimeout(() => {
+      setCallState('idle');
+    }, 5000); // 5s buffer for tagging
   };
 
   const toggleMute = () => {
@@ -126,7 +135,8 @@ export const TelephonyProvider = ({ children }) => {
       makeCall,
       endCall,
       toggleMute,
-      activeCall: call
+      activeCall: call,
+      lastCallSid
     }}>
       {children}
     </TelephonyContext.Provider>

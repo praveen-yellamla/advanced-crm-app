@@ -33,10 +33,9 @@ const AgentDialer = () => {
     isMuted, 
     duration, 
     formatDuration, 
-    makeCall, 
-    endCall, 
     toggleMute, 
-    activeCall 
+    activeCall,
+    lastCallSid
   } = useTelephony();
 
   const [activeLead, setActiveLead] = useState(null);
@@ -80,7 +79,7 @@ const AgentDialer = () => {
 
   const submitTagging = () => {
     logCallMutation.mutate({
-      callSid: activeCall?.parameters?.CallSid || '',
+      callSid: lastCallSid,
       tags: taggingData.status,
       notes: taggingData.notes
     });
