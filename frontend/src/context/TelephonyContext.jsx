@@ -2,10 +2,12 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { Device } from '@twilio/voice-sdk';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
+import { useAuth } from './AuthContext';
 
 const TelephonyContext = createContext();
 
 export const TelephonyProvider = ({ children }) => {
+  const { user } = useAuth();
   const [device, setDevice] = useState(null);
   const [call, setCall] = useState(null);
   const [callState, setCallState] = useState('idle'); // idle, ringing, in-progress, completed
@@ -15,6 +17,7 @@ export const TelephonyProvider = ({ children }) => {
 
   // 1. INITIALIZE TWILIO DEVICE
   const initDevice = async () => {
+    if (!user) return; // SAFETY: Do not init if not logged in
     try {
       const { data } = await api.get('/call/token');
       const newDevice = new Device(data.token, {
@@ -41,11 +44,16 @@ export const TelephonyProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    initDevice();
+    if (user) {
+      initDevice();
+    }
     return () => {
-      if (device) device.destroy();
+      if (device) {
+        device.destroy();
+        setDevice(null);
+      }
     };
-  }, []);
+  }, [user]);
 
   // 2. CALL ACTIONS
   const makeCall = async (phoneNumber, leadId = null) => {
