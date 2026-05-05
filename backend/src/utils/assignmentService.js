@@ -12,7 +12,8 @@ const assignLeadRoundRobin = async () => {
     const agents = await prisma.user.findMany({
       where: { 
         role: 'AGENT',
-        isActive: true
+        isActive: true,
+        inviteStatus: 'ACCEPTED'
       },
       orderBy: { id: 'asc' }
     });

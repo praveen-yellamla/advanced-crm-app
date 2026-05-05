@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Globe, 
   Settings, 
@@ -12,11 +12,18 @@ import {
   Code,
   Link,
   ChevronRight,
-  ExternalLink
+  ExternalLink,
+  X,
+  Info,
+  Copy,
+  CheckCircle2
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 const SystemIntegrations = () => {
+  const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
+
   return (
     <div className="space-y-12 pb-16">
       {/* HEADER */}
@@ -46,6 +53,7 @@ const SystemIntegrations = () => {
                desc="Capture leads directly from Facebook Forms & Instagram Messenger threads."
                status="DISCONNECTED"
                isWarning
+               onAction={() => setIsMetaModalOpen(true)}
             />
          </div>
 
@@ -76,7 +84,15 @@ const SystemIntegrations = () => {
                   <p className="pl-8">{'captureUtm: true '}</p>
                   <p className="pl-4">{'});'}</p>
                   <p>{'</script>'}</p>
-                  <button className="absolute top-6 right-8 text-[10px] font-bold text-white bg-blue-600 px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">Copy Protocol</button>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText('<script src="https://cdn.advancedcrm.io/sdk/v1.js"></script>\n<script>\nACRM.init({\n  account: "AC-9827-X", \n  captureUtm: true \n});\n</script>');
+                      toast.success('Protocol Copied to Clipboard');
+                    }}
+                    className="absolute top-6 right-8 text-[10px] font-bold text-white bg-blue-600 px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    Copy Protocol
+                  </button>
                </div>
 
                <div className="flex gap-4">
@@ -88,11 +104,99 @@ const SystemIntegrations = () => {
             </div>
          </div>
       </div>
+
+      <MetaConnectModal isOpen={isMetaModalOpen} onClose={() => setIsMetaModalOpen(false)} />
     </div>
   );
 };
 
-const IntegrationCard = ({ platform, icon, desc, status, connectedAccount, isWarning }) => (
+const MetaConnectModal = ({ isOpen, onClose }) => {
+  const verifyToken = "meta_verify_token_123";
+  const callbackUrl = `${window.location.origin.replace('5173', '5000')}/api/webhooks/meta`;
+
+  const copyToClipboard = (text, label) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied!`);
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-6">
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
+            onClick={onClose}
+          />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="relative w-full max-w-2xl bg-white rounded-[48px] shadow-2xl overflow-hidden flex flex-col"
+          >
+            <div className="p-10 border-b border-slate-100 flex justify-between items-center">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-[24px] bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner">
+                  <MessageCircle size={32} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-[#0F172A] tracking-tighter uppercase">Meta Integration Protocol</h3>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Direct Leadgen API Synchronization</p>
+                </div>
+              </div>
+              <button onClick={onClose} className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all flex items-center justify-center">
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-10 space-y-10 max-h-[70vh] overflow-y-auto scrollbar-hide">
+              <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100 flex gap-4">
+                <Info className="text-blue-600 shrink-0" size={24} />
+                <p className="text-sm font-medium text-blue-900 leading-relaxed">
+                  To connect Meta Marketing, you need to configure your Facebook App Webhooks in the Meta for Developers portal.
+                </p>
+              </div>
+
+              <div className="space-y-6">
+                <h4 className="text-sm font-black text-[#0F172A] uppercase tracking-widest">Step 1: Configure Webhook</h4>
+                <div className="grid gap-4">
+                  <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-3">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Callback URL</p>
+                    <div className="flex items-center justify-between gap-4">
+                      <code className="text-xs font-bold text-blue-600 truncate">{callbackUrl}</code>
+                      <button onClick={() => copyToClipboard(callbackUrl, 'URL')} className="text-slate-400 hover:text-blue-600 transition-colors"><Copy size={16} /></button>
+                    </div>
+                  </div>
+                  <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-3">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Verify Token</p>
+                    <div className="flex items-center justify-between gap-4">
+                      <code className="text-xs font-bold text-blue-600">{verifyToken}</code>
+                      <button onClick={() => copyToClipboard(verifyToken, 'Token')} className="text-slate-400 hover:text-blue-600 transition-colors"><Copy size={16} /></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="text-sm font-black text-[#0F172A] uppercase tracking-widest">Step 2: Subscription Fields</h4>
+                <p className="text-sm font-medium text-slate-500">Subscribe to the <span className="font-bold text-slate-900">leadgen</span> field under the <span className="font-bold text-slate-900">Page</span> object in your Facebook App Dashboard.</p>
+              </div>
+
+              <div className="pt-6 border-t border-slate-100">
+                <button 
+                  onClick={onClose}
+                  className="w-full h-16 bg-[#0F172A] text-white rounded-2xl font-bold uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-slate-900/20"
+                >
+                  Confirm Configuration
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const IntegrationCard = ({ platform, icon, desc, status, connectedAccount, isWarning, onAction }) => (
   <div className="bg-white p-12 rounded-[56px] border border-slate-100 shadow-sm relative group hover:shadow-2xl transition-all duration-500 overflow-hidden">
      <div className="flex items-start justify-between relative z-10">
         <div className="flex gap-8">
@@ -116,7 +220,10 @@ const IntegrationCard = ({ platform, icon, desc, status, connectedAccount, isWar
               </div>
            </div>
         </div>
-        <button className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-[#0F172A] group-hover:text-white transition-all">
+        <button 
+          onClick={onAction}
+          className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-[#0F172A] group-hover:text-white transition-all"
+        >
            {status === 'AUTHENTICATED' ? <ExternalLink size={20} /> : <Settings size={20} />}
         </button>
      </div>

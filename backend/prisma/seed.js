@@ -8,17 +8,24 @@ async function main() {
   const hashedPassword = await bcrypt.hash('password123', 10);
 
   // 1. CLEAR EXISTING DATA (CASCADE FRIENDLY)
-  // Disable foreign key checks for thorough reset if needed, but here we just delete in order
-  await prisma.client.deleteMany();
-  await prisma.supportTicket.deleteMany();
-  await prisma.invoiceItem.deleteMany();
-  await prisma.invoice.deleteMany();
+  // Delete in reverse order of dependency to avoid foreign key violations
+  await prisma.aIUsage.deleteMany();
+  await prisma.feedback.deleteMany();
   await prisma.callQA.deleteMany();
   await prisma.call.deleteMany();
   await prisma.task.deleteMany();
+  await prisma.leadActivity.deleteMany();
   await prisma.lead.deleteMany();
   await prisma.company.deleteMany();
+  await prisma.supportTicket.deleteMany();
+  await prisma.invoiceItem.deleteMany();
+  await prisma.invoice.deleteMany();
+  await prisma.client.deleteMany();
+  await prisma.auditLog.deleteMany();
   await prisma.team.deleteMany();
+  await prisma.invite.deleteMany();
+  await prisma.googleAccount.deleteMany();
+  await prisma.integrationAccount.deleteMany();
   await prisma.user.deleteMany();
 
   // 2. INTERNAL STAFF PROTOCOLS

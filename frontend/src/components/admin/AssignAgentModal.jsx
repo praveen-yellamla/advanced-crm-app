@@ -38,8 +38,10 @@ const AssignAgentModal = ({ isOpen, onClose, leadId, currentAgentId }) => {
   });
 
   const filteredAgents = agents?.filter(a => 
-    a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.role.toLowerCase().includes(searchTerm.toLowerCase())
+    (a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    a.role.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    a.isActive === true &&
+    a.inviteStatus === 'ACCEPTED'
   ) || [];
 
   if (!isOpen) return null;
