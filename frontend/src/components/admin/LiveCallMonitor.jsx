@@ -39,8 +39,8 @@ const LiveCallMonitor = () => {
                <Activity size={32} className="animate-pulse" />
             </div>
             <div>
-               <h3 className="text-2xl font-black text-[#0F172A] tracking-tighter uppercase">Live Floor Oversight</h3>
-               <p className="text-[#64748B] font-medium text-xs mt-1 italic uppercase tracking-widest">Real-time tactical session monitoring</p>
+               <h3 className="text-2xl font-black text-[#0F172A] tracking-tighter uppercase">Active Calls</h3>
+               <p className-[#64748B] font-medium text-xs mt-1 italic uppercase tracking-widest">Monitor team calls in real-time</p>
             </div>
          </div>
          <div className="flex items-center gap-3 px-6 py-3 bg-slate-900 rounded-full text-white text-[10px] font-black uppercase tracking-widest border border-slate-800">
@@ -58,7 +58,7 @@ const LiveCallMonitor = () => {
                 className="col-span-full p-20 border-2 border-dashed border-slate-100 rounded-[32px] flex flex-col items-center justify-center text-slate-300 gap-4"
               >
                 <Headphones size={48} className="opacity-20" />
-                <p className="text-[10px] font-black uppercase tracking-widest">The floor is currently silent</p>
+                <p className="text-[10px] font-black uppercase tracking-widest">No active calls right now</p>
               </motion.div>
             ) : activeCalls?.map((call) => (
               <motion.div 

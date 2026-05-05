@@ -137,21 +137,21 @@ const CallCenter = () => {
                     onClick={handleCall}
                     className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
                   >
-                    Initiate Call
+                    Call
                   </button>
                 </div>
               ) : callState === 'completed' ? (
                 <div className="space-y-6">
                   <div className="text-center space-y-2">
-                     <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest">Post-Call Disposition</h4>
+                     <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest">Call Result</h4>
                      <p className="text-xs font-bold text-slate-900 italic">Call with {phoneNumber || 'Customer'}</p>
                   </div>
                   
                   <div className="space-y-4">
                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                           <Tag size={12} /> Lead Disposition
-                        </label>
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <Tag size={12} /> Outcome
+                         </label>
                         <select 
                           value={disposition.tags}
                           onChange={(e) => setDisposition({...disposition, tags: e.target.value})}
@@ -164,9 +164,9 @@ const CallCenter = () => {
                         </select>
                      </div>
                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                           <FileText size={12} /> Interaction Notes
-                        </label>
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <FileText size={12} /> Notes
+                         </label>
                         <textarea 
                           value={disposition.notes}
                           onChange={(e) => setDisposition({...disposition, notes: e.target.value})}
@@ -174,12 +174,12 @@ const CallCenter = () => {
                           className="w-full h-24 bg-slate-50 border-none rounded-xl p-4 text-xs font-medium text-slate-600 resize-none"
                         />
                      </div>
-                     <button 
-                       onClick={submitDisposition}
-                       className="w-full h-12 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all"
-                     >
-                        Save & Close
-                     </button>
+                      <button 
+                        onClick={submitDisposition}
+                        className="w-full h-12 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all"
+                      >
+                         Save
+                      </button>
                   </div>
                 </div>
               ) : (

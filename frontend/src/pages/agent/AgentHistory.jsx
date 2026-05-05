@@ -41,8 +41,8 @@ const AgentHistory = () => {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-           <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Call Intelligence logs</h1>
-           <p className="text-[#64748B] font-medium text-sm mt-1">Audit personal recording logs & session dispositions</p>
+           <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Call History</h1>
+           <p className="text-[#64748B] font-medium text-sm mt-1">Review your recent calls and recordings</p>
         </div>
       </div>
 
@@ -52,8 +52,8 @@ const AgentHistory = () => {
             <table className="w-full text-left border-collapse">
                <thead>
                   <tr className="bg-slate-50/50">
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Recording Seq.</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Customer Identity</th>
+                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Call ID</th>
+                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Customer</th>
                      <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Disposition</th>
                      <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Duration</th>
                      <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Actions</th>

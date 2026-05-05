@@ -108,20 +108,20 @@ const AdminDashboard = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
            <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Dashboard</h1>
-           <p className="text-[#64748B] font-medium text-sm mt-1">Business Overview & Performance Metrics</p>
+           <p className="text-[#64748B] font-medium text-sm mt-1">Key Performance Indicators</p>
         </div>
         <div className="flex gap-4">
            <button 
             onClick={handleExport}
             className="h-12 px-6 bg-white border border-[#E2E8F0] rounded-2xl text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2"
            >
-             <Download size={14} /> Export Report
+             <Download size={14} /> Download Report
            </button>
            <button 
             onClick={handleRefresh}
             className="h-12 px-6 bg-blue-600 text-white rounded-2xl text-xs font-bold shadow-lg shadow-blue-500/20 hover:scale-105 transition-all flex items-center gap-2"
            >
-             <RefreshCw size={14} /> Refresh Data
+             <RefreshCw size={14} /> Refresh Dashboard
            </button>
         </div>
       </div>

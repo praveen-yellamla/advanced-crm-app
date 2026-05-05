@@ -56,25 +56,25 @@ const DashboardLayout = () => {
       accent: '#2563EB',
       gradient: 'from-blue-600 to-blue-700',
       glow: 'shadow-blue-500/25',
-      label: 'Platform Admin'
+      label: 'Admin'
     },
     MANAGER: {
       accent: '#7C3AED',
       gradient: 'from-violet-600 to-violet-700',
       glow: 'shadow-violet-500/25',
-      label: 'Regional Manager'
+      label: 'Manager'
     },
     AGENT: {
       accent: '#06B6D4',
       gradient: 'from-cyan-500 to-cyan-600',
       glow: 'shadow-cyan-500/25',
-      label: 'Strategic Agent'
+      label: 'Agent'
     },
     CLIENT: {
       accent: '#4F46E5',
       gradient: 'from-indigo-600 to-indigo-700',
       glow: 'shadow-indigo-500/25',
-      label: 'Executive Client'
+      label: 'Client'
     }
   };
 
@@ -86,12 +86,12 @@ const DashboardLayout = () => {
       { name: 'Teams', icon: Layers, path: '/admin/teams' },
       { name: 'Agents', icon: Users, path: '/admin/agents' },
       { name: 'Leads', icon: Target, path: '/admin/leads' },
-      { name: 'Lead Pipeline', icon: TrendingUp, path: '/admin/pipeline' },
+      { name: 'Pipeline', icon: TrendingUp, path: '/admin/pipeline' },
       { name: 'Integrations', icon: Globe, path: '/admin/integrations' },
       { name: 'Bulk Import', icon: Zap, path: '/admin/import' },
       { name: 'Tasks', icon: ClipboardCheck, path: '/admin/tasks' },
       { name: 'Invoices', icon: FileText, path: '/admin/ledger' },
-      { name: 'Call Logs', icon: PhoneCall, path: '/admin/calls' },
+      { name: 'Call History', icon: PhoneCall, path: '/admin/calls' },
       { name: 'Quality Center', icon: ShieldCheck, path: '/admin/qcqa' },
       { name: 'AI Assistant', icon: BrainCircuit, path: '/admin/ai' },
       { name: 'Settings', icon: Settings, path: '/admin/settings' },
@@ -105,10 +105,10 @@ const DashboardLayout = () => {
       { name: 'Team Performance', icon: BarChart3, path: '/manager/reports' },
     ],
     AGENT: [
-      { name: 'Agent Workspace', icon: LayoutDashboard, path: '/agent/dashboard' },
+      { name: 'Dashboard', icon: LayoutDashboard, path: '/agent/dashboard' },
       { name: 'My Leads', icon: Target, path: '/agent/leads' },
       { name: 'Dialer', icon: Headphones, path: '/agent/dialer' },
-      { name: 'Call Logs', icon: History, path: '/agent/history' },
+      { name: 'Call History', icon: History, path: '/agent/history' },
       { name: 'Tasks', icon: ClipboardCheck, path: '/agent/tasks' },
       { name: 'Feedback', icon: MessageSquare, path: '/agent/feedback' },
       { name: 'Emails', icon: Mail, path: '/agent/emails' },
@@ -199,7 +199,7 @@ const DashboardLayout = () => {
           <div className="flex items-center bg-slate-50 border border-slate-200 px-6 py-2.5 rounded-2xl w-[440px] focus-within:ring-4 focus-within:ring-blue-500/5 focus-within:border-blue-500/50 transition-all">
             <Search size={18} className="text-slate-400" />
             <input 
-              type="text" placeholder="Intelligence search..." 
+              type="text" placeholder="Search..." 
               className="bg-transparent border-none focus:ring-0 text-[14px] ml-4 w-full font-medium text-[#0F172A] placeholder:text-slate-400" 
             />
           </div>

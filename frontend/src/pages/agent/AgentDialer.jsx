@@ -35,7 +35,9 @@ const AgentDialer = () => {
     formatDuration, 
     toggleMute, 
     activeCall,
-    lastCallSid
+    lastCallSid,
+    makeCall,
+    endCall
   } = useTelephony();
 
   const [activeLead, setActiveLead] = useState(null);
@@ -73,7 +75,7 @@ const AgentDialer = () => {
 
   const startCall = () => {
     const target = phoneNumber || activeLead?.phone;
-    if (!target) return toast.error('Selection of target identity required');
+    if (!target) return toast.error('Please select a lead or enter a number');
     makeCall(target, activeLead?.id);
   };
 
@@ -173,7 +175,7 @@ const AgentDialer = () => {
                       (!activeLead && !phoneNumber) || callState !== 'idle' ? 'bg-slate-800 text-slate-600 grayscale cursor-not-allowed' : 'bg-emerald-600 text-white shadow-2xl shadow-emerald-500/30 hover:scale-105 active:scale-95 brightness-110'
                     }`}
                   >
-                     <Phone size={24} fill="currentColor" /> Initiate Real-World Session
+                     <Phone size={24} fill="currentColor" /> Start Call
                   </button>
                )}
             </div>
@@ -189,8 +191,8 @@ const AgentDialer = () => {
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="bg-white p-12 rounded-[48px] border border-blue-100 shadow-2xl h-full flex flex-col justify-between">
                  <div className="space-y-12">
                     <div className="space-y-2">
-                       <h3 className="text-3xl font-bold text-[#0F172A] tracking-tight">Call Disposition Mandatory</h3>
-                       <p className="text-sm font-medium text-slate-400">Classify the outcome for <span className="text-blue-600 font-bold">{activeLead?.customerName || phoneNumber}</span></p>
+                       <h3 className="text-3xl font-bold text-[#0F172A] tracking-tight">Call Result</h3>
+                       <p className="text-sm font-medium text-slate-400">Save the outcome for <span className="text-blue-600 font-bold">{activeLead?.customerName || phoneNumber}</span></p>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -208,9 +210,9 @@ const AgentDialer = () => {
                     </div>
 
                     <div className="space-y-4">
-                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Session Notes & Intelligence</label>
+                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Call Notes</label>
                        <textarea 
-                          placeholder="Provide behavioral cues and strategic summary..."
+                          placeholder="Summarize the call..."
                           className="w-full h-32 p-6 bg-slate-50 border border-slate-100 rounded-3xl outline-none focus:border-blue-600 transition-all font-medium text-sm"
                           value={taggingData.notes} onChange={e => setTaggingData({...taggingData, notes: e.target.value})}
                        />
@@ -231,7 +233,7 @@ const AgentDialer = () => {
                       onClick={submitTagging}
                       className="h-18 px-12 bg-[#0F172A] text-white rounded-[24px] font-bold uppercase text-xs tracking-widest shadow-2xl hover:brightness-125 transition-all"
                     >
-                       Commit & Refresh Sequence
+                       Save Outcome
                     </button>
                  </div>
               </motion.div>
@@ -239,13 +241,13 @@ const AgentDialer = () => {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
                  <div className="bg-white p-10 rounded-[40px] border border-[#E2E8F0] shadow-sm space-y-8">
                     <div className="flex items-center justify-between">
-                       <h3 className="text-xl font-bold text-[#0F172A] tracking-tight">Target Lead Repository</h3>
-                       <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em] italic">Personal Assignment Hub</p>
+                       <h3 className="text-xl font-bold text-[#0F172A] tracking-tight">Your Leads</h3>
+                       <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em] italic">Assigned to you</p>
                     </div>
                     <div className="relative group">
                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
                        <input 
-                          type="text" placeholder="Direct query by customer identity..." 
+                          type="text" placeholder="Search leads..." 
                           className="w-full h-16 pl-16 pr-6 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:border-blue-600 outline-none transition-all font-semibold text-sm"
                        />
                     </div>
