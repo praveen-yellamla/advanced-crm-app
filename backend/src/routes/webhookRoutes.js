@@ -4,50 +4,80 @@ const prisma = require('../config/prisma');
 const { assignLeadRoundRobin } = require('../utils/assignmentService');
 
 /**
- * Lead Ingestion Webhook
+ * Lead Ingestion Webhook - PRODUCTION GRADE
  * POST /api/webhooks/leads
  * Used by external systems (Zapier, Meta, Custom Sites) to push leads into the CRM.
  */
 router.post('/leads', async (req, res) => {
   try {
-    const { name, email, phone, source = 'WEBSITE' } = req.body;
+    const { name, email, phone, source = 'WEBHOOK' } = req.body;
 
-    if (!name || !phone) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Required fields missing: name and phone are mandatory." 
+    // 1. Mandatory Field Validation
+    if (!email || !name || !phone) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields. Name, Email, and Phone are all mandatory."
       });
     }
 
-    // Auto-assign lead using round-robin
+    // 2. Comprehensive Duplicate Check (Email OR Phone)
+    // Both are unique in your Prisma schema, so we must check both to avoid P2002 errors.
+    const existingLead = await prisma.lead.findFirst({
+      where: {
+        OR: [
+          { email: email },
+          { phone: phone }
+        ]
+      }
+    });
+
+    if (existingLead) {
+      return res.status(200).json({
+        success: true,
+        message: "Lead already exists in the system",
+        lead: existingLead
+      });
+    }
+
+    // 3. Automated Agent Assignment
     const assignedToId = await assignLeadRoundRobin();
 
-    // Create the lead
-    const lead = await prisma.lead.create({
+    // 4. Create Lead with Schema Mapping
+    const newLead = await prisma.lead.create({
       data: {
-        customerName: name,
-        email: email || null,
-        phone: phone,
-        source: source,
+        customerName: name, // Mapping input 'name' to schema 'customerName'
+        email,
+        phone,
+        source,
         assignedToId: assignedToId,
         status: 'NEW'
       }
     });
 
-    console.log(`[WEBHOOK] New lead created: ${lead.customerName} (Assigned: ${assignedToId})`);
+    console.log(`[INGESTION SUCCESS] Lead ${name} assigned to Agent ID: ${assignedToId}`);
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
-      message: "Lead successfully ingested and assigned.",
-      leadId: lead.id,
-      assignedToId: assignedToId
+      message: "Lead created successfully",
+      lead: newLead
     });
 
   } catch (error) {
-    console.error("[WEBHOOK ERROR]", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Internal server error during lead ingestion." 
+    // 5. Specialized Error Handling for Prisma Unique Constraints (P2002)
+    // This prevents the server from returning 500 if a race condition occurs.
+    if (error.code === 'P2002') {
+      console.warn("[DUPLICATE PREVENTED]", error.meta?.target);
+      return res.status(200).json({
+        success: true,
+        message: "Lead already exists (Conflict detected on unique fields)",
+      });
+    }
+
+    // Log other unexpected errors
+    console.error("CRITICAL WEBHOOK ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error during ingestion"
     });
   }
 });
@@ -55,7 +85,6 @@ router.post('/leads', async (req, res) => {
 /**
  * Meta Ads Simulation API
  * GET /api/webhooks/test-lead
- * Simulates a lead coming from Meta Ads.
  */
 router.get('/test-lead', async (req, res) => {
   try {
@@ -91,3 +120,4 @@ router.get('/test-lead', async (req, res) => {
 });
 
 module.exports = router;
+
