@@ -2,8 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
+import { TelephonyProvider } from './context/TelephonyContext';
 import AppRoutes from './routes/AppRoutes';
-import { Toaster } from 'react-hot-toast';
 
 // Initialize Query Client for caching and real-time data Refresh
 const queryClient = new QueryClient({
@@ -20,10 +20,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
-          <AppRoutes />
-          <Toaster 
-            position="top-right"
+        <TelephonyProvider>
+          <Router>
+            <AppRoutes />
+            <Toaster 
+              position="top-right"
             toastOptions={{
               duration: 4000,
               style: {
@@ -38,8 +39,9 @@ function App() {
             }}
           />
         </Router>
-      </AuthProvider>
-    </QueryClientProvider>
+      </TelephonyProvider>
+    </AuthProvider>
+  </QueryClientProvider>
   );
 }
 

@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import AIAssistant from '../components/AIAssistant';
+import CallCenter from '../components/telephony/CallCenter';
 import ErrorBoundary from '../components/common/ErrorBoundary';
 import { 
   LayoutDashboard, 
@@ -217,8 +218,8 @@ const DashboardLayout = () => {
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <span className="text-[14px] font-bold text-[#0F172A]">{user?.name}</span>
-                  <ChevronDown size={14} className="text-slate-400 group-hover:translate-y-0.5 transition-transform" />
+                   <span className="text-[14px] font-bold text-[#0F172A]">{user?.name}</span>
+                   <ChevronDown size={14} className="text-slate-400 group-hover:translate-y-0.5 transition-transform" />
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-blue-600" style={{ color: currentStyle.accent }}>{currentStyle.label}</span>
               </div>
@@ -242,6 +243,7 @@ const DashboardLayout = () => {
       <ErrorBoundary>
         <AIAssistant />
       </ErrorBoundary>
+      <CallCenter />
     </div>
   );
 };

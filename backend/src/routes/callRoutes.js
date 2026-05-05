@@ -1,0 +1,27 @@
+const express = require('express');
+const router = express.Router();
+const { 
+  getCallToken, 
+  initiateOutgoingCall, 
+  handleVoiceWebhook, 
+  handleStatusWebhook, 
+  handleRecordingWebhook,
+  tagCall,
+  getCallHistory
+} = require('../controllers/callController');
+const { protect } = require('../middleware/authMiddleware');
+
+// PUBLIC WEBHOOKS (Called by Twilio)
+router.post('/webhook/voice', handleVoiceWebhook);
+router.post('/webhook/status', handleStatusWebhook);
+router.post('/webhook/recording', handleRecordingWebhook);
+
+// PROTECTED API ENDPOINTS
+router.use(protect);
+
+router.get('/token', getCallToken);
+router.post('/outgoing', initiateOutgoingCall);
+router.post('/tag', tagCall);
+router.get('/history/:agentId', getCallHistory);
+
+module.exports = router;

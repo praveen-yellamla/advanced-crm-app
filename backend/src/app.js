@@ -54,6 +54,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/auth/google', googleRoutes);
 app.use('/api/invite', inviteRoutes);
 app.use('/api/webhooks', webhookRoutes);
+app.use('/api/call', require('./routes/callRoutes'));
 
 const prisma = require('./config/prisma');
 

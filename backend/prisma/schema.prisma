@@ -196,26 +196,35 @@ model Task {
   description String?
   dueDate     DateTime? @map("due_date")
   priority    String?   @default("Normal")
-  status      String?   @default("Pending")
+  status      String?   @default("PENDING") // PENDING, DONE
+  type        String?   @default("FOLLOWUP") // CALLBACK, FOLLOWUP, MISSED_CALL
+  
   userId      Int       @map("user_id")
   user        User      @relation(fields: [userId], references: [id])
 
   leadId Int?  @map("lead_id")
   lead   Lead? @relation("LeadTasks", fields: [leadId], references: [id])
 
+  createdAt DateTime @default(now()) @map("created_at")
+
   @@map("tasks")
 }
 
 model Call {
   id              Int        @id @default(autoincrement())
-  leadId          Int        @map("lead_id")
+  sid             String?    @unique // Twilio Call SID
+  leadId          Int?       @map("lead_id")
   agentId         Int        @map("agent_id")
-  callStatus      String     @map("call_status")
-  durationSeconds Int        @map("duration_seconds")
+  phone           String?
+  status          String     @default("ringing") // ringing, in-progress, completed, missed
+  duration        Int        @default(0) @map("duration_seconds")
   recordingUrl    String?    @map("recording_url")
+  tags            String?    // Interested, Callback, Not Interested
+  notes           String?    @db.Text
+  
   createdAt       DateTime   @default(now()) @map("created_at")
   agent           User       @relation(fields: [agentId], references: [id])
-  lead            Lead       @relation(fields: [leadId], references: [id])
+  lead            Lead?      @relation(fields: [leadId], references: [id])
   qa              CallQA?
   feedbacks       Feedback[]
 
