@@ -105,13 +105,25 @@ const handleVoiceWebhook = (req, res) => {
     });
 
     // Use a unique Conference room per call for monitoring support
+    const conferenceName = `call_${to.replace('+', '')}`;
+
+    if (!isMonitor) {
+      // TRIGGER THE OUTBOUND CALL TO THE CUSTOMER
+      // This is what makes the customer's phone actually ring
+      client.calls.create({
+        to: to,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        twiml: `<Response><Dial><Conference startConferenceOnEnter="true" endConferenceOnExit="true">${conferenceName}</Conference></Dial></Response>`
+      }).catch(err => console.error("Outbound Call Error:", err));
+    }
+
     dial.conference({
       muted: isMonitor, // SILENT LISTEN if manager
       startConferenceOnEnter: !isMonitor,
       endConferenceOnExit: !isMonitor,
       statusCallback: `${process.env.BACKEND_URL}/api/call/webhook/status`,
       statusCallbackEvent: 'start end join leave',
-    }, `call_${to.replace('+', '')}`);
+    }, conferenceName);
 
     res.set("Content-Type", "text/xml");
     return res.status(200).send(twiml.toString());
