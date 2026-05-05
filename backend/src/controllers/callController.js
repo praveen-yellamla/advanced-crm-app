@@ -67,7 +67,7 @@ const initiateOutgoingCall = async (req, res) => {
 };
 
 // 3. VOICE WEBHOOK (TWIML GENERATOR)
-const handleVoiceWebhook = (req, res) => {
+const handleVoiceWebhook = async (req, res) => {
   console.log("Incoming Twilio request body:", req.body);
   console.log("Incoming Twilio query:", req.query);
   
@@ -96,29 +96,48 @@ const handleVoiceWebhook = (req, res) => {
     }
 
     const isMonitor = req.body.isMonitor === 'true' || req.query.isMonitor === 'true';
-
-    const dial = twiml.dial({
-      callerId: process.env.TWILIO_PHONE_NUMBER,
-      record: isMonitor ? false : 'record-from-answer',
-      recordingStatusCallback: isMonitor ? null : `${process.env.BACKEND_URL}/api/call/webhook/recording`,
-      statusCallback: `${process.env.BACKEND_URL}/api/call/webhook/status`
-    });
-
-    // Use a unique Conference room per call for monitoring support
     const conferenceName = `call_${to.replace('+', '')}`;
 
+    // DAY 7: MASTER LOG CREATION
+    if (!isMonitor && req.body.CallSid) {
+      try {
+        const agentId = req.query.agentId || req.body.agentId;
+        const leadId = req.query.leadId || req.body.leadId;
+
+        await prisma.call.upsert({
+          where: { sid: req.body.CallSid },
+          update: {
+            status: 'ringing',
+            leadId: leadId ? parseInt(leadId) : null,
+          },
+          create: {
+            sid: req.body.CallSid,
+            from: req.body.From || process.env.TWILIO_PHONE_NUMBER,
+            phone: to,
+            status: 'ringing',
+            agentId: agentId ? parseInt(agentId) : 1, // Fallback to system agent
+            leadId: leadId ? parseInt(leadId) : null,
+          }
+        });
+      } catch (logError) {
+        console.error("Master logging failed:", logError);
+      }
+    }
+
     if (!isMonitor) {
-      // TRIGGER THE OUTBOUND CALL TO THE CUSTOMER
-      // This is what makes the customer's phone actually ring
+      // TRIGGER OUTBOUND TO CUSTOMER
       client.calls.create({
         to: to,
         from: process.env.TWILIO_PHONE_NUMBER,
-        twiml: `<Response><Dial><Conference startConferenceOnEnter="true" endConferenceOnExit="true">${conferenceName}</Conference></Dial></Response>`
+        twiml: `<Response><Dial><Conference startConferenceOnEnter="true" endConferenceOnExit="true">${conferenceName}</Conference></Dial></Response>`,
+        // Important: We use the SAME status callback to track the customer side too
+        statusCallback: `${process.env.BACKEND_URL}/api/call/webhook/status`,
+        statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed']
       }).catch(err => console.error("Outbound Call Error:", err));
     }
 
     dial.conference({
-      muted: isMonitor, // SILENT LISTEN if manager
+      muted: isMonitor,
       startConferenceOnEnter: !isMonitor,
       endConferenceOnExit: !isMonitor,
       statusCallback: `${process.env.BACKEND_URL}/api/call/webhook/status`,
@@ -141,33 +160,68 @@ const handleVoiceWebhook = (req, res) => {
 
 // 4. STATUS CALLBACK WEBHOOK (STATE UPDATES)
 const handleStatusWebhook = async (req, res) => {
-  const { CallSid, CallStatus, CallDuration } = req.body;
+  const { CallSid, CallStatus, CallDuration, To } = req.body;
+  console.log(`WEBHOOK: Status ${CallStatus} for ${CallSid} (To: ${To})`);
 
   try {
-    await prisma.call.update({
-      where: { sid: CallSid },
-      data: { 
-        status: CallStatus,
-        duration: parseInt(CallDuration) || 0
+    const call = await prisma.call.findUnique({ where: { sid: CallSid } });
+
+    if (call) {
+      await prisma.call.update({
+        where: { sid: CallSid },
+        data: { 
+          status: CallStatus,
+          duration: parseInt(CallDuration) || call.duration
+        }
+      });
+    } else {
+      const masterCall = await prisma.call.findFirst({
+        where: { phone: To, status: 'ringing' },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (masterCall) {
+        await prisma.call.update({
+          where: { id: masterCall.id },
+          data: { 
+            status: CallStatus,
+            duration: parseInt(CallDuration) || 0
+          }
+        });
       }
-    });
+    }
 
     // DAY 8: AUTO TASK CREATION FOR MISSED CALLS
     const missedStatuses = ['no-answer', 'failed', 'busy', 'canceled'];
     if (missedStatuses.includes(CallStatus)) {
-      const call = await prisma.call.findUnique({ where: { sid: CallSid } });
-      if (call) {
-        await prisma.task.create({
-          data: {
-            title: `Missed Call Follow-up: ${call.phone}`,
-            description: `Automated task created due to ${CallStatus} status. Please retry at the earliest.`,
+      const callData = await prisma.call.findFirst({
+        where: { OR: [{ sid: CallSid }, { phone: To }] },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (callData && callData.leadId) {
+        // Prevent duplicate tasks for the same logical call within 1 minute
+        const existingTask = await prisma.task.findFirst({
+          where: { 
+            leadId: callData.leadId,
             type: 'MISSED_CALL',
-            priority: 'HIGH',
-            userId: call.agentId,
-            leadId: call.leadId
+            createdAt: { gte: new Date(Date.now() - 60000) } 
           }
         });
-        console.log(`AUTOMATION: Created follow-up task for ${call.phone} (Status: ${CallStatus})`);
+
+        if (!existingTask) {
+          await prisma.task.create({
+            data: {
+              title: `Missed Call: ${callData.phone}`,
+              description: `Automated follow-up due to ${CallStatus} status.`,
+              type: 'MISSED_CALL',
+              priority: 'HIGH',
+              userId: callData.agentId,
+              leadId: callData.leadId
+            }
+          });
+          console.log(`AUTOMATION: Task created for missed call to ${callData.phone}`);
+        }
       }
     }
 
@@ -203,11 +257,10 @@ const tagCall = async (req, res) => {
       include: { lead: true }
     });
 
-    // If the call is linked to a lead, update the lead's status too
     if (updatedCall.leadId) {
       await prisma.lead.update({
         where: { id: updatedCall.leadId },
-        data: { status: tags } // Sync lead status with call disposition
+        data: { status: tags }
       });
     }
 
@@ -232,7 +285,22 @@ const getCallHistory = async (req, res) => {
   }
 };
 
-// 7.5 GET ACTIVE CALLS (FOR MANAGERS)
+const getAllCalls = async (req, res) => {
+  try {
+    const history = await prisma.call.findMany({
+      include: { 
+        lead: true,
+        agent: { select: { name: true, email: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ success: true, data: history });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 8. LIVE MONITORING (FOR MANAGERS)
 const getActiveCalls = async (req, res) => {
   try {
     const activeCalls = await prisma.call.findMany({
@@ -250,16 +318,14 @@ const getActiveCalls = async (req, res) => {
   }
 };
 
-// 8. LIVE MONITORING (SILENT LISTEN)
 const monitorCall = (req, res) => {
-  const { phone } = req.query; // The number of the active call to monitor
+  const { phone } = req.query;
   try {
     const VoiceResponse = twilio.twiml.VoiceResponse;
     const twiml = new VoiceResponse();
-
     const dial = twiml.dial();
     dial.conference({
-      muted: true, // SILENT LISTEN
+      muted: true,
       startConferenceOnEnter: false,
       endConferenceOnExit: false
     }, `call_${phone.replace('+', '')}`);
@@ -279,6 +345,7 @@ module.exports = {
   handleRecordingWebhook,
   tagCall,
   getCallHistory,
-  monitorCall,
-  getActiveCalls
+  getAllCalls,
+  getActiveCalls,
+  monitorCall
 };
