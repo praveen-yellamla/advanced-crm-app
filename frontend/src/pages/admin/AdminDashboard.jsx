@@ -1,5 +1,4 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { 
   Users, 
@@ -13,7 +12,9 @@ import {
   ShieldCheck,
   Globe,
   PieChart as PieIcon,
-  BarChart2
+  BarChart2,
+  Download,
+  RefreshCw
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -23,6 +24,7 @@ import {
 } from 'recharts';
 
 const AdminDashboard = () => {
+  const queryClient = useQueryClient();
   const { data: statsData, isLoading } = useQuery({
     queryKey: ['adminDashboard'],
     queryFn: async () => {
@@ -39,6 +41,50 @@ const AdminDashboard = () => {
     }
   });
 
+  const handleRefresh = () => {
+    queryClient.invalidateQueries(['adminDashboard']);
+    queryClient.invalidateQueries(['inviteStats']);
+    toast.success('System telemetry synchronized');
+  };
+
+  const handleExport = () => {
+    if (!statsData) return;
+    
+    const { cards, sources, funnel } = statsData;
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "ACRM EXECUTIVE REPORT\n";
+    csvContent += `Generated: ${new Date().toLocaleString()}\n\n`;
+    
+    csvContent += "KPI SUMMARY\n";
+    csvContent += `Metric,Value\n`;
+    csvContent += `Total Leads,${cards.totalLeads}\n`;
+    csvContent += `Active Agents,${cards.activeAgents}\n`;
+    csvContent += `Conversion Rate,${cards.conversionRate}%\n\n`;
+    
+    csvContent += "LEAD SOURCES\n";
+    csvContent += `Source,Count\n`;
+    sources.forEach(s => {
+      csvContent += `${s.source},${s._count}\n`;
+    });
+    
+    csvContent += "\nSALES FUNNEL\n";
+    csvContent += `Status,Count\n`;
+    funnel.forEach(f => {
+      csvContent += `${f.status},${f._count}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `ACRM_Report_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('Executive report generated successfully');
+  };
+
   if (isLoading) return <DashboardSkeleton />;
 
   const { cards, funnel, sources } = statsData || {};
@@ -51,6 +97,8 @@ const AdminDashboard = () => {
     { name: 'Lost', value: funnel?.find(l => l.status === 'LOST')?._count || 0 },
   ];
 
+  const webhookUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/webhooks/leads`;
+
   return (
     <div className="space-y-10 pb-16">
       {/* HEADER */}
@@ -60,8 +108,18 @@ const AdminDashboard = () => {
            <p className="text-[#64748B] font-medium text-sm mt-1">Business Overview & Performance Metrics</p>
         </div>
         <div className="flex gap-4">
-           <button className="h-12 px-6 bg-white border border-[#E2E8F0] rounded-2xl text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 transition-all">Export Report</button>
-           <button className="h-12 px-6 bg-blue-600 text-white rounded-2xl text-xs font-bold shadow-lg shadow-blue-500/20 hover:scale-105 transition-all">Refresh Data</button>
+           <button 
+            onClick={handleExport}
+            className="h-12 px-6 bg-white border border-[#E2E8F0] rounded-2xl text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2"
+           >
+             <Download size={14} /> Export Report
+           </button>
+           <button 
+            onClick={handleRefresh}
+            className="h-12 px-6 bg-blue-600 text-white rounded-2xl text-xs font-bold shadow-lg shadow-blue-500/20 hover:scale-105 transition-all flex items-center gap-2"
+           >
+             <RefreshCw size={14} /> Refresh Data
+           </button>
         </div>
       </div>
 
@@ -169,13 +227,12 @@ const AdminDashboard = () => {
                <div className="flex gap-4">
                   <div className="flex-1 h-14 bg-slate-800/50 border border-slate-700 rounded-2xl flex items-center px-6 overflow-hidden">
                      <code className="text-emerald-400 font-mono text-sm truncate">
-                        {`${window.location.origin.replace('5174', '5000')}/api/webhooks/leads`}
+                        {webhookUrl}
                      </code>
                   </div>
                   <button 
                     onClick={() => {
-                      const url = `${window.location.origin.replace('5174', '5000')}/api/webhooks/leads`;
-                      navigator.clipboard.writeText(url);
+                      navigator.clipboard.writeText(webhookUrl);
                       toast.success('Webhook URL Copied!');
                     }}
                     className="h-14 px-8 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-900/40 hover:scale-[1.02] transition-all"
