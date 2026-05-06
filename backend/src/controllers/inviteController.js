@@ -37,9 +37,6 @@ const inviteUser = async (req, res) => {
 
     console.log(`[INVITE] Generating link for ${invite.email}: ${inviteLink}`);
 
-    // Send Email
-    const emailSent = await sendInviteEmail(invite.email, inviteLink, name, invite.role);
-
     // Upsert shadow user for visibility in Agent List
     if (invite.role !== 'CLIENT') {
       await prisma.user.upsert({
@@ -62,11 +59,15 @@ const inviteUser = async (req, res) => {
       });
     }
 
-    if (!emailSent) {
-      return res.json({ 
-        success: true, 
-        message: "Invite link generated, but automatic email delivery was blocked by Render.",
-        inviteLink 
+    // Send Email
+    try {
+      await sendInviteEmail(invite.email, inviteLink, name, invite.role);
+    } catch (emailError) {
+      console.error("[INVITE ABORTED] SMTP Failure:", emailError.message);
+      return res.status(500).json({ 
+        success: false, 
+        message: `Failed to send email: ${emailError.message}. The invite link was generated but email delivery failed.`,
+        inviteLink
       });
     }
 
