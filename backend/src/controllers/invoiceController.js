@@ -72,7 +72,7 @@ const updateInvoiceStatus = async (req, res) => {
 };
 
 // 4. LIST ALL (For Admin/Manager)
-const getAllInvoices = async (req, res) => {
+const getInvoices = async (req, res) => {
   try {
     const invoices = await prisma.invoice.findMany({
       include: { raisedBy: { select: { name: true } }, lead: { select: { customerName: true } } },
@@ -84,9 +84,16 @@ const getAllInvoices = async (req, res) => {
   }
 };
 
+// 5. GENERATE PDF
+const generatePDF = async (req, res) => {
+  // Placeholder for PDF generation
+  res.status(501).json({ success: false, message: "PDF generation not yet implemented." });
+};
+
 module.exports = {
   createInvoice,
   getInvoice,
   updateInvoiceStatus,
-  getAllInvoices
+  getInvoices,
+  generatePDF
 };
