@@ -270,7 +270,7 @@ const exportAnalytics = async (req, res) => {
     });
 
     const mailOptions = {
-      from: `"CRM Analytics System" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
+      from: `"CRM Analytics System" <${process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.EMAIL_USER}>`,
       to: req.user.email,
       subject: `Your Business Overview Report - ${new Date().toLocaleDateString()}`,
       html: `

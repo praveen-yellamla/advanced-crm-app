@@ -26,7 +26,7 @@ const sendInviteEmail = async (toEmail, inviteLink, name = "Agent", role = "Agen
     console.log(`[SMTP] Sending invite to: ${toEmail}`);
     
     await transporter.sendMail({
-      from: `"CRM Platform" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
+      from: `"CRM Platform" <${process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.EMAIL_USER}>`,
       to: toEmail,
       subject: "You're invited to join CRM",
       html: `
