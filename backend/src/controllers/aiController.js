@@ -21,7 +21,22 @@ const getCallSummary = async (req, res) => {
   }
 };
 
+const getAISettings = async (req, res) => {
+  res.json({ success: true, data: { model: "gpt-4-turbo-preview", temperature: 0.7 } });
+};
+
+const updateAISettings = async (req, res) => {
+  res.json({ success: true, data: req.body });
+};
+
+const getAIUsage = async (req, res) => {
+  res.json({ success: true, data: { tokens: 0, cost: 0 } });
+};
+
 module.exports = {
   getLeadScore,
-  getCallSummary
+  getCallSummary,
+  getAISettings,
+  updateAISettings,
+  getAIUsage
 };
