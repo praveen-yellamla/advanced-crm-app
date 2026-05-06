@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { Device } from '@twilio/voice-sdk';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
@@ -15,59 +15,88 @@ export const TelephonyProvider = ({ children }) => {
   const [callState, setCallState] = useState('idle'); // idle, ringing, in-progress, completed
   const [isMuted, setIsMuted] = useState(false);
   const [duration, setDuration] = useState(0);
+  const [networkQuality, setNetworkQuality] = useState(5); // 1-5
   const timerRef = useRef(null);
+  const reconnectAttempts = useRef(0);
 
   // 1. INITIALIZE TWILIO DEVICE
-  const initDevice = async () => {
-    if (!user) return; // SAFETY: Do not init if not logged in
+  const initDevice = useCallback(async () => {
+    if (!user) return;
     try {
       const { data } = await api.get('/call/token');
       const newDevice = new Device(data.token, {
         codecPreferences: ['opus', 'pcmu'],
-        fakeLocalAudio: false,
         enableIceRestart: true,
+        maxCallSignalingTimeoutMs: 30000
       });
 
-      newDevice.on('registered', () => console.log('Twilio Device Registered'));
-      newDevice.on('error', (error) => console.error('Twilio Device Error:', error));
-      
+      newDevice.on('registered', () => {
+        console.log('TELEPHONY: Device Registered');
+        reconnectAttempts.current = 0;
+      });
+
+      newDevice.on('error', (error) => {
+        console.error('TELEPHONY: Device Error:', error);
+        if (error.code === 31005 && reconnectAttempts.current < 3) {
+          reconnectAttempts.current++;
+          setTimeout(initDevice, 2000);
+        }
+      });
+
+      newDevice.on('network', (level) => setNetworkQuality(level));
+
       newDevice.on('incoming', (incomingCall) => {
         setCall(incomingCall);
         setCallState('ringing');
-        incomingCall.on('accept', () => setCallState('in-progress'));
-        incomingCall.on('disconnect', () => endCall());
+        
+        incomingCall.on('accept', () => {
+          setCallState('in-progress');
+          startTimer();
+        });
+
+        incomingCall.on('disconnect', () => handleCallEnd());
+        incomingCall.on('reject', () => handleCallEnd());
       });
 
       await newDevice.register();
       setDevice(newDevice);
     } catch (error) {
-      console.error('Failed to init telephony:', error);
+      console.error('TELEPHONY: Init Failed:', error);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    if (user) {
-      initDevice();
-    }
+    initDevice();
     return () => {
       if (device) {
         device.destroy();
         setDevice(null);
       }
     };
-  }, [user]);
+  }, [initDevice]);
 
-  // 2. CALL ACTIONS
+  // 2. CALL LIFECYCLE HANDLERS
+  const handleCallEnd = useCallback(() => {
+    setCall(null);
+    setCallState('completed');
+    stopTimer();
+    setIsMuted(false);
+    setTimeout(() => setCallState('idle'), 5000);
+  }, []);
+
   const makeCall = async (phoneNumber, leadId = null) => {
-    if (!device) return toast.error('Telephony not initialized');
+    if (!device) {
+      toast.error('Telephony core offline. Reconnecting...');
+      return initDevice();
+    }
     
     try {
       const formattedTo = formatPhoneNumber(phoneNumber);
-      console.log("Dialing number (Frontend):", formattedTo);
-      
       setCallState('ringing');
-      const params = { To: formattedTo, leadId, agentId: user?.id };
-      const outgoingCall = await device.connect({ params });
+      
+      const outgoingCall = await device.connect({ 
+        params: { To: formattedTo, leadId, agentId: user?.id } 
+      });
       
       setCall(outgoingCall);
 
@@ -79,10 +108,16 @@ export const TelephonyProvider = ({ children }) => {
         startTimer();
       });
 
-      outgoingCall.on('disconnect', () => endCall());
-      outgoingCall.on('reject', () => endCall());
+      outgoingCall.on('disconnect', () => handleCallEnd());
+      outgoingCall.on('reject', () => handleCallEnd());
+      outgoingCall.on('error', (err) => {
+        console.error('Call Error:', err);
+        toast.error('Call failed');
+        handleCallEnd();
+      });
+
     } catch (error) {
-      toast.error('Call failed to initiate');
+      toast.error('Could not initiate call');
       setCallState('idle');
     }
   };
@@ -92,12 +127,7 @@ export const TelephonyProvider = ({ children }) => {
       if (call.parameters?.CallSid) setLastCallSid(call.parameters.CallSid);
       call.disconnect();
     }
-    setCall(null);
-    setCallState('completed');
-    stopTimer();
-    setTimeout(() => {
-      setCallState('idle');
-    }, 5000); // 5s buffer for tagging
+    handleCallEnd();
   };
 
   const toggleMute = () => {
@@ -108,39 +138,44 @@ export const TelephonyProvider = ({ children }) => {
     }
   };
 
-  // 3. TIMER LOGIC
+  const sendDigits = (digits) => {
+    if (call) call.sendDigits(digits);
+  };
+
+  // 3. MONITORING & TOOLS
+  const monitorActiveCall = async (phoneNumber) => {
+    if (!device) return toast.error('Telephony offline');
+    try {
+      const formattedTo = formatPhoneNumber(phoneNumber);
+      setCallState('ringing');
+      const monitoringCall = await device.connect({ 
+        params: { To: formattedTo, isMonitor: 'true' } 
+      });
+      
+      setCall(monitoringCall);
+      monitoringCall.on('accept', () => setCallState('in-progress'));
+      monitoringCall.on('disconnect', () => handleCallEnd());
+    } catch (error) {
+      toast.error('Monitoring failed');
+      setCallState('idle');
+    }
+  };
+
+  // 4. UTILS
   const startTimer = () => {
     setDuration(0);
-    timerRef.current = setInterval(() => {
-      setDuration(prev => prev + 1);
-    }, 1000);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => setDuration(prev => prev + 1), 1000);
   };
 
   const stopTimer = () => {
-    clearInterval(timerRef.current);
+    if (timerRef.current) clearInterval(timerRef.current);
   };
 
   const formatDuration = (s) => {
     const mins = Math.floor(s / 60);
     const secs = s % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const monitorActiveCall = async (phoneNumber) => {
-    if (!device) return toast.error('Telephony not initialized');
-    try {
-      const formattedTo = formatPhoneNumber(phoneNumber);
-      setCallState('ringing');
-      const params = { To: formattedTo, isMonitor: 'true' };
-      const monitoringCall = await device.connect({ params });
-      
-      setCall(monitoringCall);
-      monitoringCall.on('accept', () => setCallState('in-progress'));
-      monitoringCall.on('disconnect', () => endCall());
-    } catch (error) {
-      toast.error('Failed to join monitor session');
-      setCallState('idle');
-    }
   };
 
   return (
@@ -152,8 +187,10 @@ export const TelephonyProvider = ({ children }) => {
       makeCall,
       endCall,
       toggleMute,
+      sendDigits,
       activeCall: call,
       lastCallSid,
+      networkQuality,
       monitorActiveCall
     }}>
       {children}
