@@ -20,7 +20,8 @@ initSocket(server);
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server started successfully at ${new Date().toISOString()}`);
-  console.log(`Server running on port ${PORT}`);
-  console.log('CORS dynamically configured for Local & Render.');
+  console.log(`--- NETWORK INTERFACE ONLINE ---`);
+  console.log(`Service binding successful on: 0.0.0.0:${PORT}`);
+  console.log(`External Pulse Detection: ACTIVE`);
+  console.log(`Runtime Environment: ${process.env.NODE_ENV || 'development'}`);
 });

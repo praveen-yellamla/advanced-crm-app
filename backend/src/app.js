@@ -8,15 +8,17 @@ const app = express();
 
 // ==========================================
 // PRIORITY HEALTH CHECKS (For Deployment)
+// Must be above all middleware to ensure fast response
 // ==========================================
 app.get('/', (req, res) => {
-  res.status(200).send('ACRM Service Operational');
+  res.status(200).send('ACRM_ACTIVE');
 });
 
 app.get('/api/health', (req, res) => {
-  console.log('Health check pulse detected at:', new Date().toISOString());
-  res.status(200).json({ status: "OK", service: "Advanced CRM" });
+  res.status(200).json({ status: "OK", service: "Advanced CRM", timestamp: new Date() });
 });
+
+app.get('/healthz', (req, res) => res.sendStatus(200));
 
 // Middleware
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
