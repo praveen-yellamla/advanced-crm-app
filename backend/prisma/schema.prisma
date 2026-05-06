@@ -51,6 +51,7 @@ model User {
   feedbacksReceived Feedback[] @relation("AgentFeedback")
   feedbacksGiven    Feedback[] @relation("ManagerFeedback")
   aiUsage           AIUsage[]
+  emailAccounts     EmailAccount[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -195,9 +196,13 @@ model Task {
   title       String
   description String?
   dueDate     DateTime? @map("due_date")
-  priority    String?   @default("Normal")
-  status      String?   @default("PENDING") // PENDING, DONE
-  type        String?   @default("FOLLOWUP") // CALLBACK, FOLLOWUP, MISSED_CALL
+  priority    String?   @default("Normal") // Low, Normal, High, Urgent
+  status      String?   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  type        String?   @default("FOLLOWUP") // CALLBACK, FOLLOWUP, MISSED_CALL, EMAIL, MEETING
+  
+  tags        Json?     // Category tags for filtering
+  isRecurring Boolean   @default(false) @map("is_recurring")
+  recurRule   String?   @map("recur_rule") // Cron format or custom rule
   
   userId      Int       @map("user_id")
   user        User      @relation(fields: [userId], references: [id])
@@ -205,7 +210,9 @@ model Task {
   leadId Int?  @map("lead_id")
   lead   Lead? @relation("LeadTasks", fields: [leadId], references: [id])
 
-  createdAt DateTime @default(now()) @map("created_at")
+  reminderSent Boolean  @default(false) @map("reminder_sent")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("tasks")
 }
@@ -326,17 +333,36 @@ model Email {
   agentId Int   @map("agent_id")
   agent   User  @relation("AgentEmails", fields: [agentId], references: [id])
 
-  subject String
-  content String
-  sentAt  DateTime @default(now()) @map("sent_at")
+  messageId    String? @unique @map("message_id") // SMTP Message-ID
+  threadId     String? @map("thread_id")    // Group emails by thread
+  inReplyTo    String? @map("in_reply_to")  // Reference to parent email
+  
+  from         String
+  to           String
+  cc           String?
+  bcc          String?
+  subject      String
+  content      String  @db.Text
+  snippet      String? @db.Text             // Preview text for inbox
+  
+  attachments  Json?                        // Array of metadata/urls
+  
+  isOpened     Boolean   @default(false) @map("is_opened")
+  openedAt     DateTime? @map("opened_at")
+  clickCount   Int       @default(0) @map("click_count")
+  
+  status       String    @default("SENT")   // DRAFT, SENDING, SENT, FAILED, RECEIVED
+  folder       String    @default("INBOX")  // INBOX, SENT, DRAFTS, TRASH, ARCHIVE
+  
+  isRead       Boolean   @default(false) @map("is_read")
+  scheduledAt  DateTime? @map("scheduled_at")
+  sentAt       DateTime? @default(now()) @map("sent_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  // Tracking
-  isOpened   Boolean   @default(false) @map("is_opened")
-  openedAt   DateTime? @map("opened_at")
-  clickCount Int       @default(0) @map("click_count")
-
-  status String @default("SENT") // SENT, DRAFT, FAILED
-
+  @@index([threadId])
+  @@index([leadId])
+  @@index([agentId])
   @@map("emails")
 }
 
@@ -482,11 +508,58 @@ model GoogleAccount {
   @@map("google_accounts")
 }
 
+model EmailTemplate {
+  id          Int      @id @default(autoincrement())
+  name        String
+  subject     String
+  content     String   @db.Text
+  design      Json?    // For the drag-and-drop builder state
+  category    String?
+  variables   Json?    // Expected variables like {{name}}
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("email_templates")
+}
+
+model EmailAccount {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id])
+  
+  provider    String   // GMAIL, OUTLOOK, SMTP
+  email       String   @unique
+  
+  // SMTP/IMAP Config
+  smtpHost    String?  @map("smtp_host")
+  smtpPort    Int?     @map("smtp_port")
+  imapHost    String?  @map("imap_host")
+  imapPort    Int?     @map("imap_port")
+  
+  // Credentials (Encrypted on save)
+  username    String?
+  password    String?
+  
+  // OAuth
+  accessToken  String? @map("access_token")
+  refreshToken String? @map("refresh_token")
+  expiresAt    DateTime? @map("expires_at")
+  
+  syncStatus   String   @default("DISCONNECTED") // CONNECTED, DISCONNECTED, ERROR
+  lastSyncAt   DateTime? @map("last_sync_at")
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("email_accounts")
+}
+
 model LeadActivity {
   id        Int      @id @default(autoincrement())
   leadId    Int      @map("lead_id")
   lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  action    String // CREATE, UPDATE, STAGE_CHANGE, ASSIGNMENT
+  action    String // CREATE, UPDATE, STAGE_CHANGE, ASSIGNMENT, EMAIL_SENT, CALL_COMPLETED
   oldValue  String?  @map("old_value")
   newValue  String?  @map("new_value")
   userId    Int?     @map("user_id")

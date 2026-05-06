@@ -23,6 +23,7 @@ import AdminCalls from '../pages/admin/AdminCalls';
 import AdminAuditLogs from '../pages/admin/AdminAuditLogs';
 import AdminSettings from '../pages/admin/AdminSettings';
 import AIControlPanel from '../pages/admin/ai/AIControlPanel';
+import AnalyticsCommandCenter from '../pages/admin/AnalyticsCommandCenter';
 // Manager Pages
 import ManagerDashboard from '../pages/manager/ManagerDashboard';
 import ManagerLeads from '../pages/manager/ManagerLeads';
@@ -30,7 +31,7 @@ import ManagerCalls from '../pages/manager/ManagerCalls';
 import ManagerAgents from '../pages/manager/ManagerAgents';
 import ManagerInvoices from '../pages/manager/ManagerInvoices';
 import ManagerReports from '../pages/manager/ManagerReports';
-import QualityCenter from '../pages/common/QualityCenter';
+import QualityControlCenter from '../pages/manager/QualityControlCenter';
 // Agent Pages
 import AgentDashboard from '../pages/agent/AgentDashboard';
 import AgentLeads from '../pages/agent/AgentLeads';
@@ -38,9 +39,10 @@ import AgentDialer from '../pages/agent/AgentDialer';
 import AgentHistory from '../pages/agent/AgentHistory';
 import AgentTasks from '../pages/agent/AgentTasks';
 import AgentFeedback from '../pages/agent/AgentFeedback';
-import AgentEmails from '../pages/agent/AgentEmails';
+import EmailInbox from '../pages/agent/EmailInbox';
 import AgentInvoices from '../pages/agent/AgentInvoices';
 import AgentPerformance from '../pages/agent/AgentPerformance';
+import InvoiceBuilder from '../pages/agent/InvoiceBuilder';
 
 // Client Pages
 import ClientDashboard from '../pages/client/ClientDashboard';
@@ -67,6 +69,7 @@ const AppRoutes = () => {
           <Route path="/admin" element={<DashboardLayout />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="analytics" element={<AnalyticsCommandCenter />} />
             <Route path="teams" element={<AdminTeams />} />
             <Route path="agents" element={<AdminAgents />} />
             <Route path="leads" element={<LeadManagement />} />
@@ -76,7 +79,7 @@ const AppRoutes = () => {
             <Route path="tasks" element={<UnifiedTasks />} />
             <Route path="ledger" element={<FiscalLedger />} />
             <Route path="calls" element={<AdminCalls />} />
-            <Route path="qcqa" element={<QualityCenter role="ADMIN" />} />
+            <Route path="qcqa" element={<QualityControlCenter />} />
             <Route path="audit" element={<AdminAuditLogs />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="ai" element={<AIControlPanel />} />
@@ -89,7 +92,7 @@ const AppRoutes = () => {
             <Route index element={<Navigate to="/manager/dashboard" replace />} />
             <Route path="dashboard" element={<ManagerDashboard />} />
             <Route path="team-leads" element={<ManagerLeads />} />
-            <Route path="qcqa" element={<QualityCenter role="MANAGER" />} />
+            <Route path="qcqa" element={<QualityControlCenter />} />
             <Route path="agents" element={<ManagerAgents />} />
             <Route path="invoices" element={<ManagerInvoices />} />
             <Route path="reports" element={<ManagerReports />} />
@@ -107,8 +110,9 @@ const AppRoutes = () => {
             <Route path="history" element={<AgentHistory />} />
             <Route path="tasks" element={<AgentTasks />} />
             <Route path="feedback" element={<AgentFeedback />} />
-            <Route path="emails" element={<AgentEmails />} />
+            <Route path="inbox" element={<EmailInbox />} />
             <Route path="invoices" element={<AgentInvoices />} />
+            <Route path="invoices/new" element={<InvoiceBuilder />} />
             <Route path="performance" element={<AgentPerformance />} />
             <Route path="profile" element={<div className="font-bold text-2xl p-10 text-slate-400 font-mono tracking-tighter italic uppercase border-2 border-dashed border-slate-100 rounded-[40px] flex items-center justify-center h-64">Agent Identity Profile (COMING SOON)</div>} />
           </Route>

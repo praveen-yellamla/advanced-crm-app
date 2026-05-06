@@ -161,8 +161,57 @@ const DynamicContent = ({ category }) => {
     case 'AI': return <AISettings />;
     case 'Billing': return <BillingSettings />;
     case 'ADS': return <AdsSettings />;
+    case 'AUDIT': return <AuditLedger />;
     default: return <PlaceholderSettings category={category} />;
   }
+};
+
+const AuditLedger = () => {
+  const { data: logs, isLoading } = useQuery({
+    queryKey: ['auditLogs'],
+    queryFn: async () => {
+      const res = await api.get('/admin/audit'); // Need to implement this route
+      return res.data.data;
+    }
+  });
+
+  return (
+    <div className="space-y-12 relative z-10">
+        <div>
+            <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Audit Ledger.</h3>
+            <p className="text-sm font-bold text-slate-400 mt-2">Comprehensive record of institutional activity and persistence mutations.</p>
+        </div>
+
+        <div className="bg-slate-900 rounded-[48px] overflow-hidden shadow-2xl">
+           <table className="w-full text-left border-collapse">
+              <thead>
+                 <tr className="bg-slate-800/50">
+                    <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Timestamp</th>
+                    <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Strategic Actor</th>
+                    <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Action Protocol</th>
+                    <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Target Entity</th>
+                    <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Status</th>
+                 </tr>
+              </thead>
+              <tbody className="text-white/80 font-mono text-xs">
+                 {isLoading ? (
+                   <tr><td colSpan="5" className="p-20 text-center animate-pulse">Synchronizing Ledger Data...</td></tr>
+                 ) : logs?.map((log, i) => (
+                   <tr key={i} className="border-t border-slate-800/50 hover:bg-white/5 transition-colors">
+                      <td className="p-8 text-slate-500">{new Date(log.createdAt).toLocaleString()}</td>
+                      <td className="p-8 font-black text-blue-400">{log.user?.name || 'SYSTEM'}</td>
+                      <td className="p-8 uppercase tracking-widest">{log.action}</td>
+                      <td className="p-8 text-emerald-400/80">{log.target}</td>
+                      <td className="p-8">
+                         <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-lg font-black uppercase text-[9px]">Verified</span>
+                      </td>
+                   </tr>
+                 ))}
+              </tbody>
+           </table>
+        </div>
+    </div>
+  );
 };
 
 const CompanySettings = () => {

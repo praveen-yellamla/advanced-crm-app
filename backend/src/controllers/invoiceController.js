@@ -1,70 +1,92 @@
 const prisma = require('../config/prisma');
 
+// 1. CREATE INVOICE
 const createInvoice = async (req, res) => {
+  const { leadId, clientId, items, taxRate, discount, currency = 'USD' } = req.body;
+  const userId = req.user.id;
+
   try {
-    const { clientId, amount, dueDate, items } = req.body;
-    
+    const subtotal = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+    const taxAmount = subtotal * (taxRate / 100);
+    const total = subtotal + taxAmount - (discount || 0);
+
     const invoice = await prisma.invoice.create({
       data: {
         invoiceNo: `INV-${Date.now()}`,
-        clientId: parseInt(clientId),
-        raisedById: req.user.id,
-        amount: parseFloat(amount),
-        dueDate: new Date(dueDate),
+        leadId: leadId ? parseInt(leadId) : null,
+        clientId: clientId ? parseInt(clientId) : null,
+        raisedById: userId,
+        amount: total,
         status: 'PENDING',
+        dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days default
         items: {
           create: items.map(item => ({
             description: item.description,
-            quantity: parseInt(item.quantity) || 1,
+            quantity: parseInt(item.quantity),
             unitPrice: parseFloat(item.unitPrice),
-            tax: parseFloat(item.tax) || 0,
-            total: (parseInt(item.quantity) || 1) * parseFloat(item.unitPrice) + (parseFloat(item.tax) || 0)
+            tax: (item.quantity * item.unitPrice) * (taxRate / 100),
+            total: (item.quantity * item.unitPrice) + ((item.quantity * item.unitPrice) * (taxRate / 100))
           }))
         }
-      }
+      },
+      include: { items: true }
     });
 
-    res.status(201).json({ success: true, data: invoice });
+    res.json({ success: true, data: invoice });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-const getInvoices = async (req, res) => {
+// 2. GET INVOICE DETAILS
+const getInvoice = async (req, res) => {
+  const { id } = req.params;
   try {
-    const { status, raisedBy } = req.query;
-    const where = {};
-    if (status) where.status = status;
-    if (raisedBy) where.raisedById = parseInt(raisedBy);
-
-    // Role scoping
-    if (req.user.role === 'AGENT') where.raisedById = req.user.id;
-    if (req.user.role === 'MANAGER') where.raisedBy = { teamId: req.user.teamId };
-
-    const invoices = await prisma.invoice.findMany({
-      where,
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: parseInt(id) },
       include: { 
-        raisedBy: { select: { name: true } },
-        items: true,
-        // client: true // If relation exists
-      },
+        items: true, 
+        raisedBy: { select: { name: true, email: true } },
+        lead: true
+      }
+    });
+    res.json({ success: true, data: invoice });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 3. UPDATE STATUS
+const updateInvoiceStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  try {
+    const invoice = await prisma.invoice.update({
+      where: { id: parseInt(id) },
+      data: { status }
+    });
+    res.json({ success: true, data: invoice });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 4. LIST ALL (For Admin/Manager)
+const getAllInvoices = async (req, res) => {
+  try {
+    const invoices = await prisma.invoice.findMany({
+      include: { raisedBy: { select: { name: true } }, lead: { select: { customerName: true } } },
       orderBy: { createdAt: 'desc' }
     });
-
     res.json({ success: true, data: invoices });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-const generatePDF = async (req, res) => {
-  try {
-    const { id } = req.params;
-    // In production, integrate PDFKit or Puppeteer here
-    res.json({ success: true, message: 'PDF generated. Initializing download sequence.' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-}
-
-module.exports = { createInvoice, getInvoices, generatePDF };
+module.exports = {
+  createInvoice,
+  getInvoice,
+  updateInvoiceStatus,
+  getAllInvoices
+};

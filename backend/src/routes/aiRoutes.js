@@ -11,9 +11,7 @@ router.patch('/settings', authorize('ADMIN'), aiController.updateAISettings);
 router.get('/usage', authorize('ADMIN'), aiController.getAIUsage);
 
 // Intelligence Operations
-router.post('/lead/score/:leadId', aiController.scoreLead);
-router.post('/lead/summary/:leadId', aiController.summarizeLead);
-router.post('/call/transcribe/:callId', aiController.transcribeCall);
-router.post('/query', aiController.processNLQuery);
+router.post('/lead/score/:leadId', aiController.getLeadScore);
+router.post('/call/summary/:callId', aiController.getCallSummary);
 
 module.exports = router;

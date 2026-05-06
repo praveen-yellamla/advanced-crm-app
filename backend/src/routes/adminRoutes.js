@@ -16,7 +16,8 @@ const {
 const { 
   getInvoices, 
   createInvoice, 
-  getCalls 
+  getCalls,
+  getAnalytics 
 } = require('../controllers/adminExtraController');
 const { 
   inviteUser, 
@@ -55,6 +56,7 @@ router.route('/agents/:id')
   .put(upload.single('image'), updateAgent)
   .delete(deleteAgent);
 
+router.get('/audit', getAuditLogs);
 router.get('/audit-logs', getAuditLogs);
 
 router.get('/managers', getManagers);
@@ -75,6 +77,7 @@ router.route('/invoices')
   .post(createInvoice);
 
 router.get('/calls', getCalls);
+router.get('/analytics', getAnalytics);
 
 router.get('/integrations', getIntegrations);
 router.post('/integrations/meta', connectMeta);

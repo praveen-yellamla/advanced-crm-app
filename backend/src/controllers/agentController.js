@@ -157,14 +157,51 @@ const getMyTasks = async (req, res) => {
 
 const createTask = async (req, res) => {
   try {
-    const { title, description, dueDate, priority } = req.body;
+    const { title, description, dueDate, priority, type, tags } = req.body;
     const task = await prisma.task.create({
       data: {
-        title, description, dueDate: new Date(dueDate), priority,
+        title, 
+        description, 
+        dueDate: dueDate ? new Date(dueDate) : null, 
+        priority: priority || 'Normal',
+        type: type || 'FOLLOWUP',
+        tags: tags || {},
         userId: req.user.id
       }
     });
     res.json({ success: true, data: task });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const updateTask = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, title, description, dueDate, priority } = req.body;
+    const task = await prisma.task.update({
+      where: { id: parseInt(id), userId: req.user.id },
+      data: { 
+        status, 
+        title, 
+        description, 
+        dueDate: dueDate ? new Date(dueDate) : undefined, 
+        priority 
+      }
+    });
+    res.json({ success: true, data: task });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const deleteTask = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.task.delete({
+      where: { id: parseInt(id), userId: req.user.id }
+    });
+    res.json({ success: true, message: "Task deleted" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -270,6 +307,8 @@ module.exports = {
   getCallHistory,
   getMyTasks,
   createTask,
+  updateTask,
+  deleteTask,
   createInvoice,
   getMyInvoices,
   getFeedback,

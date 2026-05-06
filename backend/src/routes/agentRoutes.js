@@ -22,6 +22,8 @@ router.get('/calls', agentController.getCallHistory);
 // Tasks
 router.get('/tasks', agentController.getMyTasks);
 router.post('/tasks', agentController.createTask);
+router.patch('/tasks/:id', agentController.updateTask);
+router.delete('/tasks/:id', agentController.deleteTask);
 
 // Invoices
 router.get('/invoices', agentController.getMyInvoices);
