@@ -263,13 +263,13 @@ const exportAnalytics = async (req, res) => {
       port: process.env.SMTP_PORT || 587,
       secure: false,
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+        user: process.env.SMTP_USER || process.env.EMAIL_USER,
+        pass: process.env.SMTP_PASS || process.env.EMAIL_PASS
       }
     });
 
     const mailOptions = {
-      from: `"CRM Analytics System" <${process.env.SMTP_USER}>`,
+      from: `"CRM Analytics System" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
       to: req.user.email,
       subject: `Your Business Overview Report - ${new Date().toLocaleDateString()}`,
       html: `
