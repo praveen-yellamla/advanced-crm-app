@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import AIAssistant from '../components/AIAssistant';
-import CallCenter from '../components/telephony/CallCenter';
+import UnifiedFloatingAssistant from '../components/common/UnifiedFloatingAssistant';
 import ErrorBoundary from '../components/common/ErrorBoundary';
 import { 
   LayoutDashboard, 
@@ -244,9 +243,8 @@ const DashboardLayout = () => {
       </main>
 
       <ErrorBoundary>
-        <AIAssistant />
+        <UnifiedFloatingAssistant />
       </ErrorBoundary>
-      {location.pathname !== '/agent/dialer' && <CallCenter />}
     </div>
   );
 };
