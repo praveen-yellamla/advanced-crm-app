@@ -16,7 +16,8 @@ import {
   ChevronRight,
   PieChart as PieIcon,
   Clock,
-  ShieldCheck
+  ShieldCheck,
+  Target
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
