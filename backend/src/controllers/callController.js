@@ -147,12 +147,13 @@ const handleVoiceWebhook = async (req, res) => {
     res.set("Content-Type", "text/xml");
     return res.status(200).send(twiml.toString());
   } catch (error) {
-    console.error("Voice webhook error:", error);
-
+    console.error("FATAL Voice Webhook Error:", error);
+    
+    // FAIL-SAFE: Always return valid TwiML to Twilio
     res.set("Content-Type", "text/xml");
-    return res.status(500).send(`
+    return res.status(200).send(`
       <Response>
-        <Say>Application error occurred</Say>
+        <Say>System temporarily unavailable. Please try again.</Say>
       </Response>
     `);
   }
@@ -227,23 +228,29 @@ const handleStatusWebhook = async (req, res) => {
 
     res.status(200).send('OK');
   } catch (error) {
-    console.error('Webhook Error:', error);
-    res.status(500).send(error.message);
+    console.error('WEBHOOK ERROR (Status):', error);
+    // FAIL-SAFE: Always return 200 to Twilio to stop retries/errors
+    return res.status(200).send('OK (Handled with Error)');
   }
 };
 
 // 5. RECORDING CALLBACK WEBHOOK
 const handleRecordingWebhook = async (req, res) => {
   const { CallSid, RecordingUrl } = req.body;
+  console.log(`WEBHOOK: Recording for ${CallSid}: ${RecordingUrl}`);
 
   try {
-    await prisma.call.update({
-      where: { sid: CallSid },
-      data: { recordingUrl: RecordingUrl }
-    });
-    res.status(200).send('OK');
+    if (CallSid) {
+      await prisma.call.update({
+        where: { sid: CallSid },
+        data: { recordingUrl: RecordingUrl }
+      });
+    }
+    return res.status(200).json({ success: true });
   } catch (error) {
-    res.status(500).send(error.message);
+    console.error('WEBHOOK ERROR (Recording):', error);
+    // FAIL-SAFE: Always return 200
+    return res.status(200).json({ success: false, error: 'Internal logging error' });
   }
 };
 

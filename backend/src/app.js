@@ -66,6 +66,7 @@ app.use('/api/auth/google', googleRoutes);
 app.use('/api/invite', inviteRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/call', require('./routes/callRoutes'));
+app.use('/api/twilio', require('./routes/callRoutes'));
 
 const prisma = require('./config/prisma');
 

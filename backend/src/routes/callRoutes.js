@@ -15,6 +15,8 @@ const { protect } = require('../middleware/authMiddleware');
 
 // PUBLIC WEBHOOKS (Called by Twilio)
 router.post('/voice', handleVoiceWebhook);
+router.post('/status', handleStatusWebhook);
+router.post('/recording', handleRecordingWebhook);
 router.post('/webhook/voice', handleVoiceWebhook);
 router.post('/webhook/status', handleStatusWebhook);
 router.post('/webhook/recording', handleRecordingWebhook);
