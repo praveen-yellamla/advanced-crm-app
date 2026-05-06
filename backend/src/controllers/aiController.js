@@ -1,5 +1,22 @@
 const aiService = require('../services/aiService');
+const prisma = require('../config/prisma');
 
+/**
+ * CONVERSATIONAL AI CHAT
+ */
+const chatAssistant = async (req, res) => {
+  try {
+    const { message, history } = req.body;
+    const response = await aiService.chatWithCRM(req.user.id, message, history);
+    res.json({ success: true, data: response });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * LEAD SCORING PIPELINE
+ */
 const getLeadScore = async (req, res) => {
   const { leadId } = req.params;
   try {
@@ -10,32 +27,70 @@ const getLeadScore = async (req, res) => {
   }
 };
 
-const getCallSummary = async (req, res) => {
-  const { callId } = req.params;
-  const { transcript } = req.body;
+/**
+ * AI SYSTEM SETTINGS (DATABASE PERSISTED)
+ */
+const getAISettings = async (req, res) => {
   try {
-    const result = await aiService.summarizeCall(parseInt(callId), transcript);
-    res.json({ success: true, data: result });
+    const settings = await prisma.systemSetting.findMany({
+      where: { category: 'AI' }
+    });
+    res.json({ success: true, data: settings });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-const getAISettings = async (req, res) => {
-  res.json({ success: true, data: { model: "gpt-4-turbo-preview", temperature: 0.7 } });
-};
-
 const updateAISettings = async (req, res) => {
-  res.json({ success: true, data: req.body });
+  try {
+    const { key, value } = req.body;
+    const setting = await prisma.systemSetting.upsert({
+      where: { key },
+      update: { value, category: 'AI' },
+      create: { key, value, category: 'AI' }
+    });
+    res.json({ success: true, data: setting });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
+/**
+ * AI USAGE ANALYTICS
+ */
 const getAIUsage = async (req, res) => {
-  res.json({ success: true, data: { tokens: 0, cost: 0 } });
+  try {
+    const usage = await prisma.aiUsage.aggregate({
+      _sum: { tokens: true, cost: true },
+      _count: { _all: true }
+    });
+    
+    // Get usage trend for last 7 days
+    const lastWeek = new Date();
+    lastWeek.setDate(lastWeek.getDate() - 7);
+    
+    const trend = await prisma.aiUsage.findMany({
+      where: { createdAt: { gte: lastWeek } },
+      orderBy: { createdAt: 'asc' }
+    });
+
+    res.json({ 
+      success: true, 
+      data: {
+        totalTokens: usage._sum.tokens || 0,
+        totalCost: usage._sum.cost || 0,
+        requestCount: usage._count._all || 0,
+        trend
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
 module.exports = {
+  chatAssistant,
   getLeadScore,
-  getCallSummary,
   getAISettings,
   updateAISettings,
   getAIUsage

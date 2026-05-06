@@ -6,29 +6,103 @@ const openai = new OpenAI({
 });
 
 /**
- * SCORES A LEAD BASED ON PROFILE AND HISTORY
+ * CORE AI CONVERSATIONAL ENGINE
+ * Analyzes CRM context and provides intelligent responses
+ */
+const chatWithCRM = async (userId, message, history = []) => {
+  try {
+    // 1. DATA AGGREGATION LAYER
+    // We fetch a snapshot of the CRM to give the AI context
+    const [leadsCount, callsCount, tasksCount, recentLeads, performance] = await Promise.all([
+      prisma.lead.count(),
+      prisma.call.count(),
+      prisma.task.count(),
+      prisma.lead.findMany({ take: 5, orderBy: { createdAt: 'desc' }, select: { customerName: true, status: true, source: true } }),
+      prisma.call.groupBy({
+        by: ['status'],
+        _count: { _all: true }
+      })
+    ]);
+
+    const crmContext = `
+      CURRENT CRM SNAPSHOT:
+      - Total Leads: ${leadsCount}
+      - Total Calls: ${callsCount}
+      - Total Tasks: ${tasksCount}
+      - Recent Leads: ${JSON.stringify(recentLeads)}
+      - Call Status Distribution: ${JSON.stringify(performance)}
+      - System Date: ${new Date().toISOString()}
+    `;
+
+    // 2. PROMPT CONSTRUCTION
+    const systemPrompt = `
+      You are "Zia", the Advanced CRM Intelligence Assistant. 
+      You have access to real-time CRM data and operations.
+      Your goal is to help administrators manage the platform, optimize sales, and analyze performance.
+      
+      CRITICAL INSTRUCTIONS:
+      - Use the provided CRM Context to answer questions accurately.
+      - If you need to perform an action (like creating a task), explain that you can do it.
+      - Be professional, concise, and data-driven.
+      - Format your responses in clean Markdown.
+      - If data is missing, offer to find it or explain what is needed.
+      
+      ${crmContext}
+    `;
+
+    // 3. EXECUTION
+    const messages = [
+      { role: "system", content: systemPrompt },
+      ...history.slice(-10), // Keep last 10 messages for context
+      { role: "user", content: message }
+    ];
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4-turbo-preview",
+      messages,
+      temperature: 0.5,
+      max_tokens: 1000
+    });
+
+    const aiResponse = response.choices[0].message.content;
+
+    // 4. USAGE TRACKING
+    await prisma.aiUsage.create({
+      data: {
+        userId,
+        module: 'CHAT_ASSISTANT',
+        tokens: response.usage.total_tokens,
+        cost: (response.usage.total_tokens / 1000) * 0.01 // Simplified cost calculation
+      }
+    });
+
+    return aiResponse;
+  } catch (error) {
+    console.error("AI Chat Error:", error);
+    throw new Error("Intelligence core is currently calibrating. Please retry in a moment.");
+  }
+};
+
+/**
+ * DYNAMIC LEAD SCORING
  */
 const scoreLead = async (leadId) => {
   try {
     const lead = await prisma.lead.findUnique({
       where: { id: leadId },
       include: {
-        calls: { take: 5, orderBy: { createdAt: 'desc' } },
-        emails: { take: 5, orderBy: { createdAt: 'desc' } }
+        calls: { take: 10, orderBy: { createdAt: 'desc' } },
+        activities: { take: 10, orderBy: { createdAt: 'desc' } }
       }
     });
 
     if (!lead) return null;
 
     const prompt = `
-      You are an expert sales strategist. Analyze the following lead profile and history:
-      Name: ${lead.customerName}
-      Source: ${lead.source}
-      Status: ${lead.status}
-      History: ${JSON.stringify(lead.calls.map(c => c.callStatus))}
+      Analyze this lead for conversion probability (0-100):
+      Lead: ${JSON.stringify(lead)}
       
-      Provide a conversion probability score (0-100) and a brief strategic reasoning.
-      Return JSON: { "score": number, "reasoning": "string" }
+      Return JSON only: { "score": number, "priority": "Low|Medium|High|Urgent", "reasoning": "string", "nextAction": "string" }
     `;
 
     const response = await openai.chat.completions.create({
@@ -39,13 +113,9 @@ const scoreLead = async (leadId) => {
 
     const result = JSON.parse(response.choices[0].message.content);
 
-    // Update Lead with AI insights
     await prisma.lead.update({
       where: { id: leadId },
-      data: {
-        score: result.score,
-        // AI Reasoning would normally be in a separate AI table or field
-      }
+      data: { score: result.score }
     });
 
     return result;
@@ -56,21 +126,15 @@ const scoreLead = async (leadId) => {
 };
 
 /**
- * SUMMARIZES A CALL TRANSCRIPTION
+ * CALL TRANSCRIPTION ANALYSIS
  */
-const summarizeCall = async (callId, transcript) => {
+const analyzeCall = async (callId, transcript) => {
   try {
     const prompt = `
       Analyze this sales call transcript:
       "${transcript}"
       
-      Provide:
-      1. Sentiment (Positive/Negative/Neutral)
-      2. Key Pain Points
-      3. Action Items
-      4. Summary
-      
-      Return JSON: { "sentiment": "string", "painPoints": [], "actionItems": [], "summary": "string" }
+      Return JSON: { "sentiment": "Positive|Negative|Neutral", "objections": [], "summary": "string", "rating": 1-5 }
     `;
 
     const response = await openai.chat.completions.create({
@@ -81,12 +145,13 @@ const summarizeCall = async (callId, transcript) => {
 
     return JSON.parse(response.choices[0].message.content);
   } catch (error) {
-    console.error("AI Summarization Error:", error);
+    console.error("AI Call Analysis Error:", error);
     return null;
   }
 };
 
 module.exports = {
+  chatWithCRM,
   scoreLead,
-  summarizeCall
+  analyzeCall
 };
