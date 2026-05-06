@@ -1,18 +1,17 @@
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 465,
-  secure: process.env.SMTP_SECURE === "false" ? false : true, // Default to true for port 465
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.SMTP_USER || process.env.EMAIL_USER,
     pass: process.env.SMTP_PASS || process.env.EMAIL_PASS
   },
+  connectionTimeout: 10000, // 10 sec timeout so it fails before Axios does
   tls: {
     rejectUnauthorized: false
-  },
-  logger: true,
-  debug: true
+  }
 });
 
 /**
