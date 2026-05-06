@@ -30,5 +30,6 @@ router.post('/tag', tagCall);
 router.get('/history/:agentId', getCallHistory);
 router.get('/monitor', monitorCall);
 router.get('/active', getActiveCalls);
+router.get('/validate', validateTelephonyConfig);
 
 module.exports = router;

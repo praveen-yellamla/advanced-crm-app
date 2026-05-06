@@ -86,47 +86,66 @@ export const TelephonyProvider = ({ children }) => {
 
   const makeCall = async (phoneNumber, leadId = null) => {
     if (!device) {
-      toast.error('Telephony core offline. Reconnecting...');
+      setCallState('connecting');
+      toast.loading('Telephony core initializing...');
       return initDevice();
     }
     
     try {
       const formattedTo = formatPhoneNumber(phoneNumber);
-      setCallState('ringing');
+      console.log(`TELEPHONY: Dialing ${formattedTo}`);
+      setCallState('connecting');
       
       const outgoingCall = await device.connect({ 
         params: { To: formattedTo, leadId, agentId: user?.id } 
       });
       
       setCall(outgoingCall);
+      setCallState('ringing');
 
       outgoingCall.on('accept', () => {
-        setCallState('in-progress');
+        console.log('TELEPHONY: Call Answered');
+        setCallState('connected');
         if (outgoingCall.parameters?.CallSid) {
           setLastCallSid(outgoingCall.parameters.CallSid);
         }
         startTimer();
       });
 
-      outgoingCall.on('disconnect', () => handleCallEnd());
-      outgoingCall.on('reject', () => handleCallEnd());
+      outgoingCall.on('disconnect', () => {
+        console.log('TELEPHONY: Call Disconnected');
+        setCallState('disconnected');
+        handleCallEnd();
+      });
+
+      outgoingCall.on('reject', () => {
+        console.log('TELEPHONY: Call Rejected');
+        setCallState('failed');
+        handleCallEnd();
+      });
+
       outgoingCall.on('error', (err) => {
-        console.error('Call Error:', err);
-        toast.error('Call failed');
+        console.error('TELEPHONY: Call Error:', err);
+        toast.error(`Call failed: ${err.message}`);
+        setCallState('failed');
         handleCallEnd();
       });
 
     } catch (error) {
-      toast.error('Could not initiate call');
-      setCallState('idle');
+      console.error('TELEPHONY: Initiate Error:', error);
+      toast.error('Could not connect to voice grid');
+      setCallState('failed');
+      setTimeout(() => setCallState('idle'), 3000);
     }
   };
 
   const endCall = () => {
     if (call) {
+      console.log('TELEPHONY: Manual Terminate');
       if (call.parameters?.CallSid) setLastCallSid(call.parameters.CallSid);
       call.disconnect();
     }
+    setCallState('disconnected');
     handleCallEnd();
   };
 
@@ -135,11 +154,15 @@ export const TelephonyProvider = ({ children }) => {
       const newMuteStatus = !isMuted;
       call.mute(newMuteStatus);
       setIsMuted(newMuteStatus);
+      toast.success(newMuteStatus ? 'Microphone Muted' : 'Microphone Active');
     }
   };
 
   const sendDigits = (digits) => {
-    if (call) call.sendDigits(digits);
+    if (call) {
+      console.log(`TELEPHONY: Sending DTMF: ${digits}`);
+      call.sendDigits(digits);
+    }
   };
 
   // 3. MONITORING & TOOLS
@@ -147,17 +170,21 @@ export const TelephonyProvider = ({ children }) => {
     if (!device) return toast.error('Telephony offline');
     try {
       const formattedTo = formatPhoneNumber(phoneNumber);
-      setCallState('ringing');
+      setCallState('connecting');
       const monitoringCall = await device.connect({ 
         params: { To: formattedTo, isMonitor: 'true' } 
       });
       
       setCall(monitoringCall);
-      monitoringCall.on('accept', () => setCallState('in-progress'));
-      monitoringCall.on('disconnect', () => handleCallEnd());
+      monitoringCall.on('accept', () => setCallState('connected'));
+      monitoringCall.on('disconnect', () => {
+        setCallState('disconnected');
+        handleCallEnd();
+      });
     } catch (error) {
-      toast.error('Monitoring failed');
-      setCallState('idle');
+      toast.error('Monitoring link failed');
+      setCallState('failed');
+      setTimeout(() => setCallState('idle'), 3000);
     }
   };
 

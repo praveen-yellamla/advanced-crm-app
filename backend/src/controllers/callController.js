@@ -12,13 +12,14 @@ const callerId = process.env.TWILIO_PHONE_NUMBER;
 const client = twilio(accountSid, authToken);
 
 /**
- * 1. GENERATE ACCESS TOKEN FOR BROWSER (WEBRTC)
+ * 1. GENERATE ACCESS TOKEN
  */
 const getCallToken = async (req, res) => {
   try {
-    const agentId = req.user.id.toString();
-    const accessToken = new twilio.jwt.AccessToken(accountSid, apiKey, apiSecret, { identity: agentId });
+    const identity = req.user.id.toString();
+    console.log(`TELEPHONY TOKEN: Generating for identity: ${identity}`);
     
+    const accessToken = new twilio.jwt.AccessToken(accountSid, apiKey, apiSecret, { identity });
     const voiceGrant = new twilio.jwt.AccessToken.VoiceGrant({
       outgoingApplicationSid: twimlAppSid,
       incomingAllow: true
@@ -27,26 +28,151 @@ const getCallToken = async (req, res) => {
     accessToken.addGrant(voiceGrant);
     res.json({ success: true, token: accessToken.toJwt() });
   } catch (error) {
+    console.error("TELEPHONY TOKEN ERROR:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
 /**
- * 2. INITIATE OUTGOING CALL (API TRIGGERED - CLICK TO CALL)
- * This calls the AGENT'S browser first, then when they answer, it calls the CUSTOMER.
+ * 2. MASTER VOICE WEBHOOK (TwiML GENERATOR)
+ * CRITICAL: This must return valid XML every time.
+ */
+const handleVoiceWebhook = async (req, res) => {
+  const VoiceResponse = twilio.twiml.VoiceResponse;
+  const twiml = new VoiceResponse();
+  
+  // Twilio sends data in POST body or Query
+  const params = { ...req.query, ...req.body };
+  const { To, From, CallSid, isMonitor, agentId, leadId } = params;
+
+  console.log(`--- VOICE WEBHOOK START ---`);
+  console.log(`SID: ${CallSid}`);
+  console.log(`To: ${To}`);
+  console.log(`From: ${From}`);
+  console.log(`Params:`, params);
+
+  try {
+    // A. SILENT MONITORING (MANAGER LISTENING)
+    if (isMonitor === 'true' || isMonitor === true) {
+      console.log(`TELEPHONY: Entering MONITOR mode for ${To}`);
+      const dial = twiml.dial();
+      dial.conference({
+        muted: true,
+        startConferenceOnEnter: false,
+        endConferenceOnExit: false,
+        beep: 'false'
+      }, `conf_${To.replace(/[^a-zA-Z0-9]/g, '')}`);
+      
+      res.type('text/xml');
+      return res.send(twiml.toString());
+    }
+
+    // B. INCOMING CALL TO TWILIO NUMBER
+    if (To === callerId) {
+      console.log(`TELEPHONY: Handling INCOMING call to ${callerId}`);
+      const dial = twiml.dial({ 
+        timeout: 20,
+        record: 'record-from-answer'
+      });
+      dial.client('broadcast_all');
+      
+      res.type('text/xml');
+      return res.send(twiml.toString());
+    }
+
+    // C. OUTGOING CALL FROM BROWSER
+    // This is the leg from the AGENT browser to Twilio
+    if (To && To !== callerId) {
+      const cleanTo = formatToE164(To);
+      console.log(`TELEPHONY: Handling OUTGOING call from Browser to ${cleanTo}`);
+
+      // We bridge via Conference to enable monitoring
+      const conferenceName = `conf_${cleanTo.replace(/[^a-zA-Z0-9]/g, '')}`;
+      const baseUrl = (process.env.BACKEND_URL || '').replace(/\/$/, '');
+
+      // 1. Log the call start in DB
+      await prisma.call.create({
+        data: {
+          sid: CallSid,
+          from: callerId,
+          phone: cleanTo,
+          status: 'initiated',
+          agentId: agentId ? parseInt(agentId) : (req.user ? req.user.id : 1),
+          leadId: leadId ? parseInt(leadId) : null,
+          type: 'OUTBOUND'
+        }
+      }).catch(err => console.error("DB Log Error (Non-Fatal):", err));
+
+      // 2. Put the Agent in the Conference
+      const dial = twiml.dial({
+        record: 'record-from-answer',
+        recordingStatusCallback: `${baseUrl}/api/call/recording`
+      });
+      
+      dial.conference({
+        startConferenceOnEnter: true,
+        endConferenceOnExit: true,
+        statusCallback: `${baseUrl}/api/call/status`,
+        statusCallbackEvent: ['start', 'end', 'join', 'leave']
+      }, conferenceName);
+
+      // 3. TRIGGER CUSTOMER LEG ASYNCHRONOUSLY
+      // We call the customer and put them in the SAME conference
+      console.log(`TELEPHONY: Triggering customer leg for ${cleanTo} via conference ${conferenceName}`);
+      
+      const customerTwiML = `<Response><Dial><Conference startConferenceOnEnter="true" endConferenceOnExit="true" statusCallback="${baseUrl}/api/call/status">${conferenceName}</Conference></Dial></Response>`;
+      
+      client.calls.create({
+        to: cleanTo,
+        from: callerId,
+        twiml: customerTwiML,
+        statusCallback: `${baseUrl}/api/call/status`,
+        statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed']
+      }).then(call => {
+        console.log(`TELEPHONY: Customer leg initiated successfully. SID: ${call.sid}`);
+      }).catch(err => {
+        console.error("TELEPHONY: Customer leg CRITICAL FAILURE:", {
+          message: err.message,
+          code: err.code,
+          moreInfo: err.moreInfo
+        });
+        // If the customer leg fails (e.g. trial restrictions), we should probably end the agent leg too?
+        // For now, logging is key.
+      });
+
+      res.type('text/xml');
+      const xml = twiml.toString();
+      console.log(`TwiML Response to Agent:\n${xml}`);
+      return res.send(xml);
+    }
+
+    // D. FALLBACK (Empty response if nothing matches)
+    console.warn(`TELEPHONY: Webhook fallback - no matching logic for To: ${To}`);
+    res.type('text/xml');
+    return res.send('<Response><Say>Communication node active. No destination specified.</Say></Response>');
+
+  } catch (error) {
+    console.error("TELEPHONY FATAL WEBHOOK ERROR:", error);
+    res.type('text/xml');
+    return res.send('<Response><Say>System internal error. Please retry.</Say></Response>');
+  }
+};
+
+/**
+ * 3. INITIATE OUTGOING CALL (CLICK-TO-CALL VIA API)
  */
 const initiateOutgoingCall = async (req, res) => {
   const { phoneNumber, leadId } = req.body;
   const agentId = req.user.id;
 
   if (!isValidPhone(phoneNumber)) {
-    return res.status(400).json({ success: false, message: "Invalid phone number format." });
+    return res.status(400).json({ success: false, message: "Invalid phone format." });
   }
 
   const formattedTo = formatToE164(phoneNumber);
 
   try {
-    // We call the client identity (agent's browser)
+    console.log(`TELEPHONY: API Triggered call from Agent ${agentId} to ${formattedTo}`);
     const call = await client.calls.create({
       url: `${process.env.BACKEND_URL}/api/call/voice?To=${encodeURIComponent(formattedTo)}&leadId=${leadId}&agentId=${agentId}`,
       to: `client:${agentId}`,
@@ -55,180 +181,68 @@ const initiateOutgoingCall = async (req, res) => {
 
     res.json({ success: true, callSid: call.sid });
   } catch (error) {
-    console.error("Initiate Outgoing Call Error:", error);
+    console.error("TELEPHONY API CALL ERROR:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
 /**
- * 3. MASTER VOICE WEBHOOK (TwiML GENERATOR)
- * This handles both Outgoing (from browser) and Incoming (to number)
- */
-const handleVoiceWebhook = async (req, res) => {
-  const VoiceResponse = twilio.twiml.VoiceResponse;
-  const twiml = new VoiceResponse();
-
-  try {
-    const { To, From, CallSid, isMonitor, agentId, leadId } = { ...req.query, ...req.body };
-    const cleanTo = To ? To.replace('client:', '') : '';
-    
-    console.log(`TELEPHONY ENGINE: Handling Voice for ${CallSid} | To: ${To} | Monitor: ${isMonitor}`);
-
-    // CASE A: SILENT MONITORING (MANAGER LISTENING)
-    if (isMonitor === 'true') {
-      const dial = twiml.dial();
-      dial.conference({
-        muted: true,
-        startConferenceOnEnter: false,
-        endConferenceOnExit: false,
-        beep: 'false'
-      }, `call_${cleanTo.replace('+', '')}`);
-      
-      res.set("Content-Type", "text/xml");
-      return res.status(200).send(twiml.toString());
-    }
-
-    // CASE B: INCOMING CALL TO TWILIO NUMBER
-    if (To === callerId) {
-      // In a real scenario, we'd route to an agent. For now, we broadcast to all browsers.
-      const dial = twiml.dial({ 
-        timeout: 20,
-        record: 'record-from-answer',
-        recordingStatusCallback: `${process.env.BACKEND_URL}/api/call/recording`
-      });
-      dial.client('broadcast_all'); // Or a specific agent identity
-      
-      res.set("Content-Type", "text/xml");
-      return res.status(200).send(twiml.toString());
-    }
-
-    // CASE C: OUTGOING CALL FROM BROWSER OR CLICK-TO-CALL AGENT LEG
-    // We bridge the call via a Conference to allow monitoring
-    const conferenceName = `call_${cleanTo.replace('+', '')}`;
-    
-    // Create the DB record if it doesn't exist (optimistic logging)
-    await prisma.call.upsert({
-      where: { sid: CallSid },
-      update: { status: 'ringing' },
-      create: {
-        sid: CallSid,
-        from: From || callerId,
-        phone: cleanTo,
-        status: 'ringing',
-        agentId: agentId ? parseInt(agentId) : 1,
-        leadId: leadId ? parseInt(leadId) : null,
-        type: 'OUTBOUND'
-      }
-    });
-
-    const dial = twiml.dial({
-      record: 'record-from-answer',
-      recordingStatusCallback: `${process.env.BACKEND_URL}/api/call/recording`,
-      statusCallback: `${process.env.BACKEND_URL}/api/call/status`,
-      statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed']
-    });
-
-    // We dial the customer and put them in the conference
-    dial.number({
-      statusCallback: `${process.env.BACKEND_URL}/api/call/status`,
-      statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed']
-    }, cleanTo);
-
-    // Also put the agent leg in the conference
-    // But since this TwiML is returned TO the agent leg, 
-    // we use Conference inside Dial if we want both in one.
-    // Simpler: Just Dial the number. The agent is already connected.
-    
-    /* 
-    NOTE: To support silent monitoring, we MUST use Conference. 
-    The logic is: Agent calls -> enters Conference A. 
-    Backend simultaneously calls Customer -> enters Conference A.
-    */
-    
-    const response = new VoiceResponse();
-    const dialC = response.dial();
-    dialC.conference({
-      startConferenceOnEnter: true,
-      endConferenceOnExit: true,
-      statusCallback: `${process.env.BACKEND_URL}/api/call/status`,
-      statusCallbackEvent: ['start', 'end', 'join', 'leave']
-    }, conferenceName);
-
-    // Simultaneously trigger the customer leg if it hasn't been triggered
-    // This is handled by Twilio's Dial command above if we use simple Dial.
-    // For monitoring, we do:
-    
-    client.calls.create({
-      to: cleanTo,
-      from: callerId,
-      twiml: `<Response><Dial><Conference startConferenceOnEnter="true" endConferenceOnExit="true">${conferenceName}</Conference></Dial></Response>`,
-      statusCallback: `${process.env.BACKEND_URL}/api/call/status`,
-    }).catch(err => console.error("Customer leg trigger failed:", err));
-
-    res.set("Content-Type", "text/xml");
-    return res.status(200).send(response.toString());
-
-  } catch (error) {
-    console.error("FATAL Voice Webhook Error:", error);
-    res.set("Content-Type", "text/xml");
-    return res.status(200).send('<Response><Say>Connection error. Please retry.</Say></Response>');
-  }
-};
-
-/**
- * 4. STATUS CALLBACK WEBHOOK
+ * 4. STATUS CALLBACK
  */
 const handleStatusWebhook = async (req, res) => {
-  const { CallSid, CallStatus, CallDuration, To } = req.body;
-  console.log(`TELEPHONY STATUS: ${CallStatus} | SID: ${CallSid}`);
+  const { CallSid, CallStatus, CallDuration, To, From } = req.body;
+  console.log(`TELEPHONY STATUS: ${CallStatus} | SID: ${CallSid} | Target: ${To}`);
 
   try {
-    await prisma.call.updateMany({
+    // Update call status in DB
+    const updated = await prisma.call.updateMany({
       where: { 
         OR: [
           { sid: CallSid },
-          { phone: To, status: { in: ['ringing', 'queued'] } }
+          { phone: To, status: { in: ['initiated', 'ringing', 'queued'] } }
         ]
       },
       data: { 
-        status: CallStatus,
-        duration: parseInt(CallDuration) || undefined
+        status: CallStatus.toLowerCase(),
+        duration: CallDuration ? parseInt(CallDuration) : undefined
       }
     });
 
-    // MISSED CALL AUTOMATION (DAY 8)
-    if (['no-answer', 'failed', 'busy'].includes(CallStatus)) {
+    // Handle Missed Calls
+    if (['no-answer', 'failed', 'busy'].includes(CallStatus.toLowerCase())) {
+      console.log(`TELEPHONY: Call failed/missed. Creating task.`);
       const callData = await prisma.call.findFirst({
-        where: { sid: CallSid },
-        include: { lead: true }
+        where: { OR: [{ sid: CallSid }, { phone: To }] },
+        orderBy: { createdAt: 'desc' }
       });
 
       if (callData && callData.leadId) {
         await prisma.task.create({
           data: {
-            title: `Missed Call: ${callData.phone}`,
-            description: `Automated follow-up for ${callData.lead.customerName} (Status: ${CallStatus})`,
+            title: `Missed Call Follow-up: ${callData.phone}`,
+            description: `Automated follow-up. Reason: ${CallStatus}`,
             type: 'FOLLOW_UP',
             priority: 'HIGH',
             userId: callData.agentId,
             leadId: callData.leadId
           }
-        });
+        }).catch(e => console.error("Task Creation Error:", e));
       }
     }
 
     res.status(200).send('OK');
   } catch (error) {
-    console.error('Status Webhook Error:', error);
+    console.error('TELEPHONY STATUS ERROR:', error);
     res.status(200).send('OK');
   }
 };
 
 /**
- * 5. RECORDING CALLBACK
+ * 5. RECORDING & OTHER HELPERS
  */
 const handleRecordingWebhook = async (req, res) => {
   const { CallSid, RecordingUrl } = req.body;
+  console.log(`TELEPHONY RECORDING: ${RecordingUrl} | SID: ${CallSid}`);
   try {
     await prisma.call.updateMany({
       where: { sid: CallSid },
@@ -240,17 +254,19 @@ const handleRecordingWebhook = async (req, res) => {
   }
 };
 
-/**
- * 6. TAG & NOTES (DISPOSITION)
- */
 const tagCall = async (req, res) => {
   const { callSid, tags, notes } = req.body;
   try {
     const call = await prisma.call.findFirst({
-      where: { OR: [{ sid: callSid }, { id: parseInt(callSid) || -1 }] }
+      where: { OR: [
+        { sid: callSid }, 
+        { id: parseInt(callSid) || -1 },
+        { phone: callSid, status: 'completed' }
+      ] },
+      orderBy: { createdAt: 'desc' }
     });
 
-    if (!call) return res.status(404).json({ success: false, message: "Call not found" });
+    if (!call) return res.status(404).json({ success: false, message: "Call record not found" });
 
     const updatedCall = await prisma.call.update({
       where: { id: call.id },
@@ -258,18 +274,13 @@ const tagCall = async (req, res) => {
     });
 
     if (updatedCall.leadId) {
-      await prisma.lead.update({
-        where: { id: updatedCall.leadId },
-        data: { status: tags }
-      });
-      
-      // Log activity
+      await prisma.lead.update({ where: { id: updatedCall.leadId }, data: { status: tags } });
       await prisma.activityLog.create({
         data: {
           leadId: updatedCall.leadId,
           userId: req.user.id,
           type: 'CALL',
-          action: `Call Logged: ${tags}`,
+          action: `Disposition: ${tags}`,
           details: notes
         }
       });
@@ -281,9 +292,6 @@ const tagCall = async (req, res) => {
   }
 };
 
-/**
- * 7. CALL HISTORY
- */
 const getCallHistory = async (req, res) => {
   const { agentId } = req.params;
   try {
@@ -301,13 +309,10 @@ const getCallHistory = async (req, res) => {
   }
 };
 
-/**
- * 8. LIVE MONITORING
- */
 const getActiveCalls = async (req, res) => {
   try {
     const activeCalls = await prisma.call.findMany({
-      where: { status: { in: ['ringing', 'in-progress', 'answered'] } },
+      where: { status: { in: ['initiated', 'ringing', 'in-progress', 'answered'] } },
       include: { 
         agent: { select: { name: true, id: true } },
         lead: { select: { customerName: true, id: true } }
@@ -326,17 +331,49 @@ const monitorCall = async (req, res) => {
     const twiml = new VoiceResponse();
     const dial = twiml.dial();
     
+    const conferenceName = `conf_${phone.replace(/[^a-zA-Z0-9]/g, '')}`;
+    console.log(`TELEPHONY: Manager monitoring conference: ${conferenceName}`);
+
     dial.conference({
       muted: true,
       startConferenceOnEnter: false,
       endConferenceOnExit: false,
       beep: 'false'
-    }, `call_${phone.replace('+', '')}`);
+    }, conferenceName);
 
-    res.set("Content-Type", "text/xml");
+    res.type('text/xml');
     res.status(200).send(twiml.toString());
   } catch (error) {
+    console.error("MONITOR CALL ERROR:", error);
     res.status(500).send(error.message);
+  }
+};
+
+const validateTelephonyConfig = async (req, res) => {
+  const config = {
+    accountSid: !!process.env.TWILIO_ACCOUNT_SID,
+    authToken: !!process.env.TWILIO_AUTH_TOKEN,
+    apiKey: !!process.env.TWILIO_API_KEY,
+    apiSecret: !!process.env.TWILIO_API_SECRET,
+    twimlAppSid: !!process.env.TWILIO_TWIML_APP_SID,
+    phoneNumber: !!process.env.TWILIO_PHONE_NUMBER,
+    backendUrl: !!process.env.BACKEND_URL
+  };
+
+  const missing = Object.keys(config).filter(k => !config[k]);
+  
+  if (missing.length > 0) {
+    console.error("TELEPHONY CONFIG ERROR: Missing variables:", missing);
+    return res.status(500).json({ success: false, message: `Missing config: ${missing.join(', ')}` });
+  }
+
+  try {
+    // Test client connectivity
+    await client.api.accounts(accountSid).fetch();
+    res.json({ success: true, message: "Telephony configuration validated and online." });
+  } catch (error) {
+    console.error("TELEPHONY CONNECTIVITY ERROR:", error);
+    res.status(500).json({ success: false, message: `Twilio Connectivity Failed: ${error.message}` });
   }
 };
 
@@ -349,5 +386,6 @@ module.exports = {
   tagCall,
   getCallHistory,
   getActiveCalls,
-  monitorCall
+  monitorCall,
+  validateTelephonyConfig
 };
