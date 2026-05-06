@@ -83,9 +83,9 @@ const DashboardLayout = () => {
 
   const menuItems = {
     ADMIN: [
-      { name: 'Executive Overview', icon: LayoutDashboard, path: '/admin/dashboard' },
-      { name: 'Analytics Command', icon: BarChart3, path: '/admin/analytics' },
-      { name: 'Team Architecture', icon: Users, path: '/admin/teams' },
+      { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
+      { name: 'Business Overview', icon: BarChart3, path: '/admin/analytics' },
+      { name: 'Teams', icon: Users, path: '/admin/teams' },
       { name: 'Agents', icon: Users, path: '/admin/agents' },
       { name: 'Leads', icon: Target, path: '/admin/leads' },
       { name: 'Pipeline', icon: TrendingUp, path: '/admin/pipeline' },
