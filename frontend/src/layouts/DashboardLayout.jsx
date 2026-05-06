@@ -37,7 +37,8 @@ import {
   ShieldCheck,
   FileBarChart,
   Mail,
-  BrainCircuit
+  BrainCircuit,
+  Phone
 } from 'lucide-react';
 
 const DashboardLayout = () => {
