@@ -17,7 +17,8 @@ const {
   getInvoices, 
   createInvoice, 
   getCalls,
-  getAnalytics 
+  getAnalytics,
+  exportAnalytics 
 } = require('../controllers/adminExtraController');
 const { 
   inviteUser, 
@@ -78,6 +79,7 @@ router.route('/invoices')
 
 router.get('/calls', getCalls);
 router.get('/analytics', getAnalytics);
+router.post('/analytics/export', exportAnalytics);
 
 router.get('/integrations', getIntegrations);
 router.post('/integrations/meta', connectMeta);
