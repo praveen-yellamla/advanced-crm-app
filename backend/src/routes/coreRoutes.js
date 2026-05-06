@@ -34,7 +34,12 @@ router.post('/leads/merge', leadController.mergeLeads);
 
 // Task Orchestration
 router.get('/tasks', taskController.getTasks);
-router.patch('/tasks/:id', taskController.updateTask);
+router.get('/tasks/analytics', taskController.getTaskAnalytics);
+router.get('/tasks/:id', taskController.getTaskById);
+router.post('/tasks', taskController.createTask);
+router.put('/tasks/:id', taskController.updateTask);
+router.patch('/tasks/:id/status', taskController.patchTaskStatus);
+router.delete('/tasks/:id', taskController.deleteTask);
 
 // Fiscal Engineering (Invoices)
 router.get('/invoices', invoiceController.getInvoices);

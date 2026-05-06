@@ -1,125 +1,262 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { 
-  ClipboardCheck, 
-  Map, 
-  Filter, 
-  Search, 
   Plus, 
-  Clock, 
-  User, 
-  ChevronRight,
-  MoreVertical,
-  CheckCircle2,
   Calendar,
-  AlertCircle
+  Layout,
+  BarChart3,
+  RefreshCcw,
+  Zap
 } from 'lucide-react';
-import { motion, Reorder } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
+
+// Sub-components
+import TaskKanban from '../../components/admin/tasks/TaskKanban';
+import TaskCalendar from '../../components/admin/tasks/TaskCalendar';
+import TaskModal from '../../components/admin/tasks/TaskModal';
+import TaskFilters from '../../components/admin/tasks/TaskFilters';
+import TaskAnalytics from '../../components/admin/tasks/TaskAnalytics';
 
 const UnifiedTasks = () => {
-  const { data: tasks, isLoading } = useQuery({
-    queryKey: ['globalTasks'],
+  const queryClient = useQueryClient();
+  const [view, setView] = useState('kanban'); // kanban, calendar, analytics
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [filters, setFilters] = useState({
+    search: '',
+    priority: '',
+    status: '',
+    sort: 'newest'
+  });
+
+  // Queries
+  const { data: tasksData, isLoading, isFetching } = useQuery({
+    queryKey: ['tasks', filters],
     queryFn: async () => {
-      const res = await api.get('/core/tasks');
+      const params = new URLSearchParams();
+      if (filters.search) params.append('search', filters.search);
+      if (filters.priority) params.append('priority', filters.priority);
+      if (filters.status) params.append('status', filters.status);
+      params.append('sort', filters.sort);
+      
+      const res = await api.get(`/core/tasks?${params.toString()}`);
+      return res.data;
+    }
+  });
+
+  const { data: analyticsData } = useQuery({
+    queryKey: ['tasksAnalytics'],
+    queryFn: async () => {
+      const res = await api.get('/core/tasks/analytics');
       return res.data.data;
     }
   });
 
-  const columns = ['Pending', 'In Progress', 'Completed'];
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: (data) => api.post('/core/tasks', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tasks']);
+      queryClient.invalidateQueries(['tasksAnalytics']);
+      toast.success('Strategy task deployed successfully');
+      setIsModalOpen(false);
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => api.put(`/core/tasks/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tasks']);
+      queryClient.invalidateQueries(['tasksAnalytics']);
+      toast.success('Task orchestration updated');
+      setIsModalOpen(false);
+    }
+  });
+
+  const patchStatusMutation = useMutation({
+    mutationFn: ({ id, status }) => api.patch(`/core/tasks/${id}/status`, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tasks']);
+      queryClient.invalidateQueries(['tasksAnalytics']);
+      toast.success('Pipeline status synced');
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => api.delete(`/core/tasks/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tasks']);
+      queryClient.invalidateQueries(['tasksAnalytics']);
+      toast.success('Task decommissioned');
+      setIsModalOpen(false);
+    }
+  });
+
+  // Handlers
+  const handleSave = (data) => {
+    if (selectedTask) {
+      updateMutation.mutate({ id: selectedTask.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const handleTaskUpdate = (id, data) => {
+    if (data.status) {
+      patchStatusMutation.mutate({ id, status: data.status });
+    }
+  };
+
+  const handleTaskClick = (task) => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
+  };
+
+  const handleCreateClick = () => {
+    setSelectedTask(null);
+    setIsModalOpen(true);
+  };
+
+  const handleDuplicate = (task) => {
+    const { id, createdAt, updatedAt, activityLogs, ...rest } = task;
+    createMutation.mutate({ ...rest, title: `${rest.title} (Copy)` });
+  };
 
   return (
-    <div className="space-y-10 pb-16">
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-           <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Strategic Tasks</h1>
-           <p className="text-[#64748B] font-medium text-sm mt-1">Manage cross-relational conversion activities with Kanban orchestration</p>
+    <div className="space-y-10 pb-20">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 bg-white p-10 rounded-[50px] border border-slate-100 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500" />
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 animate-pulse">
+              <Zap size={20} />
+            </div>
+            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">Operational Cockpit</span>
+          </div>
+          <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter leading-none mb-3">
+             Strategy <span className="text-slate-300">Hub</span>
+          </h1>
+          <p className="text-[#64748B] font-bold text-sm tracking-tight flex items-center gap-2">
+             Orchestrating <span className="text-blue-600">{tasksData?.pagination?.total || 0}</span> global activities with AI-driven prioritization
+          </p>
         </div>
-        <div className="flex gap-4">
-           <button className="h-14 px-8 bg-white border border-[#E2E8F0] text-slate-400 rounded-2xl font-bold text-xs flex items-center gap-3">
-              <Calendar size={18} /> Calendar View
-           </button>
-           <button className="h-14 px-8 bg-[#0F172A] text-white rounded-2xl font-bold text-xs shadow-xl hover:brightness-125 transition-all flex items-center gap-3">
-              <Plus size={20} /> Create Global Task
-           </button>
+
+        <div className="flex flex-wrap gap-4 relative z-10">
+          <div className="bg-slate-50 p-2 rounded-3xl border border-slate-200 flex gap-1">
+             <button 
+               onClick={() => setView('kanban')}
+               className={`h-14 px-8 rounded-2xl font-bold text-xs flex items-center gap-3 transition-all ${
+                 view === 'kanban' ? 'bg-white text-blue-600 shadow-xl' : 'text-slate-400 hover:text-slate-600'
+               }`}
+             >
+               <Layout size={18} /> Kanban
+             </button>
+             <button 
+               onClick={() => setView('calendar')}
+               className={`h-14 px-8 rounded-2xl font-bold text-xs flex items-center gap-3 transition-all ${
+                 view === 'calendar' ? 'bg-white text-blue-600 shadow-xl' : 'text-slate-400 hover:text-slate-600'
+               }`}
+             >
+               <Calendar size={18} /> Timeline
+             </button>
+             <button 
+               onClick={() => setView('analytics')}
+               className={`h-14 px-8 rounded-2xl font-bold text-xs flex items-center gap-3 transition-all ${
+                 view === 'analytics' ? 'bg-white text-blue-600 shadow-xl' : 'text-slate-400 hover:text-slate-600'
+               }`}
+             >
+               <BarChart3 size={18} /> Analytics
+             </button>
+          </div>
+          
+          <button 
+            onClick={handleCreateClick}
+            className="h-18 px-10 bg-[#0F172A] text-white rounded-3xl font-black text-xs shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-4 group"
+          >
+            <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center group-hover:rotate-90 transition-transform">
+              <Plus size={20} />
+            </div>
+            DEPLOY TASK
+          </button>
         </div>
       </div>
 
-      {/* SEARCH/FILTERS */}
-      <div className="flex flex-col md:flex-row gap-6">
-         <div className="flex-1 relative">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-            <input 
-              type="text" placeholder="Search tasks, descriptions, or linked lead identities..." 
-              className="w-full h-18 pl-16 pr-6 bg-white border border-[#E2E8F0] rounded-2xl outline-none focus:border-blue-600 transition-all font-semibold"
-            />
-         </div>
+      {/* SEARCH & FILTERS */}
+      <TaskFilters filters={filters} setFilters={setFilters} />
+
+      {/* MAIN CONTENT AREA */}
+      <div className="relative">
+        <AnimatePresence mode="wait">
+          {isLoading ? (
+            <motion.div 
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="py-40 flex flex-col items-center justify-center text-center"
+            >
+              <div className="w-20 h-20 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin mb-8" />
+              <h3 className="text-2xl font-bold text-slate-800 tracking-tight">Syncing with Task Engine...</h3>
+              <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-4">Retrieving real-time operational data</p>
+            </motion.div>
+          ) : (
+            <motion.div
+              key={view}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {view === 'kanban' && (
+                <TaskKanban 
+                  tasks={tasksData?.data} 
+                  onTaskUpdate={handleTaskUpdate}
+                  onTaskClick={handleTaskClick}
+                />
+              )}
+              {view === 'calendar' && (
+                <TaskCalendar 
+                  tasks={tasksData?.data}
+                  onTaskClick={handleTaskClick}
+                />
+              )}
+              {view === 'analytics' && (
+                <TaskAnalytics 
+                  analytics={analyticsData}
+                />
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* REFRESH INDICATOR */}
+        {isFetching && !isLoading && (
+          <div className="fixed bottom-10 right-10 z-[60]">
+            <div className="bg-[#0F172A] text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-bounce">
+              <RefreshCcw size={16} className="animate-spin" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Auto-Syncing</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* KANBAN BOARD */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-         {columns.map(col => (
-           <div key={col} className="space-y-8 min-h-[600px]">
-              <div className="flex items-center justify-between px-4">
-                 <div className="flex items-center gap-4">
-                    <div className={`w-3 h-3 rounded-full ${col === 'Pending' ? 'bg-amber-400' : col === 'In Progress' ? 'bg-blue-500' : 'bg-emerald-500'}`} />
-                    <h3 className="text-sm font-bold text-[#0F172A] uppercase tracking-[0.2em]">{col}</h3>
-                 </div>
-                 <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-3 py-1 rounded-lg">
-                    {tasks?.filter(t => t.status === col).length || 0}
-                 </span>
-              </div>
-
-              <div className="space-y-6">
-                 {isLoading ? (
-                    <div className="p-10 text-center animate-pulse text-slate-300 font-bold uppercase text-[10px]">Loading...lumn...</div>
-                 ) : tasks?.filter(t => t.status === col).map(task => (
-                   <motion.div 
-                     layoutId={task.id}
-                     key={task.id}
-                     className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 group relative overflow-hidden"
-                   >
-                      <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                         <MoreVertical size={16} className="text-slate-300 pointer" />
-                      </div>
-                      
-                      <div className="space-y-6">
-                         <div className="flex gap-2">
-                            <span className={`px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest ${
-                              task.priority === 'Urgent' ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600'
-                            }`}>{task.priority}</span>
-                         </div>
-                         
-                         <h4 className="text-lg font-bold text-[#0F172A] leading-snug tracking-tight">{task.title}</h4>
-                         
-                         {task.lead && (
-                           <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
-                              <User size={14} className="text-blue-600" />
-                              <span className="text-xs font-bold text-slate-900">{task.lead.customerName}</span>
-                           </div>
-                         )}
-
-                         <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                               <Clock size={12} /> {new Date(task.dueDate).toLocaleDateString()}
-                            </div>
-                            <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500 shadow-sm overflow-hidden">
-                               {task.user.name.charAt(0)}
-                            </div>
-                         </div>
-                      </div>
-                   </motion.div>
-                 ))}
-                 <button className="w-full h-18 rounded-[32px] border-2 border-dashed border-slate-100 text-slate-300 font-bold uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:border-blue-600 hover:text-blue-600 transition-all">
-                    <Plus size={16} /> New Task
-                 </button>
-              </div>
-           </div>
-         ))}
-      </div>
+      {/* TASK MODAL */}
+      <TaskModal 
+        isOpen={isModalOpen}
+        task={selectedTask}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSave}
+        onDelete={deleteMutation.mutate}
+        onDuplicate={handleDuplicate}
+        onArchive={(id) => handleTaskUpdate(id, { status: 'ARCHIVED' })}
+      />
     </div>
   );
 };
 
 export default UnifiedTasks;
+

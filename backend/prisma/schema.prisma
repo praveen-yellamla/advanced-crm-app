@@ -41,7 +41,8 @@ model User {
 
   calls         Call[]
   assignedLeads Lead[]     @relation("AssignedLeads")
-  tasks         Task[]
+  tasksAssigned Task[]     @relation("TaskAssignee")
+  tasksCreated  Task[]     @relation("TaskCreator")
   auditLogs     AuditLog[]
   invoices      Invoice[]  @relation("InvoiceRaisedBy")
   emailsSent    Email[]    @relation("AgentEmails")
@@ -194,23 +195,35 @@ model SupportTicket {
 model Task {
   id          Int       @id @default(autoincrement())
   title       String
-  description String?
+  description String?   @db.Text
+  notes       String?   @db.Text
   dueDate     DateTime? @map("due_date")
   priority    String?   @default("Normal") // Low, Normal, High, Urgent
-  status      String?   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  status      String?   @default("PENDING") // PENDING, IN_PROGRESS, FOLLOW_UP, WAITING, COMPLETED, ARCHIVED
   type        String?   @default("FOLLOWUP") // CALLBACK, FOLLOWUP, MISSED_CALL, EMAIL, MEETING
   
   tags        Json?     // Category tags for filtering
+  attachments Json?     // Array of attachment metadata
+  
   isRecurring Boolean   @default(false) @map("is_recurring")
+  recurringType String? @map("recurring_type") // DAILY, WEEKLY, MONTHLY, YEARLY
   recurRule   String?   @map("recur_rule") // Cron format or custom rule
   
-  userId      Int       @map("user_id")
-  user        User      @relation(fields: [userId], references: [id])
+  reminderTime DateTime? @map("reminder_time")
+  reminderSent Boolean  @default(false) @map("reminder_sent")
+  
+  createdById Int?      @map("created_by_id")
+  createdBy   User?     @relation("TaskCreator", fields: [createdById], references: [id])
+  
+  assignedToId Int      @map("assigned_to_id")
+  assignedTo  User      @relation("TaskAssignee", fields: [assignedToId], references: [id])
 
   leadId Int?  @map("lead_id")
   lead   Lead? @relation("LeadTasks", fields: [leadId], references: [id])
 
-  reminderSent Boolean  @default(false) @map("reminder_sent")
+  activityLogs Json?    @map("activity_logs") // Array of {action, timestamp, user}
+  completedAt  DateTime? @map("completed_at")
+  
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
