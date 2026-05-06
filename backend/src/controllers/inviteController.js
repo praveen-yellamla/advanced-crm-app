@@ -40,10 +40,6 @@ const inviteUser = async (req, res) => {
     // Send Email
     const emailSent = await sendInviteEmail(invite.email, inviteLink, name, invite.role);
 
-    if (!emailSent) {
-      return res.status(500).json({ message: "Failed to send email. Check SMTP settings." });
-    }
-
     // Upsert shadow user for visibility in Agent List
     if (invite.role !== 'CLIENT') {
       await prisma.user.upsert({
@@ -63,6 +59,14 @@ const inviteUser = async (req, res) => {
           inviteStatus: 'PENDING',
           isActive: false
         }
+      });
+    }
+
+    if (!emailSent) {
+      return res.json({ 
+        success: true, 
+        message: "Invite link generated, but automatic email delivery was blocked by Render.",
+        inviteLink 
       });
     }
 
