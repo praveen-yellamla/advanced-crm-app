@@ -9,7 +9,8 @@ const {
   tagCall,
   getCallHistory,
   monitorCall,
-  getActiveCalls
+  getActiveCalls,
+  validateTelephonyConfig
 } = require('../controllers/callController');
 const { protect } = require('../middleware/authMiddleware');
 
