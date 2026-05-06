@@ -1,3 +1,15 @@
+console.log("--- SYSTEM BOOT SEQUENCE START ---");
+
+process.on('uncaughtException', (err) => {
+  console.error('FATAL: Uncaught Exception during boot:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('FATAL: Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
 const app = require('./app');
 const http = require('http');
 const { initSocket } = require('./utils/socketService');
