@@ -5,8 +5,8 @@ const transporter = nodemailer.createTransport({
   port: parseInt(process.env.SMTP_PORT || "587"),
   secure: process.env.SMTP_SECURE === "true", // false for port 587
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
   },
   tls: {
     rejectUnauthorized: false // Helps with some cloud hosting environments
@@ -25,7 +25,7 @@ const sendInviteEmail = async (toEmail, inviteLink, name = "Agent", role = "Agen
     console.log(`[SMTP] Sending invite to: ${toEmail}`);
     
     await transporter.sendMail({
-      from: `"CRM Platform" <${process.env.EMAIL_USER}>`,
+      from: `"CRM Platform" <${process.env.SMTP_USER}>`,
       to: toEmail,
       subject: "You're invited to join CRM",
       html: `
