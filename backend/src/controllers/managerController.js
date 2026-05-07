@@ -1,9 +1,9 @@
 const prisma = require('../config/prisma');
 
 // Helper to get teams managed by this manager
-const getManagedTeamIds = async (managerId) => {
+const getManagedTeamIds = async (managerId, organizationId) => {
   const teams = await prisma.team.findMany({
-    where: { managerId },
+    where: { managerId, organizationId },
     select: { id: true }
   });
   return teams.map(t => t.id);
@@ -15,7 +15,8 @@ const getManagedTeamIds = async (managerId) => {
 const getDashboardStats = async (req, res) => {
   try {
     const managerId = req.user.id;
-    const teamIds = await getManagedTeamIds(managerId);
+    const organizationId = req.user.organizationId;
+    const teamIds = await getManagedTeamIds(managerId, organizationId);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -50,7 +51,7 @@ const getDashboardStats = async (req, res) => {
       }),
       prisma.callQA.aggregate({
         _avg: { totalScore: true },
-        where: { managerId }
+        where: { managerId, organizationId }
       })
     ]);
 
@@ -80,7 +81,7 @@ const getDashboardStats = async (req, res) => {
 // ==================================================
 const getTeamLeads = async (req, res) => {
   try {
-    const teamIds = await getManagedTeamIds(req.user.id);
+    const teamIds = await getManagedTeamIds(req.user.id, req.user.organizationId);
     const leads = await prisma.lead.findMany({
       where: { assignedTo: { teamId: { in: teamIds } } },
       include: {
@@ -98,17 +99,25 @@ const getTeamLeads = async (req, res) => {
 const assignLead = async (req, res) => {
   try {
     const { leadId, agentId } = req.body;
-    const teamIds = await getManagedTeamIds(req.user.id);
+    const organizationId = req.user.organizationId;
+    const teamIds = await getManagedTeamIds(req.user.id, organizationId);
     
     // Check if agent belongs to manager's team
     const agent = await prisma.user.findFirst({
-      where: { id: parseInt(agentId), teamId: { in: teamIds } }
+      where: { 
+        id: parseInt(agentId), 
+        teamId: { in: teamIds },
+        organizationId
+      }
     });
 
     if (!agent) return res.status(403).json({ success: false, message: "Agent not in your team scope" });
 
     const updatedLead = await prisma.lead.update({
-      where: { id: parseInt(leadId) },
+      where: { 
+        id: parseInt(leadId),
+        organizationId
+      },
       data: { assignedToId: agent.id }
     });
 
@@ -123,7 +132,7 @@ const assignLead = async (req, res) => {
 // ==================================================
 const getTeamCalls = async (req, res) => {
   try {
-    const teamIds = await getManagedTeamIds(req.user.id);
+    const teamIds = await getManagedTeamIds(req.user.id, req.user.organizationId);
     const calls = await prisma.call.findMany({
       where: { agent: { teamId: { in: teamIds } } },
       include: {
@@ -143,6 +152,15 @@ const submitQA = async (req, res) => {
   try {
     const { callId, greeting, discovery, pitch, objectionHandling, closing, compliance, managerNotes } = req.body;
     
+    // Verify call ownership
+    const call = await prisma.call.findFirst({
+      where: { id: parseInt(callId), organizationId: req.user.organizationId }
+    });
+
+    if (!call) {
+      return res.status(403).json({ success: false, message: 'Call not found in your organization scope' });
+    }
+
     const totalScore = (greeting + discovery + pitch + objectionHandling + closing + compliance) / 6;
 
     const qa = await prisma.callQA.upsert({
@@ -152,6 +170,7 @@ const submitQA = async (req, res) => {
         totalScore, managerNotes, status: totalScore >= 70 ? 'PASS' : 'NEEDS_COACHING'
       },
       create: {
+        organizationId: req.user.organizationId,
         callId: parseInt(callId),
         managerId: req.user.id,
         greeting, discovery, pitch, objectionHandling, closing, compliance,
@@ -170,7 +189,7 @@ const submitQA = async (req, res) => {
 // ==================================================
 const getTeamInvoices = async (req, res) => {
   try {
-    const teamIds = await getManagedTeamIds(req.user.id);
+    const teamIds = await getManagedTeamIds(req.user.id, req.user.organizationId);
     const invoices = await prisma.invoice.findMany({
       where: { raisedBy: { teamId: { in: teamIds } } },
       include: {
@@ -192,7 +211,10 @@ const updateInvoiceStatus = async (req, res) => {
     // Scoped check omitted for brevity here, but should check if invoice.raisedBy.teamId is in manager's teams
     
     const invoice = await prisma.invoice.update({
-      where: { id: parseInt(id) },
+      where: { 
+        id: parseInt(id),
+        organizationId: req.user.organizationId // ENFORCE OWNERSHIP
+      },
       data: { status }
     });
     res.json({ success: true, data: invoice });
@@ -206,7 +228,7 @@ const updateInvoiceStatus = async (req, res) => {
 // ==================================================
 const getTeamAgents = async (req, res) => {
   try {
-    const teamIds = await getManagedTeamIds(req.user.id);
+    const teamIds = await getManagedTeamIds(req.user.id, req.user.organizationId);
     const agents = await prisma.user.findMany({
       where: { teamId: { in: teamIds }, role: 'AGENT' },
       include: {
@@ -224,6 +246,7 @@ const sendFeedback = async (req, res) => {
     const { agentId, content, priority, suggestions, callId } = req.body;
     const feedback = await prisma.feedback.create({
       data: {
+        organizationId: req.user.organizationId,
         agentId: parseInt(agentId),
         managerId: req.user.id,
         callId: callId ? parseInt(callId) : null,

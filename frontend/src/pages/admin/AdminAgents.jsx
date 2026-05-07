@@ -27,7 +27,8 @@ import {
   UserPlus,
   Send,
   Zap,
-  Loader2
+  Loader2,
+  UserCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -66,27 +67,6 @@ const AdminAgents = () => {
     }
   });
 
-  const deleteInviteMutation = useMutation({
-    mutationFn: (id) => api.delete(`/admin/invites/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['adminAgents']);
-      queryClient.invalidateQueries(['adminDashboardStats']);
-      toast.success('Invite deleted successfully');
-    },
-    onError: (err) => toast.error(err.response?.data?.message || 'Delete failed')
-  });
-
-  const bulkDeleteInviteMutation = useMutation({
-    mutationFn: (type) => api.post('/admin/invites/bulk-delete', { type }),
-    onSuccess: (res) => {
-      queryClient.invalidateQueries(['adminAgents']);
-      queryClient.invalidateQueries(['adminDashboardStats']);
-      toast.success(res.data.message);
-      setIsCleanupOpen(false);
-    },
-    onError: (err) => toast.error(err.response?.data?.message || 'Bulk delete failed')
-  });
-
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -101,7 +81,7 @@ const AdminAgents = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(['adminAgents']);
       queryClient.invalidateQueries(['adminDashboardStats']);
-      toast.success('Agent account created (Manual)');
+      toast.success('Account created successfully');
       setIsModalOpen(false);
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Creation failed')
@@ -111,7 +91,7 @@ const AdminAgents = () => {
     mutationFn: ({ id, data }) => api.put(`/admin/agents/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['adminAgents']);
-      toast.success('Agent configuration updated');
+      toast.success('Account updated');
       setIsModalOpen(false);
       setEditAgentId(null);
     },
@@ -123,7 +103,7 @@ const AdminAgents = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(['adminAgents']);
       queryClient.invalidateQueries(['adminDashboardStats']);
-      toast.success('Agent node terminated');
+      toast.success('Account removed');
     }
   });
 
@@ -131,11 +111,11 @@ const AdminAgents = () => {
     mutationFn: (data) => api.post('/admin/invites', data),
     onSuccess: (res) => {
       setGeneratedInviteLink(res.data.inviteLink);
-      toast.success('Invite link generated (Tracking Active)');
+      toast.success('Invitation sent');
       queryClient.invalidateQueries(['adminAgents']);
       queryClient.invalidateQueries(['adminDashboardStats']);
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to generate invite')
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to send invite')
   });
 
   const handleEdit = (agent) => {
@@ -152,8 +132,8 @@ const AdminAgents = () => {
   };
 
   const filteredAgents = (agents || []).filter(a => {
-    const matchesSearch = a.name.toLowerCase().includes(search.toLowerCase()) || 
-                         a.email.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = (a.name || '').toLowerCase().includes(search.toLowerCase()) || 
+                         (a.email || '').toLowerCase().includes(search.toLowerCase());
     
     if (filterType === 'ALL') return matchesSearch;
     if (filterType === 'MANUAL') return matchesSearch && a.agentType === 'MANUAL';
@@ -165,57 +145,22 @@ const AdminAgents = () => {
   const cards = stats?.cards || {};
 
   return (
-    <div className="space-y-10 pb-16">
+    <div className="space-y-8 pb-16 px-4 md:px-0">
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-           <h1 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase">Agent Lifecycle Manager</h1>
-           <p className="text-[#64748B] font-medium text-xs mt-1 italic uppercase tracking-widest">Architectural control for manual & invited organizational nodes</p>
+           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Team Members</h1>
+           <p className="text-slate-500 font-medium text-sm mt-1">Manage user accounts, roles, and departmental assignments.</p>
         </div>
-        <div className="flex gap-4">
-           <div className="relative">
-              <button 
-                onClick={() => setIsCleanupOpen(!isCleanupOpen)}
-                className="h-14 px-8 bg-white border border-[#E2E8F0] rounded-3xl flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#0F172A] shadow-sm hover:bg-slate-50 transition-all"
-              >
-                 <Trash2 size={18} className="text-rose-500" /> Manage Invites
-              </button>
-              
-              <AnimatePresence>
-                 {isCleanupOpen && (
-                   <motion.div 
-                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                     className="absolute top-full mt-4 right-0 w-64 bg-white border border-slate-100 rounded-[32px] shadow-2xl p-6 z-50 space-y-2"
-                   >
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-2">Cleanup Protocol</p>
-                      {[
-                        { id: 'today', label: 'Delete Today', icon: Calendar },
-                        { id: 'month', label: 'Delete This Month', icon: History },
-                        { id: 'year', label: 'Delete This Year', icon: Users },
-                        { id: 'all', label: 'Delete All Pending', icon: UserX },
-                      ].map(opt => (
-                        <button 
-                          key={opt.id}
-                          onClick={() => { if(confirm(`Confirm bulk deletion of invites (${opt.label})?`)) bulkDeleteInviteMutation.mutate(opt.id); }}
-                          className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-all group text-left"
-                        >
-                           <opt.icon size={16} className="text-slate-300 group-hover:text-rose-500" />
-                           <span className="text-[10px] font-bold uppercase tracking-widest">{opt.label}</span>
-                        </button>
-                      ))}
-                   </motion.div>
-                 )}
-              </AnimatePresence>
-           </div>
-
+        <div className="flex gap-3">
            <button 
              onClick={() => {
                setGeneratedInviteLink('');
                setIsInviteModalOpen(true);
              }}
-             className="h-14 px-8 bg-white border border-[#E2E8F0] rounded-3xl flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#0F172A] shadow-sm hover:bg-slate-50 transition-all"
+             className="h-12 px-5 bg-white border border-slate-200 rounded-xl flex items-center gap-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
            >
-              <Mail size={18} /> Invite Agent
+              <Mail size={18} className="text-slate-400" /> Invite Member
            </button>
            <button 
              onClick={() => {
@@ -223,193 +168,174 @@ const AdminAgents = () => {
                setFormData({ name: '', email: '', password: '', phone: '', teamId: '', role: 'AGENT' });
                setIsModalOpen(true);
              }}
-             className="h-14 px-10 bg-blue-600 text-white rounded-2xl font-bold uppercase tracking-widest text-[10px] shadow-2xl shadow-blue-500/20 hover:scale-105 transition-all flex items-center gap-4"
+             className="h-12 px-6 bg-blue-600 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2"
            >
-              <Plus size={20} /> Create Manual
+              <Plus size={18} /> Add Manually
            </button>
         </div>
       </div>
 
       {/* STATS OVERVIEW */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-         <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm flex items-center gap-6 group hover:shadow-xl transition-all">
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
-               <Users size={28} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+               <Users size={24} />
             </div>
             <div>
-               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Manual Agents</p>
-               <p className="text-3xl font-black text-[#0F172A] tracking-tighter">{cards.manualAgents || 0}</p>
+               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Users</p>
+               <p className="text-2xl font-bold text-slate-900">{cards.manualAgents + cards.invitedJoined || 0}</p>
             </div>
          </div>
 
-         <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm flex items-center gap-6 group hover:shadow-xl transition-all">
-            <div className="w-16 h-16 rounded-2xl bg-violet-50 flex items-center justify-center text-violet-600 group-hover:scale-110 transition-transform">
-               <Send size={28} />
+         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600">
+               <Send size={24} />
             </div>
             <div>
-               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Sent</p>
-               <p className="text-3xl font-black text-[#0F172A] tracking-tighter">{cards.invitedTotal || 0}</p>
+               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Invites Sent</p>
+               <p className="text-2xl font-bold text-slate-900">{cards.invitedTotal || 0}</p>
             </div>
          </div>
 
-         <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm flex items-center gap-6 group hover:shadow-xl transition-all">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
-               <Zap size={28} />
+         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+               <UserCheck size={24} />
             </div>
             <div>
-               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Invited Joined</p>
-               <p className="text-3xl font-black text-[#0F172A] tracking-tighter">{cards.invitedJoined || 0}</p>
+               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Now</p>
+               <p className="text-2xl font-bold text-slate-900">{agents?.filter(a => a.isActive).length || 0}</p>
             </div>
          </div>
 
-         <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm flex items-center gap-6 group hover:shadow-xl transition-all">
-            <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
-               <Key size={28} />
+         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+               <History size={24} />
             </div>
             <div>
-               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Invited Pending</p>
-               <p className="text-3xl font-black text-[#0F172A] tracking-tighter">{cards.invitedPending || 0}</p>
+               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Join</p>
+               <p className="text-2xl font-bold text-slate-900">{cards.invitedPending || 0}</p>
             </div>
          </div>
       </div>
 
       {/* FILTERS */}
-      <div className="flex flex-col lg:flex-row gap-8 items-center">
+      <div className="flex flex-col lg:flex-row gap-4 items-center">
          <div className="flex-1 relative group w-full">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={18} />
             <input 
-               type="text" placeholder="Search agents by name, email, or phone..." 
-               className="w-full h-18 pl-16 pr-6 bg-white border border-[#E2E8F0] rounded-3xl focus:ring-[12px] focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-semibold text-[#0F172A] shadow-sm"
+               type="text" placeholder="Search by name or email..." 
+               className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 outline-none transition-all font-medium text-slate-900 placeholder:text-slate-400 shadow-sm"
                value={search} onChange={e => setSearch(e.target.value)}
             />
          </div>
          
-         <div className="flex gap-2 p-2 bg-slate-100 rounded-3xl">
+         <div className="flex gap-1 p-1 bg-slate-100 rounded-xl w-full lg:w-auto">
             {['ALL', 'MANUAL', 'INVITED'].map(t => (
                <button 
                  key={t}
                  onClick={() => setFilterType(t)}
-                 className={`px-8 h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                   filterType === t ? 'bg-white text-[#0F172A] shadow-xl' : 'text-slate-400 hover:text-slate-600'
+                 className={`px-6 h-10 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex-1 lg:flex-none ${
+                   filterType === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                  }`}
                >
-                  {t === 'ALL' ? 'All Lifecycle' : t}
+                  {t === 'ALL' ? 'Show All' : t}
                </button>
             ))}
          </div>
       </div>
 
-      {/* AGENTS LIST */}
-      <div className="bg-white rounded-[48px] border border-[#E2E8F0] shadow-sm overflow-hidden">
+      {/* MEMBERS LIST */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
          <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
                <thead>
-                  <tr className="bg-slate-50/50">
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Agent Identity</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Architecture</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Team</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Metrics</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Status</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400 text-right">Controls</th>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Member Identity</th>
+                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Method</th>
+                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Team / Department</th>
+                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Activity</th>
+                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Account Status</th>
+                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Actions</th>
                   </tr>
                </thead>
-               <tbody>
+               <tbody className="divide-y divide-slate-100">
                   {isAgentsLoading ? (
-                    <tr><td colSpan="6" className="p-32 text-center text-slate-400 font-bold uppercase tracking-widest italic">Synchronizing Global Agent Registry...</td></tr>
+                    <tr><td colSpan="6" className="p-12 text-center text-slate-400 font-medium italic">Syncing Member Directory...</td></tr>
                   ) : filteredAgents.length === 0 ? (
-                    <tr><td colSpan="6" className="p-32 text-center text-slate-400 font-bold uppercase tracking-widest italic">No agents detected for the selected filter</td></tr>
+                    <tr><td colSpan="6" className="p-12 text-center text-slate-400 font-medium italic">No matching members found.</td></tr>
                   ) : filteredAgents.map((agent) => (
-                    <tr key={agent.id} className="border-b last:border-none border-slate-50 hover:bg-slate-50/30 transition-all duration-500 group">
-                       <td className="px-10 py-8">
-                          <div className="flex items-center gap-6">
+                    <tr key={agent.id} className="hover:bg-slate-50/50 transition-colors group">
+                       <td className="px-6 py-5">
+                          <div className="flex items-center gap-4">
                              <div className="relative">
-                                <div className="w-16 h-16 rounded-[24px] border-4 border-slate-50 bg-white overflow-hidden shadow-inner group-hover:scale-110 transition-transform">
+                                <div className="w-12 h-12 rounded-xl border-2 border-slate-100 bg-white overflow-hidden shadow-sm">
                                    <img src={agent.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(agent.name)}&background=random&color=fff&bold=true`} alt="" className="w-full h-full object-cover" />
                                 </div>
-                                <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-lg border-2 border-white flex items-center justify-center text-white ${agent.isActive ? 'bg-emerald-500' : 'bg-slate-300'}`}>
-                                   {agent.isActive ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
-                                </div>
+                                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${agent.isActive ? 'bg-emerald-500' : 'bg-slate-300'}`} />
                              </div>
                              <div>
-                                <p className="text-xl font-black text-[#0F172A] tracking-tight">{agent.name}</p>
-                                <div className="flex gap-4 mt-1">
-                                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><Mail size={12}/> {agent.email}</p>
-                                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><Phone size={12}/> {agent.phone || 'N/A'}</p>
-                                </div>
+                                <p className="font-bold text-slate-900">{agent.name}</p>
+                                <p className="text-xs text-slate-500 font-medium">{agent.email}</p>
                              </div>
                           </div>
                        </td>
-                       <td className="px-10 py-8">
-                          <div className={`px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest w-fit flex items-center gap-2 ${agent.agentType === 'MANUAL' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-violet-50 text-violet-600 border-violet-100'}`}>
-                             {agent.agentType === 'MANUAL' ? <Zap size={12} /> : <Send size={12} />}
-                             {agent.agentType}
+                       <td className="px-6 py-5">
+                          <div className={`px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider w-fit flex items-center gap-1.5 ${agent.agentType === 'MANUAL' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-violet-50 text-violet-700 border-violet-100'}`}>
+                             {agent.agentType === 'MANUAL' ? <Plus size={12} /> : <Mail size={12} />}
+                             {agent.agentType === 'MANUAL' ? 'Manual' : 'Invited'}
                           </div>
                        </td>
-                       <td className="px-10 py-8">
-                          <div className="flex items-center gap-3">
-                             <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-[10px] font-bold text-slate-500">
-                                <Briefcase size={14} />
-                             </div>
-                             <span className="text-sm font-bold text-slate-700">{agent.team?.teamName || 'Unassigned'}</span>
+                       <td className="px-6 py-5">
+                          <div className="flex items-center gap-2">
+                             <Briefcase size={16} className="text-slate-400" />
+                             <span className="text-sm font-semibold text-slate-700">{agent.team?.teamName || 'General Staff'}</span>
                           </div>
                        </td>
-                       <td className="px-10 py-8">
-                          <div className="flex items-center gap-8">
-                             <div className="text-center">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Leads</p>
-                                <p className="text-xl font-black text-[#0F172A]">{agent._count?.assignedLeads || 0}</p>
+                       <td className="px-6 py-5">
+                          <div className="flex items-center gap-6">
+                             <div>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Leads</p>
+                                <p className="text-base font-bold text-slate-900">{agent._count?.assignedLeads || 0}</p>
                              </div>
-                             <div className="text-center">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Calls</p>
-                                <p className="text-xl font-black text-blue-600">{agent._count?.calls || 0}</p>
+                             <div>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Calls</p>
+                                <p className="text-base font-bold text-blue-600">{agent._count?.calls || 0}</p>
                              </div>
                           </div>
                        </td>
-                       <td className="px-10 py-8">
-                          {agent.agentType === 'INVITED' ? (
-                            <div className={`flex items-center gap-3 font-bold italic ${agent.inviteStatus === 'PENDING' ? 'text-amber-500' : 'text-emerald-500'}`}>
-                               <Key size={16} />
-                               <span className="text-[10px] font-black uppercase tracking-widest">
-                                 {agent.inviteStatus === 'PENDING' ? 'Invite Pending' : 'Invite Accepted'}
-                               </span>
+                       <td className="px-6 py-5">
+                          {agent.agentType === 'INVITED' && agent.inviteStatus === 'PENDING' ? (
+                            <div className="flex items-center gap-2 text-amber-600 font-bold">
+                               <History size={16} />
+                               <span className="text-[10px] uppercase tracking-wider">Awaiting Join</span>
                             </div>
                           ) : agent.isActive ? (
-                            <div className="flex items-center gap-3 text-emerald-500 font-bold italic">
+                            <div className="flex items-center gap-2 text-emerald-600 font-bold">
                                <ShieldCheck size={16} />
-                               <span className="text-[10px] font-black uppercase tracking-widest">Active</span>
+                               <span className="text-[10px] uppercase tracking-wider">Active</span>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-3 text-rose-500 font-bold italic">
-                               <ShieldAlert size={16} />
-                               <span className="text-[10px] font-black uppercase tracking-widest">Suspended</span>
+                            <div className="flex items-center gap-2 text-slate-400 font-bold">
+                               <XCircle size={16} />
+                               <span className="text-[10px] uppercase tracking-wider">Inactive</span>
                             </div>
                           )}
                        </td>
-                       <td className="px-10 py-8">
-                          <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                       <td className="px-6 py-5">
+                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                              <button 
                                onClick={() => handleEdit(agent)}
-                               title="Modify identity parameters"
-                               className="w-12 h-12 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-200 transition-all"
+                               className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                               title="Edit Profile"
                              >
                                 <Edit3 size={18} />
                              </button>
                              <button 
-                               onClick={() => {
-                                 if (agent.agentType === 'INVITED' && agent.inviteStatus === 'PENDING') {
-                                   if (confirm('Decommission pending invite?')) {
-                                      // Find corresponding invite record to delete
-                                      // For now delete agent record directly since it's a shadow
-                                      deleteAgentMutation.mutate(agent.id);
-                                   }
-                                 } else {
-                                   if (confirm('Initiate agent node termination sequence?')) deleteAgentMutation.mutate(agent.id);
-                                 }
-                               }}
-                               title="Terminate node"
-                               className="w-12 h-12 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-slate-400 hover:text-rose-600 hover:border-rose-200 transition-all"
+                               onClick={() => { if (confirm('Remove this account?')) deleteAgentMutation.mutate(agent.id); }}
+                               className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                               title="Delete Member"
                              >
-                                <UserX size={18} />
+                                <Trash2 size={18} />
                              </button>
                           </div>
                        </td>
@@ -423,12 +349,12 @@ const AdminAgents = () => {
       {/* CREATE/EDIT MODAL */}
       <AnimatePresence>
          {isModalOpen && (
-           <div className="fixed inset-0 z-50 flex items-center justify-center p-8">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#0F172A]/90 backdrop-blur-3xl" onClick={() => setIsModalOpen(false)}/>
-              <motion.div initial={{ opacity: 0, scale: 0.95, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 30 }} className="relative w-full max-w-2xl bg-white rounded-[48px] shadow-2xl p-16">
-                 <div className="mb-12">
-                    <h2 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase">{editAgentId ? 'Update Identity' : 'Create Agent'}</h2>
-                    <p className="text-xs font-bold text-slate-400 mt-2 uppercase tracking-widest italic">Node deployment & configuration module</p>
+           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}/>
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+                 <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
+                    <h2 className="text-xl font-bold text-slate-900">{editAgentId ? 'Update Member Profile' : 'Add New Member'}</h2>
+                    <p className="text-sm text-slate-500 mt-1">Configure account access and departmental assignment.</p>
                  </div>
 
                  <form onSubmit={(e) => {
@@ -447,65 +373,67 @@ const AdminAgents = () => {
                     } else {
                       createAgentMutation.mutate(data);
                     }
-                 }} className="space-y-6">
-                    <div className="grid grid-cols-2 gap-6">
-                       <div className="space-y-3">
-                          <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Identity Name</label>
+                 }} className="p-8 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                       <div className="space-y-2 col-span-2 md:col-span-1">
+                          <label className="text-xs font-bold text-slate-700 ml-1">Full Name</label>
                           <input 
-                             type="text" required placeholder="Full Name"
-                             className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl focus:border-blue-600 focus:ring-8 focus:ring-blue-600/5 transition-all outline-none font-bold"
+                             type="text" required placeholder="e.g. John Smith"
+                             className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all outline-none font-medium"
                              value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
                           />
                        </div>
-                       <div className="space-y-3">
-                          <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Secure Email</label>
+                       <div className="space-y-2 col-span-2 md:col-span-1">
+                          <label className="text-xs font-bold text-slate-700 ml-1">Business Email</label>
                           <input 
                              type="email" required placeholder="name@company.com"
-                             className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl focus:border-blue-600 focus:ring-8 focus:ring-blue-600/5 transition-all outline-none font-bold"
+                             className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all outline-none font-medium"
                              value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
                           />
                        </div>
-                       <div className="space-y-3">
-                          <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Access Phrase</label>
-                          <input 
-                             type="password" required={!editAgentId} placeholder={editAgentId ? "••••••••" : "Password"}
-                             className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl focus:border-blue-600 focus:ring-8 focus:ring-blue-600/5 transition-all outline-none font-bold"
-                             value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})}
-                          />
-                       </div>
-                       <div className="space-y-3">
-                          <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Team Hub</label>
+                       {!editAgentId && (
+                         <div className="space-y-2 col-span-2">
+                            <label className="text-xs font-bold text-slate-700 ml-1">Set Password</label>
+                            <input 
+                               type="password" required placeholder="Minimum 8 characters"
+                               className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all outline-none font-medium"
+                               value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})}
+                            />
+                         </div>
+                       )}
+                       <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-700 ml-1">Team Assignment</label>
                           <select 
                              required 
-                             className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl focus:border-blue-600 focus:ring-8 focus:ring-blue-600/5 transition-all outline-none font-bold appearance-none"
+                             className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all outline-none font-medium appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.75rem_center] bg-no-repeat"
                              value={formData.teamId} onChange={e => setFormData({...formData, teamId: e.target.value})}
                           >
-                             <option value="">Select Center</option>
+                             <option value="">Select Team...</option>
                              {teams?.map(t => <option key={t.id} value={t.id}>{t.teamName}</option>)}
                           </select>
                        </div>
-                       <div className="col-span-2 space-y-3">
-                          <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Phone Protocol</label>
+                       <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-700 ml-1">Phone Number</label>
                           <input 
                              type="text" placeholder="+1 (555) 000-0000"
-                             className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl focus:border-blue-600 focus:ring-8 focus:ring-blue-600/5 transition-all outline-none font-bold"
+                             className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all outline-none font-medium"
                              value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
                           />
                        </div>
-                       <div className="col-span-2 space-y-3">
-                          <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Avatar Uplink</label>
+                       <div className="col-span-2 space-y-2">
+                          <label className="text-xs font-bold text-slate-700 ml-1">Profile Photo (Optional)</label>
                           <input 
-                             type="file" required={!editAgentId} accept="image/*"
-                             className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl pt-4 font-bold"
+                             type="file" accept="image/*"
+                             className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer"
                              onChange={e => setFormData({...formData, image: e.target.files[0]})}
                           />
                        </div>
                     </div>
 
-                    <div className="flex gap-4 pt-8">
-                       <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-18 rounded-full bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px]">Abort</button>
-                       <button type="submit" className="flex-2 h-18 rounded-full bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20">
-                          {editAgentId ? 'Update Node' : 'Initialize Node'}
+                    <div className="flex gap-3 pt-6 border-t border-slate-100">
+                       <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-11 rounded-xl bg-slate-100 text-slate-600 font-bold text-sm">Cancel</button>
+                       <button type="submit" className="flex-1 h-11 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-lg shadow-blue-500/20">
+                          {editAgentId ? 'Save Changes' : 'Create Account'}
                        </button>
                     </div>
                  </form>
@@ -517,36 +445,36 @@ const AdminAgents = () => {
       {/* INVITE MODAL */}
       <AnimatePresence>
          {isInviteModalOpen && (
-           <div className="fixed inset-0 z-50 flex items-center justify-center p-8">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#0F172A]/90 backdrop-blur-3xl" onClick={() => setIsInviteModalOpen(false)}/>
-              <motion.div initial={{ opacity: 0, scale: 0.95, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 30 }} className="relative w-full max-w-xl bg-white rounded-[48px] shadow-2xl p-16">
+           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsInviteModalOpen(false)}/>
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
                  {generatedInviteLink ? (
-                    <div className="text-center space-y-8">
-                       <div className="w-24 h-24 bg-emerald-50 text-emerald-500 rounded-[32px] flex items-center justify-center mx-auto border-4 border-white shadow-xl rotate-6">
-                          <CheckCircle2 size={40} />
+                    <div className="p-10 text-center space-y-6">
+                       <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto border-2 border-emerald-100">
+                          <CheckCircle2 size={32} />
                        </div>
                        <div>
-                          <h2 className="text-3xl font-black text-[#0F172A] uppercase tracking-tight">Node Invite Ready</h2>
-                          <p className="text-xs font-bold text-slate-400 mt-2 italic">Tracking system synchronized for candidate ingestion</p>
+                          <h2 className="text-xl font-bold text-slate-900">Invitation Ready</h2>
+                          <p className="text-sm text-slate-500 mt-1">The member can now join your workspace using the link below.</p>
                        </div>
-                       <div className="bg-slate-50 p-6 rounded-[32px] border-2 border-dashed border-slate-200 font-mono text-[10px] text-blue-600 break-all">
+                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 font-mono text-[11px] text-blue-600 break-all select-all">
                           {generatedInviteLink}
                        </div>
-                       <div className="flex gap-4">
+                       <div className="flex gap-3 pt-2">
                           <button 
                             onClick={() => { navigator.clipboard.writeText(generatedInviteLink); toast.success('Link copied'); }}
-                            className="flex-1 h-18 rounded-full bg-[#0F172A] text-white font-black uppercase tracking-widest text-[11px]"
+                            className="flex-1 h-11 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-lg shadow-blue-500/20"
                           >
                              Copy Link
                           </button>
-                          <button onClick={() => { setIsInviteModalOpen(false); setGeneratedInviteLink(''); }} className="h-18 px-10 rounded-full bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px]">Close</button>
+                          <button onClick={() => { setIsInviteModalOpen(false); setGeneratedInviteLink(''); }} className="h-11 px-6 rounded-xl bg-slate-100 text-slate-600 font-bold text-sm">Close</button>
                        </div>
                     </div>
                  ) : (
                     <>
-                        <div className="mb-12">
-                           <h2 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase">Invite Agent</h2>
-                           <p className="text-xs font-bold text-slate-400 mt-2 uppercase tracking-widest italic">Send an email invitation to a new agent</p>
+                        <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
+                           <h2 className="text-xl font-bold text-slate-900">Invite Team Member</h2>
+                           <p className="text-sm text-slate-500 mt-1">Send a secure invitation link to join the platform.</p>
                         </div>
                         <form onSubmit={(e) => {
                            e.preventDefault();
@@ -555,41 +483,41 @@ const AdminAgents = () => {
                              role: formData.role,
                              name: formData.name.trim()
                            });
-                        }} className="space-y-6">
-                           <div className="space-y-3">
-                              <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Agent Name</label>
+                        }} className="p-8 space-y-5">
+                           <div className="space-y-2">
+                              <label className="text-xs font-bold text-slate-700 ml-1">Full Name</label>
                               <input 
-                                 type="text" required placeholder="Full Name"
-                                 className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl focus:border-blue-600 focus:ring-8 focus:ring-blue-600/5 transition-all outline-none font-bold"
+                                 type="text" required placeholder="Member's Name"
+                                 className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all outline-none font-medium"
                                  value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
                               />
                            </div>
-                           <div className="space-y-3">
-                              <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Agent Email</label>
+                           <div className="space-y-2">
+                              <label className="text-xs font-bold text-slate-700 ml-1">Email Address</label>
                               <input 
-                                 type="email" required placeholder="name@example.com"
-                                 className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl focus:border-blue-600 focus:ring-8 focus:ring-blue-600/5 transition-all outline-none font-bold"
+                                 type="email" required placeholder="email@company.com"
+                                 className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all outline-none font-medium"
                                  value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
                               />
                            </div>
-                           <div className="space-y-3">
-                              <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Role</label>
+                           <div className="space-y-2">
+                              <label className="text-xs font-bold text-slate-700 ml-1">System Role</label>
                               <select 
-                                 required className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-3xl focus:border-blue-600 focus:ring-8 focus:ring-blue-600/5 transition-all outline-none font-bold appearance-none"
+                                 required className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all outline-none font-medium appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.75rem_center] bg-no-repeat"
                                  value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}
                               >
-                                 <option value="AGENT">Agent (Standard)</option>
-                                 <option value="MANAGER">Manager (Elevated)</option>
+                                 <option value="AGENT">Standard User (Agent)</option>
+                                 <option value="MANAGER">Elevated User (Manager)</option>
                               </select>
                            </div>
-                           <div className="flex gap-4 pt-8">
-                              <button type="button" onClick={() => setIsInviteModalOpen(false)} className="flex-1 h-18 rounded-full bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px]">Cancel</button>
+                           <div className="flex gap-3 pt-6 border-t border-slate-100">
+                              <button type="button" onClick={() => setIsInviteModalOpen(false)} className="flex-1 h-11 rounded-xl bg-slate-100 text-slate-600 font-bold text-sm">Cancel</button>
                               <button 
                                 type="submit" 
                                 disabled={inviteUserMutation.isPending}
-                                className="flex-2 h-18 rounded-full bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 disabled:opacity-50"
+                                className="flex-1 h-11 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-lg shadow-blue-500/20 disabled:opacity-50"
                               >
-                                 {inviteUserMutation.isPending ? 'SENDING...' : 'Send Invite'}
+                                 {inviteUserMutation.isPending ? 'Sending...' : 'Send Invitation'}
                               </button>
                            </div>
                         </form>

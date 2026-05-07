@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   Mail, 
@@ -28,66 +28,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 const Login = () => {
-  const { portal: portalType } = useParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const validPortals = ['admin', 'manager', 'agent', 'client'];
-    if (!validPortals.includes(portalType)) {
-      navigate('/select-portal');
-    }
-  }, [portalType, navigate]);
-
-  const config = {
-    admin: {
-      label: 'ADMIN PORTAL',
-      title: 'Admin',
-      titleHighlight: 'Dashboard',
-      sub: 'Manage your entire organization and sales pipeline.',
-      color: '#2563EB',
-      gradient: 'from-[#2563EB] to-[#3B82F6]',
-      icon: <ShieldCheck size={32} />,
-      metric: { label: 'Active Sessions', val: '142', trend: '+12.5%' }
-    },
-    manager: {
-      label: 'MANAGER PORTAL',
-      title: 'Manager',
-      titleHighlight: 'Dashboard',
-      sub: 'View team performance and manage agents.',
-      color: '#7C3AED',
-      gradient: 'from-violet-600 to-violet-800',
-      icon: <Zap size={32} />,
-      metric: { label: 'Team Velocity', val: '94.2%', trend: '+4.1%' }
-    },
-    agent: {
-      label: 'AGENT PORTAL',
-      title: 'Agent',
-      titleHighlight: 'Workspace',
-      sub: 'Your daily sales operations and lead management.',
-      color: '#06B6D4',
-      gradient: 'from-cyan-500 to-cyan-700',
-      icon: <Headphones size={32} />,
-      metric: { label: 'Inbound Flow', val: '1.8k', trend: 'Peak' }
-    },
-    client: {
-      label: 'CLIENT PORTAL',
-      title: 'Client',
-      titleHighlight: 'Portal',
-      sub: 'Access your campaign reports and Billing statements.',
-      color: '#4F46E5',
-      gradient: 'from-indigo-600 to-indigo-800',
-      icon: <Briefcase size={32} />,
-      metric: { label: 'Total Value', val: '$8.4M', trend: 'Growing' }
-    }
+  const current = {
+    label: 'ENTERPRISE SAAS PLATFORM',
+    title: 'Advanced',
+    titleHighlight: 'CRM',
+    sub: 'Secure access to your professional workspace and organization data.',
+    color: '#0F172A',
+    gradient: 'from-[#0F172A] to-[#1E293B]',
+    icon: <ShieldCheck size={32} />,
+    metric: { label: 'Platform Status', val: 'Operational', trend: 'Live' }
   };
-
-  const current = config[portalType] || config.admin;
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -95,17 +54,17 @@ const Login = () => {
 
     setIsSubmitting(true);
     try {
-      const user = await login(email, password);
+      const user = await login(email, password, rememberMe);
+      toast.success(`Welcome back, ${user.name}`);
       
-      const targetRole = portalType.toUpperCase();
-      if (user.role !== targetRole) {
-         toast.error(`Access Denied for ${current.title} ${current.titleHighlight}`);
-         return;
-      }
-
-      toast.success(`Access Granted: ${user.name}`);
-      const rolePath = { ADMIN: '/admin/dashboard', MANAGER: '/manager/dashboard', AGENT: '/agent/dashboard', CLIENT: '/client/dashboard' };
-      navigate(rolePath[user.role]);
+      const rolePath = { 
+        SUPER_ADMIN: '/platform/dashboard', 
+        ADMIN: '/admin/dashboard', 
+        MANAGER: '/manager/dashboard', 
+        AGENT: '/agent/dashboard' 
+      };
+      
+      navigate(rolePath[user.role] || '/unauthorized');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Verification failed');
     } finally {
@@ -132,15 +91,12 @@ const Login = () => {
 
          {/* TOP BRANDING */}
          <div className="relative z-10 flex items-center justify-between">
-            <button 
-              onClick={() => navigate('/select-portal')}
-              className="group flex items-center gap-3 text-slate-400 hover:text-[#0F172A] transition-all text-[10px] font-black uppercase tracking-[0.5em]"
-            >
-               <ChevronLeft size={16} className="group-hover:-translate-x-2 transition-transform duration-500" /> Choose Account Type
-            </button>
+            <div className="flex items-center gap-3">
+               <Layers size={22} className="text-blue-600" />
+               <span className="text-[14px] font-black text-[#0F172A] tracking-tighter">ADV<span className="text-blue-600">.CRM</span></span>
+            </div>
             <div className="flex items-center gap-3 opacity-40">
-               <Layers size={20} className="text-[#0F172A]" />
-               <span className="text-[10px] font-black text-[#0F172A] uppercase tracking-[0.5em]">Adv-CRM v4.2</span>
+               <span className="text-[10px] font-black text-[#0F172A] uppercase tracking-[0.5em]">Enterprise Edition</span>
             </div>
          </div>
 
@@ -212,12 +168,12 @@ const Login = () => {
                </div>
                <h2 className="text-5xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">Login</h2>
                <p className="text-[#64748B] font-medium leading-relaxed">
-                  Sign in to your account. <br />
-                  <span className="text-[9px] uppercase font-black tracking-[0.2em] opacity-40">Account Type: {portalType.toUpperCase()}</span>
+                  Sign in to your professional workspace. <br />
+                  <span className="text-[9px] uppercase font-black tracking-[0.2em] opacity-40">Enterprise Security Active</span>
                </p>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-8">
+            <form onSubmit={handleLogin} className="space-y-8" autoComplete="off">
                {/* Email Field */}
                <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#64748B] ml-1">Email Address</label>
@@ -227,6 +183,7 @@ const Login = () => {
                      </div>
                      <input 
                        type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                       autoComplete="off"
                        className="w-full pl-16 pr-6 h-[72px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-[24px] focus:ring-[12px] focus:ring-blue-600/5 focus:border-blue-600 focus:bg-white outline-none transition-all font-bold text-[#0F172A] placeholder:text-slate-300"
                        placeholder="name@company.com"
                      />
@@ -245,6 +202,7 @@ const Login = () => {
                      </div>
                      <input 
                        type={showPassword ? 'text' : 'password'} required value={password} onChange={(e) => setPassword(e.target.value)}
+                       autoComplete="new-password"
                        className="w-full pl-16 pr-14 h-[72px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-[24px] focus:ring-[12px] focus:ring-blue-600/5 focus:border-blue-600 focus:bg-white outline-none transition-all font-bold text-[#0F172A] placeholder:text-slate-300"
                        placeholder="••••••••••••"
                      />
@@ -252,6 +210,19 @@ const Login = () => {
                         {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
                      </button>
                   </div>
+               </div>
+
+               {/* Remember Me */}
+               <div className="flex items-center gap-3 ml-1">
+                  <div 
+                    onClick={() => setRememberMe(!rememberMe)}
+                    className={`w-6 h-6 rounded-lg border-2 transition-all cursor-pointer flex items-center justify-center ${rememberMe ? 'bg-blue-600 border-blue-600' : 'border-slate-200 bg-white'}`}
+                  >
+                     {rememberMe && <CheckCircle2 size={16} className="text-white" />}
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => setRememberMe(!rememberMe)}>
+                    Keep me signed in
+                  </span>
                </div>
 
                {/* Authorization Button */}

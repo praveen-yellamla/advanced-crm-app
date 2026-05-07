@@ -3,6 +3,8 @@ const {
   register,
   login,
   getMe,
+  getSessions,
+  revokeSession,
   changePassword,
   logout,
   verifyInvite,
@@ -31,6 +33,8 @@ router.post('/accept-invite', upload.single('image'), acceptInvite);
  * Private Routes
  */
 router.get('/me', protect, getMe);
+router.get('/sessions', protect, getSessions);
+router.delete('/sessions/:id', protect, revokeSession);
 router.post('/change-password', protect, changePasswordValidationRules(), validate, changePassword);
 router.post('/logout', protect, logout);
 

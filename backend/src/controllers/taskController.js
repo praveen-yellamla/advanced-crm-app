@@ -8,7 +8,8 @@ const getTasks = async (req, res) => {
       assignedTo, search, overdue, startDate, endDate, sort = 'newest' 
     } = req.query;
 
-    const where = {};
+    const organizationId = req.user.organizationId;
+    const where = { organizationId };
     
     if (status) where.status = status;
     if (priority) where.priority = priority;
@@ -87,7 +88,10 @@ const getTasks = async (req, res) => {
 const getTaskById = async (req, res) => {
   try {
     const task = await prisma.task.findUnique({
-      where: { id: parseInt(req.params.id) },
+      where: { 
+        id: parseInt(req.params.id),
+        organizationId: req.user.organizationId
+      },
       include: {
         lead: true,
         assignedTo: { select: { id: true, name: true, profileImage: true } },
@@ -112,6 +116,7 @@ const createTask = async (req, res) => {
 
     const task = await prisma.task.create({
       data: {
+        organizationId: req.user.organizationId,
         title,
         description,
         dueDate: dueDate ? new Date(dueDate) : null,
@@ -165,7 +170,10 @@ const updateTask = async (req, res) => {
     });
 
     const task = await prisma.task.update({
-      where: { id: parseInt(id) },
+      where: { 
+        id: parseInt(id),
+        organizationId: req.user.organizationId // ENFORCE OWNERSHIP
+      },
       data: { 
         title, description, priority, type, tags, notes, isRecurring, recurringType,
         status, 
@@ -205,7 +213,10 @@ const patchTaskStatus = async (req, res) => {
     });
 
     const task = await prisma.task.update({
-      where: { id: parseInt(id) },
+      where: { 
+        id: parseInt(id),
+        organizationId: req.user.organizationId // ENFORCE OWNERSHIP
+      },
       data: { 
         status,
         completedAt: status === 'COMPLETED' ? new Date() : null,
@@ -222,7 +233,12 @@ const patchTaskStatus = async (req, res) => {
 
 const deleteTask = async (req, res) => {
   try {
-    await prisma.task.delete({ where: { id: parseInt(req.params.id) } });
+    await prisma.task.delete({ 
+      where: { 
+        id: parseInt(req.params.id),
+        organizationId: req.user.organizationId
+      } 
+    });
     res.json({ success: true, message: "Task deleted successfully" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -231,16 +247,18 @@ const deleteTask = async (req, res) => {
 
 const getTaskAnalytics = async (req, res) => {
   try {
-    const total = await prisma.task.count();
-    const completed = await prisma.task.count({ where: { status: 'COMPLETED' } });
+    const orgId = req.user.organizationId;
+    const total = await prisma.task.count({ where: { organizationId: orgId } });
+    const completed = await prisma.task.count({ where: { organizationId: orgId, status: 'COMPLETED' } });
     const overdue = await prisma.task.count({ 
       where: { 
+        organizationId: orgId,
         dueDate: { lt: new Date() },
         status: { notIn: ['COMPLETED', 'ARCHIVED'] }
       } 
     });
-    const pending = await prisma.task.count({ where: { status: 'PENDING' } });
-    const inProgress = await prisma.task.count({ where: { status: 'IN_PROGRESS' } });
+    const pending = await prisma.task.count({ where: { organizationId: orgId, status: 'PENDING' } });
+    const inProgress = await prisma.task.count({ where: { organizationId: orgId, status: 'IN_PROGRESS' } });
     
     res.json({
       success: true,

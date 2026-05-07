@@ -44,49 +44,71 @@ import AgentInvoices from '../pages/agent/AgentInvoices';
 import AgentPerformance from '../pages/agent/AgentPerformance';
 import InvoiceBuilder from '../pages/agent/InvoiceBuilder';
 
-// Client Pages
-import ClientDashboard from '../pages/client/ClientDashboard';
-import CompanyManagement from '../pages/client/CompanyManagement';
+// Platform Pages
+import PlatformDashboard from '../pages/platform/PlatformDashboard';
+import PlatformCompanies from '../pages/platform/PlatformCompanies';
+import CompanyDetails from '../pages/platform/CompanyDetails';
+import PlatformSubscriptions from '../pages/platform/PlatformSubscriptions';
+import PlatformProfile from '../pages/platform/PlatformProfile';
+import PlatformSettings from '../pages/platform/PlatformSettings';
+import PlatformSecurity from '../pages/platform/PlatformSecurity';
+import PlatformAPIKeys from '../pages/platform/PlatformAPIKeys';
+import PlatformHelp from '../pages/platform/PlatformHelp';
+
+// Admin Billing
+import AdminBilling from '../pages/admin/AdminBilling';
+
+// Client Pages (Legacy)
 import ClientReports from '../pages/client/ClientReports';
-import ClientLeads from '../pages/client/ClientLeads';
-import ClientTickets from '../pages/client/ClientTickets';
-import ClientInvoices from '../pages/client/ClientInvoices';
 
 const AppRoutes = () => {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/select-portal" element={<PortalSelection />} />
-      <Route path="/login/:portal" element={<Login />} />
-      <Route path="/login" element={<Navigate to="/select-portal" replace />} />
+      <Route path="/login" element={<Login />} />
       <Route path="/accept-invite/:token" element={<AcceptInvite />} />
       
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
         
-        {/* Admin Routes */}
+        {/* 1. PLATFORM LAYER (SUPER_ADMIN ONLY) */}
+        <Route element={<RoleBasedRoute allowedRoles={['SUPER_ADMIN']} />}>
+          <Route path="/platform" element={<DashboardLayout />}>
+            <Route index element={<Navigate to="/platform/dashboard" replace />} />
+            <Route path="dashboard" element={<PlatformDashboard />} />
+            <Route path="organizations" element={<PlatformCompanies />} />
+            <Route path="organizations/:id" element={<CompanyDetails />} />
+            <Route path="subscriptions" element={<PlatformSubscriptions />} />
+            <Route path="analytics" element={<ClientReports />} />
+            <Route path="usage" element={<div className="font-bold text-2xl">Platform Usage Analytics</div>} />
+            <Route path="profile" element={<PlatformProfile />} />
+            <Route path="security" element={<PlatformSecurity />} />
+            <Route path="api-keys" element={<PlatformAPIKeys />} />
+            <Route path="settings" element={<PlatformSettings />} />
+            <Route path="help" element={<PlatformHelp />} />
+          </Route>
+        </Route>
+
+        {/* 2. CRM WORKSPACE LAYER - ADMIN */}
         <Route element={<RoleBasedRoute allowedRoles={['ADMIN']} />}>
           <Route path="/admin" element={<DashboardLayout />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="billing" element={<AdminBilling />} />
             <Route path="analytics" element={<AnalyticsCommandCenter />} />
             <Route path="teams" element={<AdminTeams />} />
             <Route path="agents" element={<AdminAgents />} />
             <Route path="leads" element={<LeadManagement />} />
             <Route path="pipeline" element={<LeadPipeline />} />
             <Route path="integrations" element={<SystemIntegrations />} />
-            <Route path="import" element={<LeadImportWizard />} />
             <Route path="tasks" element={<UnifiedTasks />} />
-            <Route path="ledger" element={<FiscalLedger />} />
             <Route path="calls" element={<AdminCalls />} />
-            <Route path="qcqa" element={<QualityControlCenter />} />
-            <Route path="audit" element={<AdminAuditLogs />} />
-            <Route path="settings" element={<AdminSettings />} />
             <Route path="ai" element={<AIControlPanel />} />
+            <Route path="settings" element={<AdminSettings />} />
           </Route>
         </Route>
 
-        {/* Manager Routes */}
+        {/* 3. CRM WORKSPACE LAYER - MANAGER */}
         <Route element={<RoleBasedRoute allowedRoles={['MANAGER']} />}>
           <Route path="/manager" element={<DashboardLayout />}>
             <Route index element={<Navigate to="/manager/dashboard" replace />} />
@@ -96,43 +118,20 @@ const AppRoutes = () => {
             <Route path="agents" element={<ManagerAgents />} />
             <Route path="invoices" element={<ManagerInvoices />} />
             <Route path="reports" element={<ManagerReports />} />
-            <Route path="analytics" element={<div className="font-bold text-2xl">Growth Analytics (Coming Soon)</div>} />
           </Route>
         </Route>
 
-        {/* Agent Routes */}
+        {/* 4. CRM WORKSPACE LAYER - AGENT */}
         <Route element={<RoleBasedRoute allowedRoles={['AGENT']} />}>
           <Route path="/agent" element={<DashboardLayout />}>
             <Route index element={<Navigate to="/agent/dashboard" replace />} />
             <Route path="dashboard" element={<AgentDashboard />} />
             <Route path="leads" element={<AgentLeads />} />
             <Route path="dialer" element={<AgentDialer />} />
-            <Route path="history" element={<AgentHistory />} />
             <Route path="tasks" element={<AgentTasks />} />
             <Route path="feedback" element={<AgentFeedback />} />
             <Route path="inbox" element={<EmailInbox />} />
-            <Route path="invoices" element={<AgentInvoices />} />
-            <Route path="invoices/new" element={<InvoiceBuilder />} />
             <Route path="performance" element={<AgentPerformance />} />
-            <Route path="profile" element={<div className="font-bold text-2xl p-10 text-slate-400 font-mono tracking-tighter italic uppercase border-2 border-dashed border-slate-100 rounded-[40px] flex items-center justify-center h-64">Agent Identity Profile (COMING SOON)</div>} />
-          </Route>
-        </Route>
-
-        {/* Client Routes */}
-        <Route element={<RoleBasedRoute allowedRoles={['CLIENT']} />}>
-          <Route path="/client" element={<DashboardLayout />}>
-             <Route index element={<Navigate to="/client/dashboard" replace />} />
-             <Route path="dashboard" element={<ClientDashboard />} />
-             <Route path="companies" element={<CompanyManagement />} />
-             <Route path="leads" element={<ClientLeads />} />
-             <Route path="reports" element={<ClientReports />} />
-             <Route path="tickets" element={<ClientTickets />} />
-             <Route path="invoices" element={<ClientInvoices />} />
-             <Route path="sources" element={<div className="font-bold text-2xl">Lead Source Distribution</div>} />
-             <Route path="analytics" element={<div className="font-bold text-2xl">Growth Analytics</div>} />
-             <Route path="Billing" element={<div className="font-bold text-2xl">Finance & Billing</div>} />
-             <Route path="Support" element={<div className="font-bold text-2xl">System Support</div>} />
-             <Route path="profile" element={<div className="font-bold text-2xl">Corporate Profile</div>} />
           </Route>
         </Route>
 
@@ -140,8 +139,8 @@ const AppRoutes = () => {
 
       {/* Utilities */}
       <Route path="/unauthorized" element={<div className="h-screen flex items-center justify-center text-red-500 font-bold text-3xl">403 - Unauthorized Access</div>} />
-      <Route path="/" element={<Navigate to="/select-portal" replace />} />
-      <Route path="*" element={<Navigate to="/select-portal" replace />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 };

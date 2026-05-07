@@ -12,6 +12,7 @@ const createInvoice = async (req, res) => {
 
     const invoice = await prisma.invoice.create({
       data: {
+        organizationId: req.user.organizationId,
         invoiceNo: `INV-${Date.now()}`,
         leadId: leadId ? parseInt(leadId) : null,
         clientId: clientId ? parseInt(clientId) : null,
@@ -43,7 +44,10 @@ const getInvoice = async (req, res) => {
   const { id } = req.params;
   try {
     const invoice = await prisma.invoice.findUnique({
-      where: { id: parseInt(id) },
+      where: { 
+        id: parseInt(id),
+        organizationId: req.user.organizationId
+      },
       include: { 
         items: true, 
         raisedBy: { select: { name: true, email: true } },
@@ -62,7 +66,10 @@ const updateInvoiceStatus = async (req, res) => {
   const { status } = req.body;
   try {
     const invoice = await prisma.invoice.update({
-      where: { id: parseInt(id) },
+      where: { 
+        id: parseInt(id),
+        organizationId: req.user.organizationId
+      },
       data: { status }
     });
     res.json({ success: true, data: invoice });
@@ -75,6 +82,7 @@ const updateInvoiceStatus = async (req, res) => {
 const getInvoices = async (req, res) => {
   try {
     const invoices = await prisma.invoice.findMany({
+      where: { organizationId: req.user.organizationId },
       include: { raisedBy: { select: { name: true } }, lead: { select: { customerName: true } } },
       orderBy: { createdAt: 'desc' }
     });

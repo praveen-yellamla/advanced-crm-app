@@ -1,8 +1,6 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
-
-dotenv.config();
 
 const app = express();
 
@@ -57,6 +55,7 @@ const webhookRoutes = require('./routes/webhookRoutes');
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/platform', require('./routes/platformRoutes'));
 app.use('/api/admin', adminRoutes);
 app.use('/api/manager', managerRoutes);
 app.use('/api/agent', agentRoutes);
@@ -71,6 +70,8 @@ app.use('/api/call', require('./routes/callRoutes'));
 app.use('/api/twilio', require('./routes/callRoutes'));
 app.use('/api/email', require('./routes/emailRoutes'));
 app.use('/api/invoices', require('./routes/invoiceRoutes'));
+app.use('/api/billing', require('./routes/billingRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 
 const prisma = require('./config/prisma');
 

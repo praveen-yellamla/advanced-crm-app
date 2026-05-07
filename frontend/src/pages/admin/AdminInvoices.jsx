@@ -51,14 +51,14 @@ const AdminInvoices = () => {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-           <h1 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase">Fiscal Archive.</h1>
-           <p className="text-[#64748B] font-bold text-sm uppercase tracking-widest mt-2">Manage Institutional Billing Logs</p>
+           <h1 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase">Invoices</h1>
+           <p className="text-[#64748B] font-bold text-sm uppercase tracking-widest mt-2">Manage company billing and payment records</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
           className="h-14 px-10 bg-emerald-600 text-white rounded-3xl font-black uppercase tracking-[0.3em] text-[10px] shadow-xl shadow-emerald-500/20 hover:scale-105 transition-all flex items-center gap-4"
         >
-           <Plus size={20} /> Raise Invoice
+           <Plus size={20} /> Create Invoice
         </button>
       </div>
 
@@ -86,17 +86,17 @@ const AdminInvoices = () => {
             <table className="w-full text-left border-collapse">
                <thead>
                   <tr className="bg-slate-50/50">
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Invoice Ref</th>
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Originator</th>
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Fiscal Amount</th>
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Temporal State</th>
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Status</th>
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Controls</th>
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400">Invoice #</th>
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400">Raised By</th>
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400">Amount</th>
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400">Due Date</th>
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400">Status</th>
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 text-right">Actions</th>
                   </tr>
                </thead>
                <tbody>
                   {isLoading ? (
-                    <tr><td colSpan="6" className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest">Hydrating Fiscal Records...</td></tr>
+                    <tr><td colSpan="6" className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest">Loading Invoices...</td></tr>
                   ) : invoices?.map((inv) => (
                     <tr key={inv.id} className="border-b last:border-none border-slate-50 hover:bg-slate-50/50 transition-all duration-500 group">
                        <td className="px-10 py-8">
@@ -144,7 +144,7 @@ const AdminInvoices = () => {
            <div className="fixed inset-0 z-50 flex items-center justify-center p-8">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#0F172A]/80 backdrop-blur-xl" onClick={() => setIsModalOpen(false)}/>
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="relative w-full max-w-xl bg-white rounded-[40px] shadow-2xl overflow-hidden p-12">
-                 <h2 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase italic mb-10">Raise Invoice.</h2>
+                 <h2 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase mb-10">Create Invoice</h2>
                  <form onSubmit={(e) => {
                     e.preventDefault();
                     createInvoiceMutation.mutate(formData);
@@ -161,12 +161,12 @@ const AdminInvoices = () => {
                        </div>
                     </div>
                     <div className="space-y-4">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Maturity Date</label>
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Due Date</label>
                        <input type="date" required className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-[#0F172A]" value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: e.target.value})}/>
                     </div>
                     <div className="flex gap-4 pt-6">
-                       <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-16 bg-slate-100 text-slate-500 rounded-3xl font-black uppercase text-[11px]">Abort</button>
-                       <button type="submit" className="flex-2 h-16 bg-emerald-600 text-white rounded-3xl font-black uppercase text-[11px] shadow-xl shadow-emerald-500/20">Raise Record</button>
+                       <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-16 bg-slate-100 text-slate-500 rounded-3xl font-black uppercase text-[11px]">Cancel</button>
+                       <button type="submit" className="flex-2 h-16 bg-emerald-600 text-white rounded-3xl font-black uppercase text-[11px] shadow-xl shadow-emerald-500/20">Create Invoice</button>
                     </div>
                  </form>
               </motion.div>

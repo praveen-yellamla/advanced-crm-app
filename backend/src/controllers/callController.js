@@ -97,6 +97,7 @@ const handleVoiceWebhook = async (req, res) => {
           from: callerId,
           phone: cleanTo,
           status: 'initiated',
+          organizationId: req.user ? req.user.organizationId : 1, // Fallback for webhook without session
           agentId: agentId ? parseInt(agentId) : (req.user ? req.user.id : 1),
           leadId: leadId ? parseInt(leadId) : null,
           type: 'OUTBOUND'
@@ -197,6 +198,7 @@ const handleStatusWebhook = async (req, res) => {
     // Update call status in DB
     const updated = await prisma.call.updateMany({
       where: { 
+        organizationId: req.user?.organizationId, // If triggered via authenticated session
         OR: [
           { sid: CallSid },
           { phone: To, status: { in: ['initiated', 'ringing', 'queued'] } }
@@ -258,11 +260,14 @@ const tagCall = async (req, res) => {
   const { callSid, tags, notes } = req.body;
   try {
     const call = await prisma.call.findFirst({
-      where: { OR: [
-        { sid: callSid }, 
-        { id: parseInt(callSid) || -1 },
-        { phone: callSid, status: 'completed' }
-      ] },
+      where: { 
+        organizationId: req.user.organizationId,
+        OR: [
+          { sid: callSid }, 
+          { id: parseInt(callSid) || -1 },
+          { phone: callSid, status: 'completed' }
+        ] 
+      },
       orderBy: { createdAt: 'desc' }
     });
 
@@ -295,8 +300,13 @@ const tagCall = async (req, res) => {
 const getCallHistory = async (req, res) => {
   const { agentId } = req.params;
   try {
+    const where = { organizationId: req.user.organizationId };
+    if (agentId !== 'all') {
+      where.agentId = parseInt(agentId);
+    }
+
     const history = await prisma.call.findMany({
-      where: agentId !== 'all' ? { agentId: parseInt(agentId) } : {},
+      where,
       include: { 
         lead: { select: { customerName: true, id: true } },
         agent: { select: { name: true } }
@@ -312,7 +322,10 @@ const getCallHistory = async (req, res) => {
 const getActiveCalls = async (req, res) => {
   try {
     const activeCalls = await prisma.call.findMany({
-      where: { status: { in: ['initiated', 'ringing', 'in-progress', 'answered'] } },
+      where: { 
+        organizationId: req.user.organizationId,
+        status: { in: ['initiated', 'ringing', 'in-progress', 'answered'] } 
+      },
       include: { 
         agent: { select: { name: true, id: true } },
         lead: { select: { customerName: true, id: true } }

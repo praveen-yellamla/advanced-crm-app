@@ -69,7 +69,7 @@ const LeadPipeline = () => {
     mutationFn: ({ id, status }) => api.patch(`/core/leads/${id}/status`, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries(['leads-pipeline']);
-      toast.success('Lead stage synchronized');
+      toast.success('Lead stage updated');
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Update failed')
   });
@@ -84,17 +84,17 @@ const LeadPipeline = () => {
   return (
     <div className="space-y-8 pb-16 h-[calc(100vh-120px)] flex flex-col">
       {/* GLOBAL HEADER & FILTERS */}
-      <div className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6 shrink-0">
+      <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm space-y-8 shrink-0">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
            <div>
-              <h1 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase">Sales Pipeline</h1>
-              <p className="text-[#64748B] font-medium text-xs mt-1 italic uppercase tracking-widest">Global conversion lifecycle architecture</p>
+              <h1 className="text-3xl font-black text-[#0F172A] tracking-tight">Sales Pipeline</h1>
+              <p className="text-slate-500 font-medium text-sm mt-1">Track and manage your leads through different stages of the sales process.</p>
            </div>
            <div className="flex gap-3">
               <button 
                 onClick={resetFilters} 
-                title="Clear all filters and search"
-                className="h-12 w-12 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center hover:text-rose-500 transition-all border border-slate-100"
+                title="Clear all filters"
+                className="h-12 w-12 bg-white text-slate-400 rounded-2xl flex items-center justify-center hover:text-rose-500 transition-all border border-slate-200 shadow-sm"
               >
                  <FilterX size={18} />
               </button>
@@ -102,18 +102,18 @@ const LeadPipeline = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-           <div className="flex-1 min-w-[300px] relative group" title="Search leads by name, email, phone, or unique ID">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={18} />
+           <div className="flex-1 min-w-[300px] relative group">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={18} />
               <input 
-                 type="text" placeholder="Search by name, ID, phone, email..." 
-                 className="w-full h-12 pl-12 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all font-bold text-xs"
+                 type="text" placeholder="Search leads by name, email, or phone..." 
+                 className="w-full h-14 pl-14 pr-4 bg-slate-50 border border-slate-100 rounded-[18px] focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all font-bold text-sm"
                  value={search} onChange={e => setSearch(e.target.value)}
               />
            </div>
            
            <FilterSelect label="Source" value={source} onChange={setSource} options={['ALL', 'GOOGLE_ADS', 'META', 'WEBSITE', 'CSV']} />
            <FilterSelect label="Owner" value={owner} onChange={setOwner} options={['ALL', ...(agents?.map(a => a.id.toString()) || [])]} agents={agents} />
-           <FilterSelect label="Timeline" value={dateRange} onChange={setDateRange} options={['ALL', 'TODAY', 'WEEK', 'MONTH']} />
+           <FilterSelect label="Timeframe" value={dateRange} onChange={setDateRange} options={['ALL', 'TODAY', 'WEEK', 'MONTH']} />
         </div>
       </div>
 

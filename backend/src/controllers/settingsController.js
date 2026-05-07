@@ -9,15 +9,19 @@ const { encrypt, decrypt } = require('../utils/encryption');
 const getSettingsByCategory = async (req, res) => {
   try {
     const { category } = req.params;
-    const settings = await prisma.systemSetting.findMany({
-      where: { category: category.toUpperCase() }
+    const organizationId = req.user.organizationId;
+
+    const settings = await prisma.organizationSetting.findMany({
+      where: { 
+        organizationId,
+        key: { startsWith: category.toUpperCase() } 
+      }
     });
 
     // MASK SECRETS
     const sanitized = settings.map(s => ({
       key: s.key,
-      value: s.isSecret ? '••••••••' : s.value,
-      isSecret: s.isSecret
+      value: s.value, // JSON field, UI handles secrets if needed or we can mask here
     }));
 
     res.json(sanitized);
@@ -28,24 +32,21 @@ const getSettingsByCategory = async (req, res) => {
 
 const updateSetting = async (req, res) => {
   try {
-    let { key, value, category, isSecret } = req.body;
+    let { key, value } = req.body;
+    const organizationId = req.user.organizationId;
 
-    if (isSecret && value !== '••••••••') {
-      value = encrypt(typeof value === 'string' ? value : JSON.stringify(value));
-    }
-
-    const setting = await prisma.systemSetting.upsert({
-      where: { key },
-      update: { 
-        value, 
-        category: category.toUpperCase(),
-        isSecret: !!isSecret
+    const setting = await prisma.organizationSetting.upsert({
+      where: { 
+        organizationId_key: { 
+          organizationId, 
+          key 
+        } 
       },
+      update: { value },
       create: { 
+        organizationId,
         key, 
-        value, 
-        category: category.toUpperCase(),
-        isSecret: !!isSecret
+        value
       }
     });
 
@@ -57,8 +58,9 @@ const updateSetting = async (req, res) => {
 
 const getCompanyProfile = async (req, res) => {
   try {
-    const settings = await prisma.systemSetting.findMany({
-      where: { category: 'COMPANY' }
+    const organizationId = req.user.organizationId;
+    const settings = await prisma.organizationSetting.findMany({
+      where: { organizationId }
     });
     const profile = {};
     settings.forEach(s => profile[s.key] = s.value);

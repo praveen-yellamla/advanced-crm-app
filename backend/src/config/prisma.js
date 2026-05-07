@@ -2,18 +2,24 @@ const { PrismaClient } = require('@prisma/client');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { Pool } = require('pg');
 
+// Ensure env is loaded (redundant but safe)
+require('dotenv').config();
+
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-  console.error("TELEPHONY ENGINE: DATABASE_URL is missing! Server cannot start.");
+  console.error("DATABASE_URL is missing!");
 }
 
 const pool = new Pool({ 
   connectionString,
-  // Enable SSL for production (Render) to prevent Access Denied errors
-  ssl: (connectionString && connectionString.includes('render.com')) || process.env.NODE_ENV === 'production'
-    ? { rejectUnauthorized: false } 
-    : false 
+  ssl: { rejectUnauthorized: false },
+  connectionTimeoutMillis: 10000,
+});
+
+// Robust error logging for the pool
+pool.on('error', (err) => {
+  console.error('CRITICAL: Postgres Pool Error:', err.message);
 });
 
 const adapter = new PrismaPg(pool);

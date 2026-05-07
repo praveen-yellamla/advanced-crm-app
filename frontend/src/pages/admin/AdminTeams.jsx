@@ -16,7 +16,8 @@ import {
   ArrowRight,
   Filter,
   CheckCircle2,
-  Layers
+  Layers,
+  Briefcase
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -28,8 +29,16 @@ const AdminTeams = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  const [formData, setFormData] = useState({
+    teamName: '',
+    managerId: '',
+    monthlyLeadsTarget: '',
+    monthlySalesTarget: '',
+    conversionTarget: '',
+    revenueGoal: ''
+  });
+
   const handleEdit = (team) => {
-    console.log("Edit clicked", team);
     setEditTeamId(team.id);
     setFormData({
       teamName: team.teamName || '',
@@ -75,37 +84,28 @@ const AdminTeams = () => {
     mutationFn: (newTeam) => api.post('/admin/teams', newTeam),
     onSuccess: () => {
       queryClient.invalidateQueries(['adminTeams']);
-      toast.success('Team Created');
+      toast.success('Team successfully created');
       setIsModalOpen(false);
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Initialization failed')
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to create team')
   });
 
   const updateTeamMutation = useMutation({
     mutationFn: (data) => api.put(`/admin/teams/${editTeamId}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['adminTeams']);
-      toast.success('Team Updated');
+      toast.success('Team updated successfully');
       setIsModalOpen(false);
       setEditTeamId(null);
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to update team')
   });
 
-  const [formData, setFormData] = useState({
-    teamName: '',
-    managerId: '',
-    monthlyLeadsTarget: '',
-    monthlySalesTarget: '',
-    conversionTarget: '',
-    revenueGoal: ''
-  });
-
   const deleteTeamMutation = useMutation({
     mutationFn: (id) => api.delete(`/admin/teams/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries(['adminTeams']);
-      toast.success('Team Decommissioned');
+      toast.success('Team archived');
     }
   });
 
@@ -114,12 +114,12 @@ const AdminTeams = () => {
   );
 
   return (
-    <div className="space-y-10 pb-16">
+    <div className="space-y-8 pb-16 px-4 md:px-0">
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-           <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Teams</h1>
-           <p className="text-[#64748B] font-medium text-sm mt-1">Manage Organization & Departmental Structures</p>
+           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Teams & Departments</h1>
+           <p className="text-slate-500 font-medium text-sm mt-1">Manage your organization's team structure and performance targets.</p>
         </div>
         <button 
           onClick={() => {
@@ -130,94 +130,103 @@ const AdminTeams = () => {
             });
             setIsModalOpen(true);
           }}
-          className="h-14 px-8 bg-blue-600 text-white rounded-2xl font-bold uppercase tracking-widest text-[10px] shadow-xl shadow-blue-500/20 hover:scale-105 transition-all flex items-center gap-4"
+          className="h-12 px-6 bg-blue-600 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2 group"
         >
-           <Plus size={20} /> Create New Team
+           <Plus size={18} className="group-hover:rotate-90 transition-transform" /> Create New Team
         </button>
       </div>
 
       {/* FILTERS */}
-      <div className="flex flex-col md:flex-row gap-6">
+      <div className="flex flex-col md:flex-row gap-4">
          <div className="flex-1 relative group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={18} />
             <input 
-               type="text" placeholder="Search teams..." 
-               className="w-full h-16 pl-16 pr-6 bg-white border border-[#E2E8F0] rounded-2xl focus:ring-[12px] focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-semibold text-[#0F172A] shadow-sm"
+               type="text" placeholder="Search teams by name..." 
+               className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 outline-none transition-all text-slate-900 font-medium placeholder:text-slate-400"
                value={search} onChange={e => setSearch(e.target.value)}
             />
          </div>
-         <button className="h-16 px-8 bg-white border border-[#E2E8F0] rounded-3xl flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#0F172A] shadow-sm hover:bg-slate-50 transition-all">
-            <Filter size={18} /> Detailed Filter
+         <button className="h-12 px-5 bg-white border border-slate-200 rounded-xl flex items-center gap-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all">
+            <Filter size={16} /> Advanced Filters
          </button>
       </div>
 
-      {/* TEAMS TABLE */}
-      <div className="bg-white rounded-[40px] border border-[#E2E8F0] shadow-sm overflow-hidden">
+      {/* TEAMS LIST */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
          <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
                <thead>
-                  <tr className="bg-slate-50/50">
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Team Name</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Team Manager</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Agent Count</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Revenue Goal</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Status</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Controls</th>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Team Details</th>
+                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Team Manager</th>
+                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Team Size</th>
+                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Monthly Targets</th>
+                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Status</th>
+                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Actions</th>
                   </tr>
                </thead>
-               <tbody>
+               <tbody className="divide-y divide-slate-100">
                   {isLoading ? (
-                    <tr><td colSpan="6" className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest">Hydrating Registry...</td></tr>
+                    <tr><td colSpan="6" className="p-12 text-center text-slate-400 font-medium">Loading teams...</td></tr>
+                  ) : filteredTeams?.length === 0 ? (
+                    <tr><td colSpan="6" className="p-12 text-center text-slate-400 font-medium">No teams found matching your search.</td></tr>
                   ) : filteredTeams?.map((team) => (
-                    <tr key={team.id} className="border-b last:border-none border-slate-50 hover:bg-slate-50/50 transition-all duration-500 group">
-                       <td className="px-10 py-8">
-                          <div className="flex items-center gap-6">
-                             <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm group-hover:scale-110 transition-transform">
-                                <Layers size={22} />
+                    <tr key={team.id} className="hover:bg-slate-50/50 transition-colors group">
+                       <td className="px-6 py-5">
+                          <div className="flex items-center gap-4">
+                             <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                                <Briefcase size={20} />
                              </div>
                              <div>
-                                <p className="text-xl font-black text-[#0F172A] tracking-tighter uppercase italic">{team.teamName}</p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">ID: CORE-{team.id}</p>
+                                <p className="font-semibold text-slate-900">{team.teamName}</p>
+                                <p className="text-xs text-slate-500 mt-0.5">ID: {team.id}</p>
                              </div>
                           </div>
                        </td>
-                       <td className="px-10 py-8">
-                          <div className="flex items-center gap-4">
-                             <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-[#0F172A] font-black text-xs border border-slate-200">
+                       <td className="px-6 py-5">
+                          <div className="flex items-center gap-3">
+                             <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-xs border border-slate-200">
                                 {team.manager?.name?.charAt(0)}
                              </div>
-                             <span className="text-sm font-black text-[#64748B] uppercase italic">{team.manager?.name || 'Unassigned'}</span>
+                             <span className="text-sm font-medium text-slate-600">{team.manager?.name || 'Unassigned'}</span>
                           </div>
                        </td>
-                       <td className="px-10 py-8 text-lg font-black text-[#0F172A] italic">{team._count.agents} Accounts</td>
-                       <td className="px-10 py-8">
-                          <div className="space-y-3">
-                             <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                <span>Revenue Growth</span>
-                                <span className="text-blue-600">$0 / ${(team.revenueGoal ?? 0).toLocaleString()}</span>
+                       <td className="px-6 py-5">
+                          <div className="flex items-center gap-2">
+                            <Users size={16} className="text-slate-400" />
+                            <span className="text-sm font-semibold text-slate-900">{team._count.agents} Members</span>
+                          </div>
+                       </td>
+                       <td className="px-6 py-5">
+                          <div className="w-48">
+                             <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-tight mb-1.5">
+                                <span>Revenue Target</span>
+                                <span className="text-blue-600 font-bold">${(team.revenueGoal ?? 0).toLocaleString()}</span>
                              </div>
-                             <div className="h-2 w-48 bg-slate-100 rounded-full overflow-hidden border border-slate-200 p-[1px]">
-                                <div className="h-full bg-blue-600 rounded-full w-[15%]" />
+                             <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500 rounded-full w-[0%]" />
                              </div>
                           </div>
                        </td>
-                       <td className="px-10 py-8">
-                          <div className="flex items-center gap-3 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl w-fit border border-emerald-100 font-medium">
-                             <CheckCircle2 size={14} />
-                             <span className="text-[10px] font-bold uppercase tracking-widest">Active</span>
+                       <td className="px-6 py-5">
+                          <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full w-fit border border-emerald-100 text-[10px] font-bold uppercase tracking-wider">
+                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                             Active
                           </div>
                        </td>
-                       <td className="px-10 py-8">
-                          <div className="flex gap-3">
+                       <td className="px-6 py-5">
+                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                              <button 
                                onClick={() => handleEdit(team)}
-                               className="w-12 h-12 rounded-xl bg-white border border-[#E2E8F0] shadow-sm hover:border-blue-600 hover:text-blue-600 transition-all flex items-center justify-center"
+                               className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                               title="Edit Team"
                              >
                                 <Edit3 size={18} />
                              </button>
                              <button 
-                               onClick={() => { if(confirm('Refresh deletion?')) deleteTeamMutation.mutate(team.id); }}
-                               className="w-12 h-12 rounded-xl bg-white border border-[#E2E8F0] shadow-sm hover:border-red-600 hover:text-red-600 transition-all flex items-center justify-center"
+                               onClick={() => { if(confirm('Are you sure you want to archive this team?')) deleteTeamMutation.mutate(team.id); }}
+                               className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                               title="Archive Team"
                              >
                                 <Archive size={18} />
                              </button>
@@ -230,22 +239,22 @@ const AdminTeams = () => {
          </div>
       </div>
 
-      {/* CREATE MODAL */}
+      {/* CREATE/EDIT MODAL */}
       <AnimatePresence>
          {isModalOpen && (
-           <div className="fixed inset-0 z-50 flex items-center justify-center p-8">
+           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
               <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-[#0F172A]/80 backdrop-blur-xl"
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
                 onClick={() => { setIsModalOpen(false); setEditTeamId(null); }}
               />
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-2xl bg-white rounded-[40px] shadow-2xl overflow-hidden"
+                className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden"
               >
-                 <div className="p-12 border-b border-slate-50 bg-[#F8FAFC]">
-                    <h2 className="text-3xl font-bold text-[#0F172A] tracking-tight">{editTeamId ? 'Edit Team' : 'Create Team'}</h2>
-                    <p className="text-sm font-medium text-[#64748B] mt-2">{editTeamId ? 'Modify existing team details' : 'Deploy a new organizational structure'}</p>
+                 <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
+                    <h2 className="text-xl font-bold text-slate-900">{editTeamId ? 'Edit Team Details' : 'Create New Team'}</h2>
+                    <p className="text-sm text-slate-500 mt-1">Define team objectives and assign a manager.</p>
                  </div>
                  
                  <form onSubmit={(e) => {
@@ -273,80 +282,69 @@ const AdminTeams = () => {
                     } else {
                       createTeamMutation.mutate(payload);
                     }
-                 }} className="p-12 space-y-8">
-                     <div className="grid grid-cols-2 gap-8">
-                        <div className="space-y-3">
-                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Team Name</label>
+                 }} className="p-8 space-y-6">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2 col-span-2 md:col-span-1">
+                           <label className="text-xs font-bold text-slate-700 ml-1">Team Name</label>
                            <input 
-                              type="text" required placeholder="Cluster Delta..."
-                              className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-12 focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-bold text-[#0F172A]"
+                              type="text" required placeholder="e.g. Sales North"
+                              className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 outline-none transition-all font-medium text-slate-900"
                               value={formData.teamName} onChange={e => setFormData({...formData, teamName: e.target.value})}
                            />
                         </div>
-                        <div className="space-y-3">
-                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Manager</label>
+                        <div className="space-y-2 col-span-2 md:col-span-1">
+                           <label className="text-xs font-bold text-slate-700 ml-1">Team Manager</label>
                            {managersLoading ? (
-                             <div className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-3 text-slate-400 font-bold text-sm">
-                               <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
-                               Loading managers...
+                             <div className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2 text-slate-400 text-sm italic">
+                               <div className="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                               Fetching managers...
                              </div>
                            ) : managersError ? (
-                             <div className="w-full h-16 px-6 bg-red-50 border border-red-200 rounded-2xl flex items-center text-red-500 font-bold text-sm">
+                             <div className="w-full h-11 px-4 bg-red-50 border border-red-200 rounded-xl flex items-center text-red-600 text-xs font-semibold">
                                Failed to load managers
-                             </div>
-                           ) : managers?.length === 0 ? (
-                             <div className="w-full h-16 px-6 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between">
-                               <span className="text-amber-700 font-bold text-sm">No managers available</span>
-                               <button 
-                                 type="button" 
-                                 onClick={() => navigate('/admin/agents')} 
-                                 className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-800 transition-colors"
-                               >
-                                 Create Manager First
-                               </button>
                              </div>
                            ) : (
                              <select 
                                 required 
-                                className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-12 focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-bold text-[#0F172A] appearance-none"
+                                className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 outline-none transition-all font-medium text-slate-900 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.75rem_center] bg-no-repeat"
                                 value={formData.managerId} onChange={e => setFormData({...formData, managerId: e.target.value})}
                              >
-                                <option value="">Select Manager...</option>
+                                <option value="">Assign a manager...</option>
                                 {managers?.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                              </select>
                            )}
                         </div>
-                        <div className="space-y-3">
-                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Monthly Revenue Goal ($)</label>
+                        <div className="space-y-2">
+                           <label className="text-xs font-bold text-slate-700 ml-1">Monthly Revenue Goal ($)</label>
                            <input 
-                              type="number" required placeholder="e.g. 50000" min="0" step="0.01"
-                              className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-12 focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-bold text-[#0F172A]"
+                              type="number" required placeholder="0.00" min="0" step="0.01"
+                              className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 outline-none transition-all font-medium text-slate-900"
                               value={formData.revenueGoal} onChange={e => setFormData({...formData, revenueGoal: e.target.value})}
                            />
                         </div>
-                        <div className="space-y-3">
-                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lead Capacity</label>
+                        <div className="space-y-2">
+                           <label className="text-xs font-bold text-slate-700 ml-1">Monthly Lead Capacity</label>
                            <input 
-                              type="number" required placeholder="e.g. 500" min="0"
-                              className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-12 focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-bold text-[#0F172A]"
+                              type="number" required placeholder="e.g. 1000" min="0"
+                              className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 outline-none transition-all font-medium text-slate-900"
                               value={formData.monthlyLeadsTarget} onChange={e => setFormData({...formData, monthlyLeadsTarget: e.target.value})}
                            />
                         </div>
                      </div>
                      
-                     <div className="flex gap-4 pt-6">
+                     <div className="flex gap-3 pt-4 border-t border-slate-100">
                         <button 
                            type="button" onClick={() => { setIsModalOpen(false); setEditTeamId(null); }}
-                           className="flex-1 h-16 bg-slate-100 text-slate-500 rounded-3xl font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all"
+                           className="flex-1 h-11 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
                         >
                            Cancel
                         </button>
                         <button 
-                           type="submit" disabled={(editTeamId ? updateTeamMutation.isPending : createTeamMutation.isPending) || (managers && managers.length === 0)}
-                           className="flex-1 h-16 bg-[#0F172A] text-white rounded-3xl font-black uppercase tracking-widest text-[11px] shadow-2xl hover:brightness-125 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                           type="submit" disabled={(editTeamId ? updateTeamMutation.isPending : createTeamMutation.isPending)}
+                           className="flex-1 h-11 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                         >
-                           {editTeamId ? (updateTeamMutation.isPending ? 'Updating...' : <>Update Team <ArrowRight size={18} /></>) 
-                                       : (createTeamMutation.isPending ? 'Loading...' : <>Create Team <ArrowRight size={18} /></>)}
+                           {editTeamId ? (updateTeamMutation.isPending ? 'Saving...' : 'Update Team') 
+                                       : (createTeamMutation.isPending ? 'Creating...' : 'Create Team')}
                         </button>
                      </div>
                  </form>

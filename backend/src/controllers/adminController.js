@@ -8,6 +8,8 @@ const getDashboardStats = async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const orgId = req.user.organizationId;
+
     const [
       totalLeads,
       todayLeads,
@@ -16,12 +18,14 @@ const getDashboardStats = async (req, res) => {
       callsToday,
       totalRevenue,
       leadsByStatus,
-      leadsBySource
+      leadsBySource,
+      organizationInfo
     ] = await Promise.all([
-      prisma.lead.count(),
-      prisma.lead.count({ where: { createdAt: { gte: today } } }),
+      prisma.lead.count({ where: { organizationId: orgId } }),
+      prisma.lead.count({ where: { organizationId: orgId, createdAt: { gte: today } } }),
       prisma.user.count({ 
         where: { 
+          organizationId: orgId,
           role: 'AGENT', 
           isActive: true,
           OR: [
@@ -31,21 +35,31 @@ const getDashboardStats = async (req, res) => {
         } 
       }),
       prisma.user.findMany({ 
-        where: { role: 'AGENT', agentType: 'INVITED' },
+        where: { organizationId: orgId, role: 'AGENT', agentType: 'INVITED' },
         select: { inviteStatus: true }
       }),
-      prisma.call.count({ where: { createdAt: { gte: today } } }),
+      prisma.call.count({ where: { organizationId: orgId, createdAt: { gte: today } } }),
       prisma.invoice.aggregate({
         _sum: { amount: true },
-        where: { status: 'PAID' }
+        where: { organizationId: orgId, status: 'PAID' }
       }),
       prisma.lead.groupBy({
         by: ['status'],
+        where: { organizationId: orgId },
         _count: true
       }),
       prisma.lead.groupBy({
         by: ['source'],
+        where: { organizationId: orgId },
         _count: true
+      }),
+      prisma.organization.findUnique({
+        where: { id: orgId },
+        select: { 
+          lastPlatformAccessAt: true, 
+          lastPlatformAccessBy: true,
+          accessApprovalRequired: true 
+        }
       })
     ]);
 
@@ -69,7 +83,8 @@ const getDashboardStats = async (req, res) => {
           conversionRate: totalLeads > 0 ? ((leadsByStatus.find(l => l.status === 'WON')?._count || 0) / totalLeads) * 100 : 0
         },
         funnel: leadsByStatus,
-        sources: leadsBySource
+        sources: leadsBySource,
+        security: organizationInfo
       }
     });
   } catch (error) {
@@ -82,8 +97,17 @@ const getDashboardStats = async (req, res) => {
 // ==================================================
 const getManagers = async (req, res) => {
   try {
+    const orgId = req.user.organizationId;
+    if (!orgId && req.user.role !== 'SUPER_ADMIN') {
+      return res.status(400).json({ success: false, message: 'Organization context missing' });
+    }
+
     const managers = await prisma.user.findMany({
-      where: { role: 'MANAGER', isActive: true },
+      where: { 
+        role: 'MANAGER', 
+        isActive: true,
+        organizationId: orgId 
+      },
       select: { id: true, name: true, email: true }
     });
     res.json({ success: true, data: managers });
@@ -95,6 +119,7 @@ const getManagers = async (req, res) => {
 const getTeams = async (req, res) => {
   try {
     const teams = await prisma.team.findMany({
+      where: { organizationId: req.user.organizationId },
       include: {
         manager: { select: { id: true, name: true, email: true } },
         agents: { select: { id: true, name: true, email: true } },
@@ -111,10 +136,24 @@ const createTeam = async (req, res) => {
   try {
     const { teamName, managerId, monthlyLeadsTarget, monthlySalesTarget, conversionTarget, revenueGoal } = req.body;
     
+    // Mission-Critical: Verify Manager Ownership
+    const managerVerify = await prisma.user.findFirst({
+      where: { 
+        id: parseInt(managerId), 
+        organizationId: req.user.organizationId,
+        role: 'MANAGER'
+      }
+    });
+
+    if (!managerVerify) {
+      return res.status(403).json({ success: false, message: 'IDENT_CROSS_TENANT_VIOLATION: Manager does not belong to this instance' });
+    }
+
     const team = await prisma.team.create({
       data: {
         teamName,
-        managerId: parseInt(managerId),
+        organizationId: req.user.organizationId,
+        managerId: managerVerify.id,
         monthlyLeadsTarget: parseInt(monthlyLeadsTarget) || 0,
         monthlySalesTarget: parseInt(monthlySalesTarget) || 0,
         conversionTarget: parseFloat(conversionTarget) || 0,
@@ -134,7 +173,12 @@ const updateTeam = async (req, res) => {
     console.log('Update Team Request Body:', req.body);
     const { id } = req.params;
     
-    const oldTeam = await prisma.team.findUnique({ where: { id: parseInt(id) } });
+    const oldTeam = await prisma.team.findUnique({ 
+      where: { 
+        id: parseInt(id),
+        organizationId: req.user.organizationId
+      } 
+    });
     if (!oldTeam) {
       return res.status(404).json({ success: false, message: 'Team not found' });
     }
@@ -177,7 +221,10 @@ const updateTeam = async (req, res) => {
     }
 
     const team = await prisma.team.update({
-      where: { id: parseInt(id) },
+      where: { 
+        id: parseInt(id),
+        organizationId: req.user.organizationId // ENFORCE OWNERSHIP
+      },
       data: updateData
     });
 
@@ -195,7 +242,10 @@ const updateTeam = async (req, res) => {
 const getAgents = async (req, res) => {
   try {
     const agents = await prisma.user.findMany({
-      where: { role: 'AGENT' },
+      where: { 
+        role: 'AGENT',
+        organizationId: req.user.organizationId
+      },
       include: {
         team: { select: { teamName: true } },
         _count: { select: { assignedLeads: true, calls: true } }
@@ -219,6 +269,14 @@ const createAgent = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Profile image is required' });
     }
 
+    // Verify Team Ownership if provided
+    if (teamId) {
+      const teamVerify = await prisma.team.findFirst({
+        where: { id: parseInt(teamId), organizationId: req.user.organizationId }
+      });
+      if (!teamVerify) return res.status(403).json({ success: false, message: 'IDENT_CROSS_TENANT_VIOLATION' });
+    }
+
     const imageUrl = await uploadToCloudinary(req.file.buffer);
 
     // Mission-Critical: Hash passwords before persistence
@@ -233,6 +291,7 @@ const createAgent = async (req, res) => {
         phone,
         profileImage: imageUrl,
         role: 'AGENT',
+        organizationId: req.user.organizationId,
         teamId: teamId ? parseInt(teamId) : null,
         isActive: true,
         agentType: 'MANUAL',
@@ -276,7 +335,10 @@ const updateAgent = async (req, res) => {
     }
 
     const agent = await prisma.user.update({
-      where: { id: parseInt(id) },
+      where: { 
+        id: parseInt(id),
+        organizationId: req.user.organizationId // ENFORCE OWNERSHIP
+      },
       data
     });
 
@@ -297,7 +359,12 @@ const updateAgent = async (req, res) => {
 const deleteAgent = async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.user.delete({ where: { id: parseInt(id) } });
+    await prisma.user.delete({ 
+      where: { 
+        id: parseInt(id),
+        organizationId: req.user.organizationId // ENFORCE OWNERSHIP
+      } 
+    });
     res.json({ success: true, message: 'Agent node terminated.' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -307,7 +374,12 @@ const deleteAgent = async (req, res) => {
 const deleteTeam = async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.team.delete({ where: { id: parseInt(id) } });
+    await prisma.team.delete({ 
+      where: { 
+        id: parseInt(id),
+        organizationId: req.user.organizationId // ENFORCE OWNERSHIP
+      } 
+    });
     res.json({ success: true, message: 'Team decommissioned.' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -320,6 +392,7 @@ const deleteTeam = async (req, res) => {
 const getAuditLogs = async (req, res) => {
   try {
     const logs = await prisma.auditLog.findMany({
+      where: { organizationId: req.user.organizationId },
       include: { user: { select: { name: true, email: true } } },
       orderBy: { createdAt: 'desc' },
       take: 200

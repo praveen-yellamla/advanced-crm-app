@@ -3,116 +3,164 @@ const prisma = require('../src/config/prisma');
 const bcrypt = require('bcryptjs');
 
 async function main() {
-  console.log('🌱 Seeding Enterprise Intelligence Grid...');
+  console.log('🌱 Seeding Multi-Tenant SaaS Infrastructure...');
 
   const hashedPassword = await bcrypt.hash('password123', 10);
 
-  // 1. CLEAR EXISTING DATA (CASCADE FRIENDLY)
-  // Delete in reverse order of dependency to avoid foreign key violations
-  await prisma.aIUsage.deleteMany();
+  // 1. CLEANUP (Reverse Order)
   await prisma.feedback.deleteMany();
   await prisma.callQA.deleteMany();
   await prisma.call.deleteMany();
   await prisma.task.deleteMany();
   await prisma.leadActivity.deleteMany();
   await prisma.lead.deleteMany();
-  await prisma.company.deleteMany();
-  await prisma.supportTicket.deleteMany();
   await prisma.invoiceItem.deleteMany();
   await prisma.invoice.deleteMany();
-  await prisma.client.deleteMany();
+  await prisma.email.deleteMany();
+  await prisma.emailAccount.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.team.deleteMany();
-  await prisma.invite.deleteMany();
-  await prisma.googleAccount.deleteMany();
-  await prisma.integrationAccount.deleteMany();
+  await prisma.organizationSetting.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.organization.deleteMany();
+  await prisma.plan.deleteMany(); // Clean plans too
 
-  // 2. INTERNAL STAFF PROTOCOLS
-  const admin = await prisma.user.create({
-    data: { name: 'Institutional Admin', email: 'admin@crm.com', password: hashedPassword, role: 'ADMIN' }
+  // 2. CREATE PLATFORM OWNER
+  const platformOwner = await prisma.user.create({
+    data: {
+      name: 'Platform Operator',
+      email: 'saas@platform.com',
+      password: hashedPassword,
+      role: 'SUPER_ADMIN',
+      isActive: true
+    }
   });
 
-  const manager = await prisma.user.create({
-    data: { name: 'Operations Manager', email: 'manager@crm.com', password: hashedPassword, role: 'MANAGER' }
-  });
-
-  const agent1 = await prisma.user.create({
-    data: { name: 'Field Agent Alpha', email: 'agent1@crm.com', password: hashedPassword, role: 'AGENT' }
-  });
-
-  // 3. CLIENT REPOSITORY (ACME & NOVA)
-  const clients = [
-    { name: 'ACME Corp Admin', email: 'client@acme.com', corp: 'ACME Corp Solutions' },
-    { name: 'Nova Director', email: 'client@nova.com', corp: 'Nova Enterprises' }
+  // 3. CREATE SUBSCRIPTION PLANS
+  console.log('📦 Seeding Subscription Plans...');
+  const plans = [
+    {
+      name: 'Starter',
+      tier: 'STARTER',
+      priceMonthly: 1999,
+      priceYearly: 19990,
+      userLimit: 5,
+      leadLimit: 1000,
+      aiTokenLimit: 10000,
+      features: { aiAssistant: false, calling: false }
+    },
+    {
+      name: 'Professional',
+      tier: 'PROFESSIONAL',
+      priceMonthly: 4999,
+      priceYearly: 49990,
+      userLimit: 20,
+      leadLimit: 10000,
+      aiTokenLimit: 50000,
+      aiAssistant: true,
+      callingEnabled: true,
+      features: { aiAssistant: true, calling: true }
+    },
+    {
+      name: 'Enterprise',
+      tier: 'ENTERPRISE',
+      priceMonthly: 14999,
+      priceYearly: 149990,
+      userLimit: 9999,
+      leadLimit: 1000000,
+      aiTokenLimit: 500000,
+      aiAssistant: true,
+      aiLeadScoring: true,
+      callingEnabled: true,
+      callRecording: true,
+      automationEnabled: true,
+      analyticsEnabled: true,
+      features: { aiAssistant: true, calling: true, automation: true }
+    }
   ];
 
-  for (const c of clients) {
-    const client = await prisma.client.create({
-      data: {
-        name: c.name,
-        email: c.email.toLowerCase().trim(),
-        password: hashedPassword,
-        companyName: c.corp,
-        status: 'ACTIVE'
-      }
-    });
-
-    // Create 2 Companies per Client
-    const comp1 = await prisma.company.create({
-      data: { clientId: client.id, name: `${c.corp} North America`, location: 'New York, USA', industry: 'Logistics' }
-    });
-    const comp2 = await prisma.company.create({
-      data: { clientId: client.id, name: `${c.corp} EMEA Hub`, location: 'Berlin, DE', industry: 'Energy' }
-    });
-
-    // Create 5 Leads for each company
-    for (const comp of [comp1, comp2]) {
-      for (let i = 1; i <= 5; i++) {
-        await prisma.lead.create({
-          data: {
-            customerName: `Lead Node ${i} - ${comp.name}`,
-            email: `lead${i}@${comp.name.toLowerCase().replace(/\s/g, '')}.com`,
-            phone: `+12345678${i}`,
-            source: 'GOOGLE_ADS',
-            status: i % 2 === 0 ? 'WON' : 'NEW',
-            companyId: comp.id,
-            assignedToId: agent1.id
-          }
-        });
-      }
-    }
-
-    // Create a Support Ticket
-    await prisma.supportTicket.create({
-      data: {
-        clientId: client.id,
-        subject: `Institutional Inquiry - ${c.corp}`,
-        type: 'TECHNICAL',
-        priority: 'HIGH',
-        description: `Routine performance inquiry for ${c.corp} operational grid.`
-      }
-    });
-
-    // Create a Sample Invoice
-    await prisma.invoice.create({
-      data: {
-        invoiceNo: `INV-${client.id}-${Date.now().toString().slice(-4)}`,
-        clientId: client.id,
-        raisedById: manager.id,
-        amount: 2500.00,
-        status: 'PAID',
-        dueDate: new Date(Date.now() + 864000000), // +10 days
-        items: {
-          create: [{ description: 'Managed CRM Services Q2', quantity: 1, unitPrice: 2500.00, total: 2500.00 }]
-        }
-      }
-    });
+  const createdPlans = {};
+  for (const p of plans) {
+    const plan = await prisma.plan.create({ data: p });
+    createdPlans[p.tier] = plan;
   }
 
-  console.log('🚀 Enterprise Seeding Complete. Neural Grid Initialized.');
+  // 4. CREATE SAMPLE ORGANIZATIONS
+  const orgs = [
+    { name: 'Skyline Logistics', slug: 'skyline', tier: 'ENTERPRISE' },
+    { name: 'Vortex Energy', slug: 'vortex', tier: 'PROFESSIONAL' },
+    { name: 'Basic Retail', slug: 'basic', tier: 'STARTER' }
+  ];
+
+  for (const orgData of orgs) {
+    const org = await prisma.organization.create({
+      data: {
+        name: orgData.name,
+        slug: orgData.slug,
+        subscriptionTier: orgData.tier,
+        planId: createdPlans[orgData.tier].id, // Link to plan
+        status: 'ACTIVE',
+        agentLimit: orgData.tier === 'ENTERPRISE' ? 100 : orgData.tier === 'PROFESSIONAL' ? 20 : 5
+      }
+    });
+
+    // 4. CREATE ORG USERS
+    const admin = await prisma.user.create({
+      data: {
+        name: `${org.name} Admin`,
+        email: `admin@${org.slug}.com`,
+        password: hashedPassword,
+        role: 'ADMIN',
+        organizationId: org.id
+      }
+    });
+
+    const manager = await prisma.user.create({
+      data: {
+        name: `${org.name} Manager`,
+        email: `manager@${org.slug}.com`,
+        password: hashedPassword,
+        role: 'MANAGER',
+        organizationId: org.id
+      }
+    });
+
+    const agent = await prisma.user.create({
+      data: {
+        name: `${org.name} Agent`,
+        email: `agent@${org.slug}.com`,
+        password: hashedPassword,
+        role: 'AGENT',
+        organizationId: org.id
+      }
+    });
+
+    // 5. SEED LEADS FOR EACH ORG (Isolation Test)
+    for (let i = 1; i <= 3; i++) {
+      await prisma.lead.create({
+        data: {
+          organizationId: org.id,
+          customerName: `Lead ${i} - ${org.name}`,
+          email: `contact${i}@client-${org.slug}.com`,
+          phone: `+919000000${org.id}${i}`,
+          source: 'WEBHOOK',
+          status: 'NEW',
+          assignedToId: agent.id
+        }
+      });
+    }
+
+    console.log(`✅ Organization ${org.name} [${org.slug}] initialized.`);
+  }
+
+  console.log('🚀 SaaS Platform Seeded Successfully.');
 }
 
 main()
-  .catch((e) => { console.error(e); process.exit(1); })
-  .finally(async () => { await prisma.$disconnect(); });
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

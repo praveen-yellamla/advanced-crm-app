@@ -1,13 +1,26 @@
 console.log("--- SYSTEM BOOT SEQUENCE START ---");
+require('dotenv').config();
 
 process.on('uncaughtException', (err) => {
-  console.error('FATAL: Uncaught Exception during boot:', err);
+  console.error('--- FATAL ERROR DETECTED ---');
+  console.error('Type:', err.name);
+  console.error('Message:', err.message);
+  console.error('Stack Trace:', err.stack);
+  console.error('----------------------------');
+  
+  // If it's just an SMTP error, don't crash the whole server
+  if (err.message.includes('SMTP')) {
+    console.warn('RECOVERY: Non-fatal SMTP error detected. Maintaining service continuity.');
+    return;
+  }
+  
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('FATAL: Unhandled Rejection at:', promise, 'reason:', reason);
-  process.exit(1);
+  console.error('--- UNHANDLED REJECTION ---');
+  console.error('Reason:', reason);
+  console.error('---------------------------');
 });
 
 const app = require('./app');

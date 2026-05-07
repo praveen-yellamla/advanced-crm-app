@@ -6,6 +6,225 @@ datasource db {
   provider = "postgresql"
 }
 
+// ==========================================
+// 1. SAAS PLATFORM LAYER (Multi-Tenant)
+// ==========================================
+
+model Organization {
+  id            Int      @id @default(autoincrement())
+  name          String
+  slug          String   @unique
+  logoUrl       String?  @map("logo_url")
+  faviconUrl    String?  @map("favicon_url")
+  industry      String?
+  website       String?
+  
+  // Branding
+  primaryColor  String?  @default("#2563EB") @map("primary_color")
+  secondaryColor String? @default("#0F172A") @map("secondary_color")
+  
+  // Subscription Info
+  planId        Int?     @map("plan_id")
+  plan          Plan?    @relation(fields: [planId], references: [id])
+  subscriptionTier SubscriptionTier @default(STARTER) @map("subscription_tier")
+  status           OrgStatus        @default(ACTIVE)
+  
+  // Usage Tracking (Current Overrides/Limits)
+  agentLimit       Int @default(5)    @map("agent_limit")
+  managerLimit     Int @default(1)    @map("manager_limit")
+  leadLimit        Int @default(1000)  @map("lead_limit")
+  storageLimitMb   Int @default(512)   @map("storage_limit_mb")
+  aiTokenLimit     Int @default(10000) @map("ai_token_limit")
+  callMinutesLimit Int @default(100)   @map("call_minutes_limit")
+  campaignLimit    Int @default(5)     @map("campaign_limit")
+  
+  // Billing Info
+  billingEmail     String?  @map("billing_email")
+  stripeCustomerId String? @map("stripe_customer_id")
+  stripeSubscriptionId String? @map("stripe_subscription_id")
+  subscriptionExpiresAt DateTime? @map("subscription_expires_at")
+  
+  // Security
+  twoFactorEnabled Boolean @default(false) @map("two_factor_enabled")
+  ipWhitelist      String?  @map("ip_whitelist")
+  
+  // Relations
+  users     User[]
+  leads     Lead[]
+  teams     Team[]
+  tasks     Task[]
+  calls     Call[]
+  invoices  Invoice[] // CRM Business Invoices
+  platformInvoices PlatformInvoice[] // SaaS Subscription Invoices
+  settings  OrganizationSetting[]
+  auditLogs AuditLog[]
+  aiUsage   AIUsage[]
+  emails    Email[]
+  emailAccounts EmailAccount[]
+  leadActivities LeadActivity[]
+  callQAs   CallQA[]
+  feedbacks Feedback[]
+  invites   Invite[]
+  notifications Notification[]
+  
+  // Security & Compliance
+  accessApprovalRequired Boolean @default(false) @map("access_approval_required")
+  lastPlatformAccessAt   DateTime? @map("last_platform_access_at")
+  lastPlatformAccessBy   String?   @map("last_platform_access_by")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("organizations")
+}
+
+model Plan {
+  id            Int      @id @default(autoincrement())
+  name          String   // Starter, Professional, Enterprise
+  tier          SubscriptionTier @unique
+  description   String?
+  priceMonthly  Float    @map("price_monthly")
+  priceYearly   Float    @map("price_yearly")
+  
+  // Usage Limits
+  userLimit       Int      @map("user_limit")
+  managerLimit    Int      @default(1) @map("manager_limit")
+  leadLimit       Int      @map("lead_limit")
+  storageLimitMb  Int      @default(512) @map("storage_limit_mb")
+  aiTokenLimit    Int      @map("ai_token_limit")
+  callMinutesLimit Int     @default(100) @map("call_minutes_limit")
+  campaignLimit   Int      @default(5) @map("campaign_limit")
+  pipelineLimit   Int      @default(3) @map("pipeline_limit")
+  
+  // Feature Toggles (Explicit for gating)
+  aiAssistant       Boolean @default(false) @map("ai_assistant")
+  aiLeadScoring     Boolean @default(false) @map("ai_lead_scoring")
+  aiVoiceCalls      Boolean @default(false) @map("ai_voice_calls")
+  callingEnabled    Boolean @default(false) @map("calling_enabled")
+  callRecording     Boolean @default(false) @map("call_recording")
+  smsEnabled        Boolean @default(false) @map("sms_enabled")
+  whatsappEnabled   Boolean @default(false) @map("whatsapp_enabled")
+  monitoringEnabled Boolean @default(false) @map("monitoring_enabled")
+  automationEnabled Boolean @default(false) @map("automation_enabled")
+  analyticsEnabled  Boolean @default(false) @map("analytics_enabled")
+  advancedReports   Boolean @default(false) @map("advanced_reports")
+  customBranding    Boolean @default(false) @map("custom_branding")
+  prioritySupport   Boolean @default(false) @map("priority_support")
+  apiAccess         Boolean @default(false) @map("api_access")
+  webhooksEnabled   Boolean @default(false) @map("webhooks_enabled")
+  auditLogsEnabled  Boolean @default(false) @map("audit_logs_enabled")
+  
+  // Billing Config
+  freeTrialDays     Int     @default(0) @map("free_trial_days")
+  setupFee          Float   @default(0) @map("setup_fee")
+  
+  // Metadata
+  features      Json     
+  isActive      Boolean  @default(true) @map("is_active")
+  isPublic      Boolean  @default(true) @map("is_public")
+  
+  organizations Organization[]
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("plans")
+}
+
+model PlatformInvoice {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  invoiceNo      String   @unique @map("invoice_no")
+  amount         Float
+  currency       String   @default("INR")
+  status         PlatformInvoiceStatus @default(PENDING)
+  billingDate    DateTime @map("billing_date")
+  paidAt         DateTime? @map("paid_at")
+  
+  stripeInvoiceId String? @map("stripe_invoice_id")
+  invoiceUrl     String?  @map("invoice_url")
+  
+  createdAt      DateTime @default(now()) @map("created_at")
+  
+  @@map("platform_invoices")
+}
+
+model Notification {
+  id             Int      @id @default(autoincrement())
+  organizationId Int?     @map("organization_id")
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  userId         Int?     @map("user_id")
+  user           User?    @relation(fields: [userId], references: [id])
+  
+  title          String
+  message        String
+  type           NotificationType @default(INFO)
+  priority       NotificationPriority @default(MEDIUM)
+  isRead         Boolean  @default(false) @map("is_read")
+  
+  link           String?
+  metadata       Json?
+  
+  createdAt      DateTime @default(now()) @map("created_at")
+  
+  @@map("notifications")
+}
+
+model PlatformSetting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       Json
+  description String?
+  category    String   @default("GENERAL")
+  
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@map("platform_settings")
+}
+
+enum SubscriptionTier {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum OrgStatus {
+  ACTIVE
+  TRIAL
+  SUSPENDED
+  CANCELLED
+}
+
+enum PlatformInvoiceStatus {
+  PENDING
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  BILLING
+  SECURITY
+  SYSTEM
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// ==========================================
+// 2. USER & ACCESS CONTROL
+// ==========================================
+
 model User {
   id           Int     @id @default(autoincrement())
   name         String
@@ -13,21 +232,23 @@ model User {
   password     String
   phone        String? @unique
   profileImage String?
+  
+  // Role & Scope
   role         Role    @default(AGENT)
-  region       String?
-  language     String?
+  
+  // Tenant Isolation
+  organizationId Int?  @map("organization_id")
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  
   isActive     Boolean @default(true) @map("is_active")
+  
+  // Workspace Layout / State
+  lastWorkspaceId Int? @map("last_workspace_id")
 
   // Performance Targets
   dailyCallsTarget       Int @default(0) @map("daily_calls_target")
   monthlySalesTarget     Int @default(0) @map("monthly_sales_target")
   monthlyFollowupsTarget Int @default(0) @map("monthly_followups_target")
-
-  // Permissions / Feature Flags
-  canCall         Boolean @default(true) @map("can_call")
-  canEmail        Boolean @default(true) @map("can_email")
-  canExport       Boolean @default(false) @map("can_export")
-  canViewInvoices Boolean @default(false) @map("can_view_invoices")
 
   // Relations
   teamId Int?  @map("team_id")
@@ -36,7 +257,6 @@ model User {
   managerId Int?   @map("manager_id")
   manager   User?  @relation("AgentManager", fields: [managerId], references: [id])
   agents    User[] @relation("AgentManager")
-
   managedTeams Team[] @relation("TeamManager")
 
   calls         Call[]
@@ -46,23 +266,58 @@ model User {
   auditLogs     AuditLog[]
   invoices      Invoice[]  @relation("InvoiceRaisedBy")
   emailsSent    Email[]    @relation("AgentEmails")
-
-  // Quality Assurance / Feedback
-  qaPerformed       CallQA[]   @relation("QAManager")
+  qaPerformed   CallQA[]   @relation("QAManager")
   feedbacksReceived Feedback[] @relation("AgentFeedback")
   feedbacksGiven    Feedback[] @relation("ManagerFeedback")
-  aiUsage           AIUsage[]
-  emailAccounts     EmailAccount[]
+  aiUsage       AIUsage[]
+  emailAccounts EmailAccount[]
+  notifications Notification[]
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  failedLoginAttempts Int @default(0) @map("failed_login_attempts")
+  lockedUntil       DateTime? @map("locked_until")
 
-  // Agent Tracking (Refactor 2026-04-29)
+  sessions      Session[]
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
   agentType    AgentType?         @default(MANUAL) @map("agent_type")
   inviteStatus AgentInviteStatus? @map("invite_status")
 
   @@index([email])
+  @@index([organizationId])
   @@map("users")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       Int      @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  token        String   @unique // The access token associated with this session
+  refreshToken String?  @unique @map("refresh_token")
+  
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  deviceName   String?  @map("device_name")
+  location     String?
+  
+  isActive     Boolean  @default(true) @map("is_active")
+  isPersistent Boolean  @default(false) @map("is_persistent") // If "Remember Me" was checked
+  
+  expiresAt    DateTime @map("expires_at")
+  lastUsedAt   DateTime @default(now()) @map("last_used_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("sessions")
+}
+
+enum Role {
+  SUPER_ADMIN      // Platform Owner
+  PLATFORM_BILLING // SaaS Billing Ops
+  PLATFORM_SUPPORT // SaaS Technical Support
+  ADMIN            // Company Admin
+  MANAGER          // Company Manager
+  AGENT            // Company Agent
 }
 
 enum AgentType {
@@ -76,24 +331,21 @@ enum AgentInviteStatus {
   EXPIRED
 }
 
+// ==========================================
+// 3. CRM MODELS (Tenant Scoped)
+// ==========================================
+
 model Team {
   id         Int     @id @default(autoincrement())
+  organizationId Int  @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
   teamName   String  @map("team_name")
-  region     String?
-  language   String?
   isActive   Boolean @default(true) @map("is_active")
-  isArchived Boolean @default(false) @map("is_archived")
-
-  // Team KPIs
-  monthlyLeadsTarget Int   @default(0) @map("monthly_leads_target")
-  monthlySalesTarget Int   @default(0) @map("monthly_sales_target")
-  conversionTarget   Float @default(0) @map("conversion_target")
-  revenueGoal        Float @default(0) @map("revenue_goal")
 
   managerId Int  @map("manager_id")
   manager   User @relation("TeamManager", fields: [managerId], references: [id])
-
-  agents User[] @relation("TeamAgents")
+  agents    User[] @relation("TeamAgents")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -101,129 +353,55 @@ model Team {
   @@map("teams")
 }
 
-model Company {
-  id       Int     @id @default(autoincrement())
-  clientId Int     @map("client_id")
-  client   Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  name     String
-  website  String?
-  location String?
-  industry String?
-  status   String  @default("ACTIVE")
-  leads    Lead[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("companies")
-}
-
 model Lead {
   id             Int     @id @default(autoincrement())
+  organizationId Int     @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
   customerName   String  @map("customer_name")
-  email          String? @unique
-  phone          String  @unique
-  alternatePhone String? @map("alternate_phone")
-  profileImage   String? @map("profile_image")
-  company        String?
-  city           String?
-  state          String?
-  country        String?
-
-  source    LeadSource
-  subSource String?    @map("sub_source")
-
-  // Marketing / UTM
-  campaignName String? @map("campaign_name")
-  adGroup      String? @map("ad_group")
-  keyword      String?
-  utmSource    String? @map("utm_source")
-  utmMedium    String? @map("utm_medium")
-  utmCampaign  String? @map("utm_campaign")
-  gclid        String?
-
+  email          String? 
+  phone          String  
+  
+  source         LeadSource
   status         LeadStatus @default(NEW)
-  stage          String?
   score          Int?       @default(0)
   aiSummary      String?    @map("ai_summary") @db.Text
-  aiRisk         String?    @map("ai_risk")
-  scoreReasoning String?    @map("score_reasoning") @db.Text
-
-  companyId     Int?     @map("company_id")
-  mappedCompany Company? @relation(fields: [companyId], references: [id])
-
-  region   String?
-  language String?
 
   assignedToId Int?  @map("assigned_to")
   assignedTo   User? @relation("AssignedLeads", fields: [assignedToId], references: [id])
-
-  teamId Int? @map("team_id")
 
   calls      Call[]
   emails     Email[]
   tasks      Task[]         @relation("LeadTasks")
   activities LeadActivity[]
 
-  notes String? @db.Text
-
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
-  @@index([phone])
-  @@index([email])
-  @@index([status])
-  @@index([assignedToId])
+  @@unique([organizationId, email])
+  @@unique([organizationId, phone])
   @@map("leads")
-}
-
-model SupportTicket {
-  id          Int      @id @default(autoincrement())
-  clientId    Int      @map("client_id")
-  client      Client   @relation(fields: [clientId], references: [id])
-  subject     String
-  priority    String   @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
-  type        String // TECHNICAL, BILLING, FEATURE, SALES
-  description String   @db.Text
-  status      String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@map("support_tickets")
 }
 
 model Task {
   id          Int       @id @default(autoincrement())
+  organizationId Int    @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
   title       String
   description String?   @db.Text
-  notes       String?   @db.Text
   dueDate     DateTime? @map("due_date")
-  priority    String?   @default("Normal") // Low, Normal, High, Urgent
-  status      String?   @default("PENDING") // PENDING, IN_PROGRESS, FOLLOW_UP, WAITING, COMPLETED, ARCHIVED
-  type        String?   @default("FOLLOWUP") // CALLBACK, FOLLOWUP, MISSED_CALL, EMAIL, MEETING
-  
-  tags        Json?     // Category tags for filtering
-  attachments Json?     // Array of attachment metadata
-  
-  isRecurring Boolean   @default(false) @map("is_recurring")
-  recurringType String? @map("recurring_type") // DAILY, WEEKLY, MONTHLY, YEARLY
-  recurRule   String?   @map("recur_rule") // Cron format or custom rule
-  
-  reminderTime DateTime? @map("reminder_time")
-  reminderSent Boolean  @default(false) @map("reminder_sent")
-  
-  createdById Int?      @map("created_by_id")
-  createdBy   User?     @relation("TaskCreator", fields: [createdById], references: [id])
+  priority    String?   @default("Normal")
+  status      String?   @default("PENDING")
   
   assignedToId Int      @map("assigned_to_id")
   assignedTo  User      @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  createdById Int?      @map("created_by_id")
+  createdBy   User?     @relation("TaskCreator", fields: [createdById], references: [id])
 
   leadId Int?  @map("lead_id")
   lead   Lead? @relation("LeadTasks", fields: [leadId], references: [id])
 
-  activityLogs Json?    @map("activity_logs") // Array of {action, timestamp, user}
-  completedAt  DateTime? @map("completed_at")
-  
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -232,93 +410,37 @@ model Task {
 
 model Call {
   id              Int        @id @default(autoincrement())
-  sid             String?    @unique // Twilio Call SID
+  organizationId  Int        @map("organization_id")
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  sid             String?    @unique
   leadId          Int?       @map("lead_id")
   agentId         Int        @map("agent_id")
   phone           String?
-  status          String     @default("ringing") // ringing, in-progress, completed, missed
-  duration        Int        @default(0) @map("duration_seconds")
+  status          String     @default("ringing")
+  duration        Int        @default(0)
   recordingUrl    String?    @map("recording_url")
-  tags            String?    // Interested, Callback, Not Interested
-  notes           String?    @db.Text
   
   createdAt       DateTime   @default(now()) @map("created_at")
   agent           User       @relation(fields: [agentId], references: [id])
   lead            Lead?      @relation(fields: [leadId], references: [id])
   qa              CallQA?
-  feedbacks       Feedback[]
 
   @@map("calls")
 }
 
-model CallQA {
-  id        Int  @id @default(autoincrement())
-  callId    Int  @unique @map("call_id")
-  call      Call @relation(fields: [callId], references: [id])
-  managerId Int  @map("manager_id")
-  manager   User @relation("QAManager", fields: [managerId], references: [id])
-
-  // Rubric Scores (0-20 typical max)
-  greeting          Int @default(0)
-  discovery         Int @default(0)
-  pitch             Int @default(0)
-  objectionHandling Int @default(0) @map("objection_handling")
-  closing           Int @default(0)
-  compliance        Int @default(0)
-
-  totalScore   Float   @map("total_score")
-  status       String  @default("PASS") // PASS, NEEDS_COACHING
-  managerNotes String? @map("manager_notes")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("call_qa")
-}
-
-model Feedback {
-  id        Int   @id @default(autoincrement())
-  agentId   Int   @map("agent_id")
-  agent     User  @relation("AgentFeedback", fields: [agentId], references: [id])
-  managerId Int   @map("manager_id")
-  manager   User  @relation("ManagerFeedback", fields: [managerId], references: [id])
-  callId    Int?  @map("call_id")
-  call      Call? @relation(fields: [callId], references: [id])
-
-  content     String
-  priority    String  @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
-  suggestions String?
-  status      String  @default("UNREAD") // READ, UNREAD
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("feedbacks")
-}
-
-model AuditLog {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  user      User     @relation(fields: [userId], references: [id])
-  action    String
-  module    String
-  oldValue  Json?    @map("old_value")
-  newValue  Json?    @map("new_value")
-  ipAddress String?  @map("ip_address")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("audit_logs")
-}
-
 model Invoice {
   id         Int           @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
   invoiceNo  String        @unique @map("invoice_no")
-  clientId   Int           @map("client_id")
-  client     Client        @relation(fields: [clientId], references: [id])
   raisedById Int           @map("raised_by_id")
   raisedBy   User          @relation("InvoiceRaisedBy", fields: [raisedById], references: [id])
   amount     Float
-  status     String        @default("PENDING") // PENDING, PAID, VOID
+  status     String        @default("PENDING")
   dueDate    DateTime      @map("due_date")
+  
   createdAt  DateTime      @default(now()) @map("created_at")
   updatedAt  DateTime      @updatedAt @map("updated_at")
   items      InvoiceItem[]
@@ -332,119 +454,150 @@ model InvoiceItem {
   invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   description String
   quantity    Int     @default(1)
-  unitPrice   Float   @map("unit_price")
-  tax         Float   @default(0)
+  unitPrice   Float
   total       Float
 
   @@map("invoice_items")
 }
 
+// ==========================================
+// 4. PLATFORM UTILITIES
+// ==========================================
+
+model OrganizationSetting {
+  id        Int      @id @default(autoincrement())
+  organizationId Int  @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  key       String
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([organizationId, key])
+  @@map("organization_settings")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  organizationId Int?  @map("organization_id")
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  userId    Int?     @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  module    String
+  details   Json?
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}
+
+model AIUsage {
+  id        Int      @id @default(autoincrement())
+  organizationId Int   @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  module    String
+  tokens    Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("ai_usage")
+}
+
 model Email {
   id      Int   @id @default(autoincrement())
+  organizationId Int @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
   leadId  Int?  @map("lead_id")
   lead    Lead? @relation(fields: [leadId], references: [id])
   agentId Int   @map("agent_id")
   agent   User  @relation("AgentEmails", fields: [agentId], references: [id])
-
-  messageId    String? @unique @map("message_id") // SMTP Message-ID
-  threadId     String? @map("thread_id")    // Group emails by thread
-  inReplyTo    String? @map("in_reply_to")  // Reference to parent email
   
-  from         String
-  to           String
-  cc           String?
-  bcc          String?
   subject      String
   content      String  @db.Text
-  snippet      String? @db.Text             // Preview text for inbox
-  
-  attachments  Json?                        // Array of metadata/urls
-  
-  isOpened     Boolean   @default(false) @map("is_opened")
-  openedAt     DateTime? @map("opened_at")
-  clickCount   Int       @default(0) @map("click_count")
-  
-  status       String    @default("SENT")   // DRAFT, SENDING, SENT, FAILED, RECEIVED
-  folder       String    @default("INBOX")  // INBOX, SENT, DRAFTS, TRASH, ARCHIVE
-  
-  isRead       Boolean   @default(false) @map("is_read")
-  scheduledAt  DateTime? @map("scheduled_at")
-  sentAt       DateTime? @default(now()) @map("sent_at")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  status       String  @default("SENT")
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  @@index([threadId])
-  @@index([leadId])
-  @@index([agentId])
   @@map("emails")
 }
 
-model LeadImport {
-  id        Int        @id @default(autoincrement())
-  filename  String?
-  source    LeadSource
-  count     Int
-  status    String     @default("COMPLETED")
-  createdAt DateTime   @default(now()) @map("created_at")
-  logs      Json?
-
-  @@map("lead_imports")
-}
-
-model IntegrationAccount {
-  id           Int       @id @default(autoincrement())
-  platform     String
-  accountName  String    @map("account_name")
-  accessToken  String    @map("access_token")
-  refreshToken String?   @map("refresh_token")
-  expiresAt    DateTime? @map("expires_at")
-  config       Json?
-  isActive     Boolean   @default(true) @map("is_active")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-
-  @@map("integration_accounts")
-}
-
-model RoutingRule {
-  id           Int      @id @default(autoincrement())
-  name         String
-  strategy     String
-  priority     Int      @default(0)
-  conditions   Json?
-  targetTeamId Int?     @map("target_team_id")
-  isActive     Boolean  @default(true) @map("is_active")
+model EmailAccount {
+  id          Int      @id @default(autoincrement())
+  organizationId Int   @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id])
+  provider    String
+  email       String   @unique
+  password    String?
   createdAt    DateTime @default(now()) @map("created_at")
 
-  @@map("routing_rules")
+  @@map("email_accounts")
 }
 
-model Setting {
+model LeadActivity {
   id        Int      @id @default(autoincrement())
-  key       String   @unique
-  value     Json
-  category  String   @default("GENERAL") // GENERAL, AI, EMAIL, KEYS
-  updatedAt DateTime @updatedAt @map("updated_at")
+  organizationId Int @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  leadId    Int      @map("lead_id")
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  action    String
+  createdAt DateTime @default(now()) @map("created_at")
 
-  @@map("settings")
+  @@map("lead_activities")
 }
 
-enum Role {
-  ADMIN
-  MANAGER
-  AGENT
-  CLIENT
+model CallQA {
+  id        Int  @id @default(autoincrement())
+  organizationId Int @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  callId    Int  @unique @map("call_id")
+  call      Call @relation(fields: [callId], references: [id])
+  managerId Int  @map("manager_id")
+  manager   User @relation("QAManager", fields: [managerId], references: [id])
+  score     Float
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("call_qa")
+}
+
+model Feedback {
+  id        Int   @id @default(autoincrement())
+  organizationId Int @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  agentId   Int   @map("agent_id")
+  agent     User  @relation("AgentFeedback", fields: [agentId], references: [id])
+  managerId Int   @map("manager_id")
+  manager   User  @relation("ManagerFeedback", fields: [managerId], references: [id])
+  content     String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("feedbacks")
+}
+
+model Invite {
+  id             Int      @id @default(autoincrement())
+  email          String   @unique
+  token          String   @unique
+  role           Role     @default(AGENT)
+  status         String   @default("PENDING")
+  organizationId Int      @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("invites")
 }
 
 enum LeadSource {
-  WEBHOOK    @map("WEBHOOK")
-  GOOGLE_ADS @map("GOOGLE_ADS")
-  META       @map("META")
-  WEBSITE    @map("WEBSITE")
-  CSV        @map("CSV")
-  REFERRAL   @map("REFERRAL")
-  CALL       @map("CALL")
-  API        @map("API")
+  WEBHOOK
+  GOOGLE_ADS
+  META
+  WEBSITE
+  CSV
+  REFERRAL
+  CALL
+  API
 }
 
 enum LeadStatus {
@@ -454,129 +607,4 @@ enum LeadStatus {
   QUALIFIED
   WON
   LOST
-}
-
-model Client {
-  id             Int             @id @default(autoincrement())
-  name           String
-  email          String          @unique
-  password       String
-  companyName    String          @map("company_name")
-  status         String          @default("ACTIVE")
-  companies      Company[]
-  supportTickets SupportTicket[]
-  invoices       Invoice[]
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
-
-  @@map("clients")
-}
-
-model AIUsage {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  user      User     @relation(fields: [userId], references: [id])
-  module    String
-  tokens    Int      @default(0)
-  cost      Float    @default(0)
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("ai_usage")
-}
-
-model SystemSetting {
-  id        Int      @id @default(autoincrement())
-  category  String
-  key       String   @unique
-  value     Json
-  isSecret  Boolean  @default(false) @map("is_secret")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("system_settings")
-}
-
-enum InviteStatus {
-  PENDING
-  JOINED
-}
-
-model Invite {
-  id        Int          @id @default(autoincrement())
-  email     String       @unique
-  role      String
-  token     String       @unique
-  status    InviteStatus @default(PENDING)
-  createdAt DateTime     @default(now())
-}
-
-model GoogleAccount {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  name         String?
-  accessToken  String   @map("access_token")
-  refreshToken String   @map("refresh_token")
-  expiresAt    DateTime @map("expires_at")
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  @@map("google_accounts")
-}
-
-model EmailTemplate {
-  id          Int      @id @default(autoincrement())
-  name        String
-  subject     String
-  content     String   @db.Text
-  design      Json?    // For the drag-and-drop builder state
-  category    String?
-  variables   Json?    // Expected variables like {{name}}
-  
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@map("email_templates")
-}
-
-model EmailAccount {
-  id          Int      @id @default(autoincrement())
-  userId      Int      @map("user_id")
-  user        User     @relation(fields: [userId], references: [id])
-  
-  provider    String   // GMAIL, OUTLOOK, SMTP
-  email       String   @unique
-  
-  // SMTP/IMAP Config
-  smtpHost    String?  @map("smtp_host")
-  smtpPort    Int?     @map("smtp_port")
-  imapHost    String?  @map("imap_host")
-  imapPort    Int?     @map("imap_port")
-  
-  // Credentials (Encrypted on save)
-  username    String?
-  password    String?
-  
-  // OAuth
-  accessToken  String? @map("access_token")
-  refreshToken String? @map("refresh_token")
-  expiresAt    DateTime? @map("expires_at")
-  
-  syncStatus   String   @default("DISCONNECTED") // CONNECTED, DISCONNECTED, ERROR
-  lastSyncAt   DateTime? @map("last_sync_at")
-  
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  @@map("email_accounts")
-}
-
-model LeadActivity {
-  id        Int      @id @default(autoincrement())
-  leadId    Int      @map("lead_id")
-  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  action    String // CREATE, UPDATE, STAGE_CHANGE, ASSIGNMENT, EMAIL_SENT, CALL_COMPLETED
-  oldValue  String?  @map("old_value")
-  newValue  String?  @map("new_value")
-  userId    Int?     @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("lead_activities")
 }

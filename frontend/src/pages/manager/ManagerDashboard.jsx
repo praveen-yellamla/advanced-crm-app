@@ -13,22 +13,31 @@ import {
   BarChart2,
   Clock,
   ArrowUpRight,
-  Headphones
+  Headphones,
+  FileText,
+  RefreshCcw,
+  BarChart3
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell
 } from 'recharts';
+import toast from 'react-hot-toast';
 
 const ManagerDashboard = () => {
-  const { data: statsData, isLoading } = useQuery({
+  const { data: statsData, isLoading, refetch } = useQuery({
     queryKey: ['managerDashboard'],
     queryFn: async () => {
       const res = await api.get('/manager/dashboard');
       return res.data.data;
     }
   });
+
+  const handleRefresh = () => {
+    refetch();
+    toast.success('Data updated');
+  };
 
   if (isLoading) return <DashboardSkeleton />;
 
@@ -42,91 +51,99 @@ const ManagerDashboard = () => {
   ];
 
   return (
-    <div className="space-y-10 pb-16">
+    <div className="space-y-8 pb-16 px-4 md:px-0">
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-           <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Team Overview</h1>
-           <p className="text-[#64748B] font-medium text-sm mt-1">Real-time Performance & Operational Oversight</p>
+           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Team Performance</h1>
+           <p className="text-slate-500 font-medium text-sm mt-1">Oversee departmental operations and sales conversions.</p>
         </div>
-        <div className="flex gap-4">
-           <button className="h-12 px-6 bg-white border border-[#E2E8F0] rounded-2xl text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 transition-all">Export Team Report</button>
-           <button className="h-12 px-6 bg-blue-600 text-white rounded-2xl text-xs font-bold shadow-lg shadow-blue-500/20 hover:scale-105 transition-all">Refresh Data</button>
+        <div className="flex gap-3">
+           <button className="h-12 px-5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm">
+              <FileText size={18} /> Export
+           </button>
+           <button 
+             onClick={handleRefresh}
+             className="h-12 px-5 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2"
+           >
+              <RefreshCcw size={18} /> Refresh
+           </button>
         </div>
       </div>
 
       {/* KPI CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <KPICard title="Total Leads" value={cards?.totalLeads ?? 0} trend="+12%" icon={<Target />} />
-        <KPICard title="Today's Leads" value={cards?.todayLeads ?? 0} trend="Live" icon={<Zap />} />
-        <KPICard title="Active Agents" value={cards?.activeAgents ?? 0} trend="Active" icon={<Users />} />
-        <KPICard title="Revenue (MTD)" value={`$${((cards?.revenueMTD || 0) / 1000).toFixed(1)}k`} trend="+8%" icon={<DollarSign />} />
-        <KPICard title="Conv. Rate" value={`${(cards?.conversionRate || 0).toFixed(1)}%`} trend="+1.2%" icon={<TrendingUp />} />
-        <KPICard title="Calls Today" value={cards?.callsToday ?? 0} icon={<Headphones />} />
-        <KPICard title="Avg QA Score" value={`${(cards?.avgQAScore || 0).toFixed(1)}%`} icon={<ShieldCheck />} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <KPICard title="Total Leads" value={cards?.totalLeads ?? 0} icon={<Target />} color="blue" />
+        <KPICard title="New Today" value={cards?.todayLeads ?? 0} icon={<Zap />} color="amber" />
+        <KPICard title="Active Staff" value={cards?.activeAgents ?? 0} icon={<Users />} color="indigo" />
+        <KPICard title="Revenue" value={`₹${((cards?.revenueMTD || 0) / 1000).toFixed(1)}k`} icon={<DollarSign />} color="emerald" />
+        <KPICard title="Success Rate" value={`${(cards?.conversionRate || 0).toFixed(1)}%`} icon={<TrendingUp />} color="violet" />
+        <KPICard title="Calls" value={cards?.callsToday ?? 0} icon={<Headphones />} color="rose" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* FUNNEL CHART */}
-        <div className="lg:col-span-2 bg-white p-10 rounded-[32px] border border-[#E2E8F0] shadow-sm relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-12">
-            <div className="space-y-1">
-              <h3 className="text-xl font-bold text-[#0F172A] tracking-tight">Team Sales Funnel</h3>
-              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest leading-none">Conversion velocity & bottle-necks</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* PIPELINE CHART */}
+        <div className="lg:col-span-2 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group">
+          <div className="flex items-center justify-between mb-10">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 tracking-tight">Sales Pipeline</h3>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Lead progression by status</p>
             </div>
-            <BarChart2 size={24} className="text-slate-200" />
+            <BarChart3 size={20} className="text-slate-300" />
           </div>
-          <div className="h-[400px]">
+          <div className="h-[350px]">
              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={funnelData} barSize={60}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 10, fontWeight: 700}} dy={12} />
-                  <YAxis hide />
-                  <Tooltip 
-                    cursor={{fill: '#F8FAFC'}}
-                    contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', padding: '16px'}}
-                  />
-                  <Bar dataKey="value" radius={[12, 12, 0, 0]}>
-                    {funnelData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={index === (funnelData.length - 1) ? '#7C3AED' : '#F1F5F9'} />
-                    ))}
-                  </Bar>
+                <BarChart data={funnelData} barSize={50}>
+                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 10, fontWeight: 700}} dy={12} />
+                   <YAxis hide />
+                   <Tooltip 
+                     cursor={{fill: '#F8FAFC'}}
+                     contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', padding: '16px'}}
+                   />
+                   <Bar dataKey="value" radius={[10, 10, 0, 0]}>
+                     {funnelData.map((entry, index) => (
+                       <Cell key={`cell-${index}`} fill={index === (funnelData.length - 1) ? '#2563EB' : '#F1F5F9'} />
+                     ))}
+                   </Bar>
                 </BarChart>
              </ResponsiveContainer>
           </div>
         </div>
 
-        {/* SOURCE DISTRIBUTION */}
-        <div className="bg-white p-10 rounded-[32px] border border-[#E2E8F0] shadow-sm relative flex flex-col justify-between">
+        {/* SOURCES */}
+        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm relative flex flex-col">
            <div className="flex items-center justify-between mb-10">
-              <h3 className="text-xl font-bold text-[#0F172A] tracking-tight">Active Lead Sources</h3>
-              <PieIcon size={24} className="text-slate-200" />
+              <h3 className="text-lg font-bold text-slate-900 tracking-tight">Lead Sources</h3>
+              <PieIcon size={20} className="text-slate-300" />
            </div>
            
-           <div className="space-y-8 flex-1">
+           <div className="space-y-6 flex-1">
               {sources?.map((source, i) => (
-                <div key={i} className="group cursor-pointer">
-                  <div className="flex items-center justify-between mb-3">
+                <div key={i} className="group">
+                  <div className="flex items-center justify-between mb-2">
                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{source.source}</span>
-                     <span className="text-sm font-bold text-[#0F172A]">{source._count} leads</span>
+                     <span className="text-xs font-bold text-slate-900">{source._count}</span>
                   </div>
-                  <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden">
+                  <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
                      <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${(source?._count / (cards?.totalLeads || 1)) * 100}%` }}
-                        className="h-full bg-violet-600 shadow-[0_0_10px_rgba(124,58,237,0.3)]"
+                        className="h-full bg-blue-600 rounded-full"
                      />
                   </div>
                 </div>
               ))}
            </div>
 
-           <div className="mt-12 pt-10 border-t border-slate-50">
-              <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
-                 <ShieldCheck className="text-violet-600" />
+           <div className="mt-10 pt-8 border-t border-slate-100">
+              <div className="p-5 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-4">
+                 <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                    <ShieldCheck size={20} />
+                 </div>
                  <div>
-                    <p className="text-[10px] font-bold uppercase text-[#0F172A]">Quality Assurance</p>
-                    <p className="text-[9px] text-slate-400 uppercase tracking-tight">All team calls are being monitored for QA</p>
+                    <p className="text-[10px] font-bold uppercase text-slate-900">Quality Assurance</p>
+                    <p className="text-[9px] text-slate-500 font-medium uppercase tracking-tight">Monitoring active customer interactions</p>
                  </div>
               </div>
            </div>
@@ -136,33 +153,41 @@ const ManagerDashboard = () => {
   );
 };
 
-const KPICard = ({ title, value, trend, icon }) => (
-  <motion.div 
-    whileHover={{ y: -5 }}
-    className="bg-white px-5 py-4 rounded-[24px] border border-[#E2E8F0] shadow-sm hover:shadow-xl hover:border-violet-100 transition-all duration-500 group overflow-hidden flex flex-col justify-between h-[160px]"
-  >
-    <div className="flex items-center justify-between">
-       <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-violet-600 group-hover:text-white transition-all duration-500">
+const KPICard = ({ title, value, icon, color }) => {
+  const colors = {
+    blue: "text-blue-600 bg-blue-50 border-blue-100",
+    amber: "text-amber-600 bg-amber-50 border-amber-100",
+    indigo: "text-indigo-600 bg-indigo-50 border-indigo-100",
+    emerald: "text-emerald-600 bg-emerald-50 border-emerald-100",
+    violet: "text-violet-600 bg-violet-50 border-violet-100",
+    rose: "text-rose-600 bg-rose-50 border-rose-100",
+  };
+
+  return (
+    <motion.div 
+      whileHover={{ y: -4 }}
+      className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg transition-all duration-300 group flex flex-col justify-between h-[150px]"
+    >
+       <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${colors[color]} shadow-sm transition-all duration-300 group-hover:scale-110`}>
           {React.cloneElement(icon, { size: 18 })}
        </div>
-       {trend && <span className="text-[9px] font-bold text-violet-600 uppercase tracking-widest px-2 py-0.5 bg-violet-50 rounded-lg">{trend}</span>}
-    </div>
-    <div>
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{title}</p>
-      <h4 className="text-2xl font-bold text-slate-900 truncate mt-1">{value}</h4>
-    </div>
-  </motion.div>
-);
+       <div>
+         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">{title}</p>
+         <h4 className="text-xl font-extrabold text-slate-900 truncate mt-1 tracking-tight">{value}</h4>
+       </div>
+    </motion.div>
+  );
+};
 
 const DashboardSkeleton = () => (
-  <div className="space-y-10 animate-pulse">
-    <div className="h-20 bg-slate-200 rounded-3xl w-full" />
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-       {[1,2,3,4,5,6,7].map(i => <div key={i} className="h-40 bg-slate-200 rounded-3xl" />)}
+  <div className="space-y-8 animate-pulse p-4 md:p-0">
+    <div className="h-20 bg-slate-100 rounded-2xl w-full" />
+    <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+       {[1,2,3,4,5,6].map(i => <div key={i} className="h-32 bg-slate-100 rounded-2xl" />)}
     </div>
-    <div className="grid grid-cols-3 gap-10">
-       <div className="col-span-2 h-[500px] bg-slate-200 rounded-3xl" />
-       <div className="h-[500px] bg-slate-200 rounded-3xl" />
+    <div className="grid grid-cols-3 gap-8">
+       <div className="col-span-2 h-[450px] bg-slate-100 rounded-2xl" />
+       <div className="h-[450px] bg-slate-100 rounded-2xl" />
     </div>
   </div>
 );

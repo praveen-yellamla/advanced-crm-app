@@ -26,23 +26,28 @@ import {
   Search,
   CheckCircle2,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Monitor,
+  MapPin,
+  Smartphone,
+  LogOut
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 const CATEGORIES = [
   { id: 'COMPANY', label: 'Company Profile', icon: Building2 },
-  { id: 'USERS', label: 'User & Role Mgmt', icon: Users },
-  { id: 'TELEPHONY', label: 'Telephony', icon: PhoneCall },
-  { id: 'ADS', label: 'Ad Intelligence', icon: Globe },
-  { id: 'WEBHOOKS', label: 'Webhooks & APIs', icon: Database },
-  { id: 'Billing', label: 'Fiscal Protocol', icon: CreditCard },
-  { id: 'AI', label: 'Cognitive Engine', icon: BrainCircuit },
-  { id: 'STORAGE', label: 'Storage Cluster', icon: HardDrive },
-  { id: 'NOTIFICATIONS', label: 'System Alerts', icon: Bell },
-  { id: 'AUDIT', label: 'Audit Ledger', icon: History },
-  { id: 'PRIVACY', label: 'Data Compliance', icon: ShieldCheck },
+  { id: 'USERS', label: 'Team Members', icon: Users },
+  { id: 'TELEPHONY', label: 'Phone Settings', icon: PhoneCall },
+  { id: 'ADS', label: 'Ad Integration', icon: Globe },
+  { id: 'WEBHOOKS', label: 'API & Webhooks', icon: Database },
+  { id: 'Billing', label: 'Billing & Payments', icon: CreditCard },
+  { id: 'AI', label: 'AI Features', icon: BrainCircuit },
+  { id: 'STORAGE', label: 'File Storage', icon: HardDrive },
+  { id: 'NOTIFICATIONS', label: 'Notifications', icon: Bell },
+  { id: 'AUDIT', label: 'Activity Logs', icon: History },
+  { id: 'PRIVACY', label: 'Data Privacy', icon: ShieldCheck },
+  { id: 'SECURITY', label: 'Security & Sessions', icon: Lock },
 ];
 
 const AdminSettings = () => {
@@ -75,18 +80,17 @@ const AdminSettings = () => {
 
   return (
     <div className="flex flex-col xl:flex-row gap-10 pb-24 min-h-screen">
-      {/* SIDEBAR NAVIGATION */}
       <aside className="w-full xl:w-96 flex flex-col gap-8">
         <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm space-y-6">
            <div>
-              <h2 className="text-3xl font-black text-[#0F172A] tracking-tighter italic uppercase underline decoration-blue-600 decoration-8 underline-offset-8">Settings.</h2>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Global Platform Orchestration</p>
+              <h2 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase">Settings</h2>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Manage your company and platform configuration</p>
            </div>
            
            <div className="relative group">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={18} />
               <input 
-                type="text" placeholder="Search parameters..." 
+                type="text" placeholder="Search settings..." 
                 className="w-full h-14 pl-16 pr-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-sm text-[#0F172A]"
                 value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -109,7 +113,6 @@ const AdminSettings = () => {
         </div>
       </aside>
 
-      {/* CONTENT ENGINE */}
       <main className="flex-1 space-y-8">
          <AnimatePresence mode="wait">
             <motion.div 
@@ -119,16 +122,10 @@ const AdminSettings = () => {
                exit={{ opacity: 0, x: -20 }}
                className="bg-white p-12 xl:p-16 rounded-[64px] border border-slate-100 shadow-sm relative overflow-hidden min-h-[800px]"
             >
-               {/* WATERMARK */}
-               <div className="absolute top-0 right-0 p-16 opacity-[0.03] italic text-[#0F172A] text-9xl font-black tracking-tighter uppercase pointer-events-none select-none">
-                  {activeCategory}
-               </div>
-
                <DynamicContent category={activeCategory} />
             </motion.div>
          </AnimatePresence>
 
-         {/* STICKY ACTION BAR */}
          {hasUnsavedChanges && (
             <motion.div 
               initial={{ y: 100 }} animate={{ y: 0 }}
@@ -137,14 +134,14 @@ const AdminSettings = () => {
                <div className="flex items-center gap-4 text-white">
                   <AlertTriangle className="text-amber-400" size={24} />
                   <div>
-                    <p className="text-sm font-black uppercase tracking-widest">Unsaved Variations Detected</p>
-                    <p className="text-[10px] text-slate-400 font-bold">Persistence ledger currently in mutation state.</p>
+                    <p className="text-sm font-black uppercase tracking-widest">Unsaved Changes</p>
+                    <p className="text-[10px] text-slate-400 font-bold">You have unsaved changes in this section.</p>
                   </div>
                </div>
                <div className="flex gap-4">
                   <button onClick={() => setHasUnsavedChanges(false)} className="px-6 h-12 bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all">Cancel</button>
                   <button className="px-8 h-12 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:scale-105 transition-all flex items-center gap-2">
-                     <Save size={16} /> Persistent Save
+                     <Save size={16} /> Save Changes
                   </button>
                </div>
             </motion.div>
@@ -162,7 +159,8 @@ const DynamicContent = ({ category }) => {
     case 'Billing': return <BillingSettings />;
     case 'ADS': return <AdsSettings />;
     case 'AUDIT': return <AuditLedger />;
-    default: return <PlaceholderSettings category={category} />;
+    case 'SECURITY': return <SecuritySettings />;
+    default: return <div className="p-20 text-center text-slate-400">Section in development.</div>;
   }
 };
 
@@ -170,7 +168,7 @@ const AuditLedger = () => {
   const { data: logs, isLoading } = useQuery({
     queryKey: ['auditLogs'],
     queryFn: async () => {
-      const res = await api.get('/admin/audit'); // Need to implement this route
+      const res = await api.get('/admin/audit');
       return res.data.data;
     }
   });
@@ -178,24 +176,24 @@ const AuditLedger = () => {
   return (
     <div className="space-y-12 relative z-10">
         <div>
-            <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Audit Ledger.</h3>
-            <p className="text-sm font-bold text-slate-400 mt-2">Comprehensive record of institutional activity and persistence mutations.</p>
+            <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">Activity Logs</h3>
+            <p className="text-sm font-bold text-slate-400 mt-2">A complete history of all changes and actions performed by your team.</p>
         </div>
 
         <div className="bg-slate-900 rounded-[48px] overflow-hidden shadow-2xl">
            <table className="w-full text-left border-collapse">
               <thead>
                  <tr className="bg-slate-800/50">
-                    <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Timestamp</th>
-                    <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Strategic Actor</th>
-                    <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Action Protocol</th>
-                    <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Target Entity</th>
-                    <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Status</th>
+                    <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-widest">Time</th>
+                    <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-widest">Performed By</th>
+                    <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-widest">Action</th>
+                    <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-widest">Target</th>
+                    <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-widest">Status</th>
                  </tr>
               </thead>
               <tbody className="text-white/80 font-mono text-xs">
                  {isLoading ? (
-                   <tr><td colSpan="5" className="p-20 text-center animate-pulse">Synchronizing Ledger Data...</td></tr>
+                   <tr><td colSpan="5" className="p-20 text-center animate-pulse">Loading Activity Logs...</td></tr>
                  ) : logs?.map((log, i) => (
                    <tr key={i} className="border-t border-slate-800/50 hover:bg-white/5 transition-colors">
                       <td className="p-8 text-slate-500">{new Date(log.createdAt).toLocaleString()}</td>
@@ -203,7 +201,7 @@ const AuditLedger = () => {
                       <td className="p-8 uppercase tracking-widest">{log.action}</td>
                       <td className="p-8 text-emerald-400/80">{log.target}</td>
                       <td className="p-8">
-                         <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-lg font-black uppercase text-[9px]">Verified</span>
+                         <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-lg font-black uppercase text-[9px]">Success</span>
                       </td>
                    </tr>
                  ))}
@@ -214,52 +212,139 @@ const AuditLedger = () => {
   );
 };
 
+const SecuritySettings = () => {
+  const { data: sessions, isLoading, refetch } = useQuery({
+    queryKey: ['sessions'],
+    queryFn: async () => {
+      const res = await api.get('/auth/sessions');
+      return res.data.data;
+    }
+  });
+
+  const revokeMutation = useMutation({
+    mutationFn: (id) => api.delete(`/auth/sessions/${id}`),
+    onSuccess: () => {
+      refetch();
+      toast.success('Security Protocol: Session Terminated.');
+    },
+    onError: () => toast.error('Termination Failed.')
+  });
+
+  return (
+    <div className="space-y-12 relative z-10">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">Security & Sessions</h3>
+          <p className="text-sm font-bold text-slate-400 mt-2">Manage your active authentication nodes and security protocols.</p>
+        </div>
+        <div className="flex items-center gap-3 px-4 py-2 bg-emerald-50 rounded-2xl border border-emerald-100">
+          <ShieldCheck size={16} className="text-emerald-500" />
+          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">E2E Encryption Active</span>
+        </div>
+      </div>
+
+      {/* Password Management */}
+      <div className="p-10 bg-slate-50 rounded-[48px] border border-slate-100 space-y-8">
+        <div className="flex items-center gap-4">
+           <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[#0F172A] shadow-sm">
+              <Lock size={20} />
+           </div>
+           <div>
+              <h4 className="text-xl font-black text-[#0F172A] tracking-tight uppercase">Authentication Credentials</h4>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Last changed 3 months ago</p>
+           </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+           <FormInput label="Current Protocol Password" type="password" isSecret placeholder="••••••••••••" />
+           <FormInput label="New Protocol Password" type="password" isSecret placeholder="••••••••••••" />
+        </div>
+        
+        <button className="h-14 px-8 bg-[#0F172A] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">
+          Update Security Protocol
+        </button>
+      </div>
+
+      {/* Active Sessions */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+           <h4 className="text-2xl font-black text-[#0F172A] tracking-tighter uppercase italic">Active Authentication Nodes</h4>
+           <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-4 py-2 rounded-xl border border-blue-100">
+             {sessions?.length || 0} Active Sessions
+           </span>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+           {isLoading ? (
+             <div className="h-40 flex items-center justify-center text-slate-400 animate-pulse uppercase font-black tracking-widest">Scanning Nodes...</div>
+           ) : sessions?.map((session) => (
+             <div key={session.id} className="p-8 bg-white border border-slate-100 rounded-[32px] shadow-sm hover:shadow-xl hover:border-blue-100 transition-all duration-500 flex items-center justify-between group">
+                <div className="flex items-center gap-6">
+                   <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all duration-500">
+                      {session.userAgent?.includes('Mobile') ? <Smartphone size={24} /> : <Monitor size={24} />}
+                   </div>
+                   <div className="space-y-1">
+                      <div className="flex items-center gap-3">
+                         <h5 className="font-black text-[#0F172A] uppercase tracking-wider">{session.deviceName || 'Unknown Device'}</h5>
+                         {session.token === (localStorage.getItem('token') || sessionStorage.getItem('token')) && (
+                           <span className="px-3 py-1 bg-emerald-500/10 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest">Current Session</span>
+                         )}
+                      </div>
+                      <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                         <div className="flex items-center gap-1"><MapPin size={12} /> {session.location || session.ipAddress}</div>
+                         <div className="flex items-center gap-1"><History size={12} /> Last active: {new Date(session.lastUsedAt).toLocaleString()}</div>
+                      </div>
+                   </div>
+                </div>
+                
+                {session.token !== (localStorage.getItem('token') || sessionStorage.getItem('token')) && (
+                  <button 
+                    onClick={() => revokeMutation.mutate(session.id)}
+                    disabled={revokeMutation.isPending}
+                    className="h-12 w-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                    title="Terminate Session"
+                  >
+                    {revokeMutation.isPending ? <Loader2 size={18} className="animate-spin" /> : <LogOut size={18} />}
+                  </button>
+                )}
+             </div>
+           ))}
+        </div>
+      </div>
+      
+      <div className="p-10 bg-blue-600 rounded-[48px] shadow-2xl shadow-blue-500/20 text-white relative overflow-hidden group">
+         <div className="absolute top-0 right-0 p-10 opacity-20 group-hover:rotate-12 transition-transform duration-1000"><ShieldCheck size={100} /></div>
+         <div className="relative z-10 space-y-4">
+            <h4 className="text-3xl font-black tracking-tighter uppercase italic">Enterprise Security Shield</h4>
+            <p className="text-sm font-medium opacity-80 leading-relaxed uppercase tracking-widest max-w-xl">
+              Enable Two-Factor Authentication (2FA) and biometric verification to harden your account against unauthorized access.
+            </p>
+            <div className="flex gap-4">
+               <button className="h-14 px-8 bg-white text-blue-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">Enable 2FA Protocol</button>
+               <button className="h-14 px-8 bg-blue-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-800 transition-all">IP Whitelisting</button>
+            </div>
+         </div>
+      </div>
+    </div>
+  );
+};
+
 const CompanySettings = () => {
     return (
         <div className="space-y-12 relative z-10">
             <div>
-                <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Corporate ID.</h3>
-                <p className="text-sm font-bold text-slate-400 mt-2">Configure institutional branding and locale parameters.</p>
+                <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">Company Profile</h3>
+                <p className="text-sm font-bold text-slate-400 mt-2">Manage your company branding, address, and local settings.</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <FormInput label="Institutional Name" placeholder="AdvancedCRM Inc." />
-                <FormInput label="GST/VAT Registry ID" placeholder="27AAACH...1Z2" />
-                <FormInput label="Headquarters Address" placeholder="101 Innovation Park, Silicon Valley" colSpan="md:col-span-2" />
-                
-                <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Locale Configuration</label>
-                    <div className="grid grid-cols-2 gap-4">
-                        <select className="h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 font-bold text-sm text-[#0F172A]">
-                            <option>USD ($)</option>
-                            <option>EUR (€)</option>
-                            <option>INR (₹)</option>
-                        </select>
-                        <select className="h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 font-bold text-sm text-[#0F172A]">
-                            <option>English (US)</option>
-                            <option>Spanish (ES)</option>
-                            <option>French (FR)</option>
-                        </select>
-                    </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company Name</label>
+                    <input className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 font-bold text-sm text-[#0F172A]" placeholder="My Business Name" />
                 </div>
-
-                <div className="space-y-4">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Brand Signature Color</label>
-                   <div className="flex gap-4">
-                      {['#2563EB', '#7C3AED', '#10B981', '#F59E0B', '#EF4444'].map(c => (
-                        <button key={c} style={{ backgroundColor: c }} className="w-16 h-16 rounded-2xl shadow-lg hover:scale-110 transition-all border-4 border-white" />
-                      ))}
-                   </div>
-                </div>
-            </div>
-
-            <div className="p-10 border-2 border-dashed border-slate-200 rounded-[40px] flex flex-col items-center justify-center gap-6 group hover:bg-slate-50 hover:border-blue-200 transition-all cursor-pointer">
-                <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner">
-                    <Building2 size={32} />
-                </div>
-                <div className="text-center">
-                    <p className="text-sm font-black text-[#0F172A] uppercase tracking-widest">Logo Repository</p>
-                    <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase italic">PNG/SVG/WEBP (MAX 2MB)</p>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tax ID / GST Number</label>
+                    <input className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 font-bold text-sm text-[#0F172A]" placeholder="Tax Registration Number" />
                 </div>
             </div>
         </div>
@@ -271,8 +356,8 @@ const TelephonySettings = () => {
     return (
         <div className="space-y-12 relative z-10">
             <div>
-                <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Voice Grid.</h3>
-                <p className="text-sm font-bold text-slate-400 mt-2">Configure primary and secondary telephony gateways.</p>
+                <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">Phone Settings</h3>
+                <p className="text-sm font-bold text-slate-400 mt-2">Connect and configure your telephony and calling providers.</p>
             </div>
 
             <div className="flex gap-4">
@@ -296,8 +381,8 @@ const TelephonySettings = () => {
                 <FormInput label="API Key Secret" placeholder="••••••••••••••••" type="password" isSecret />
             </div>
 
-            <button className="w-full h-18 bg-blue-50 border border-blue-100 text-blue-600 rounded-3xl text-[10px] font-black uppercase tracking-[0.3em] shadow-sm hover:bg-blue-100 transition-all flex items-center justify-center gap-4">
-                <Globe size={20} /> Initialize Gateway Validation
+            <button className="w-full h-18 bg-blue-50 border border-blue-100 text-blue-600 rounded-3xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-blue-100 transition-all flex items-center justify-center gap-4">
+                <Globe size={20} /> Test Connection
             </button>
         </div>
     );
@@ -307,26 +392,26 @@ const AISettings = () => {
   return (
     <div className="space-y-12 relative z-10">
         <div>
-            <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Intelligence.</h3>
-            <p className="text-sm font-bold text-slate-400 mt-2">Manage AI Assistants and atmospheric model parameters.</p>
+            <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">AI Features</h3>
+            <p className="text-sm font-bold text-slate-400 mt-2">Configure AI assistants and automation tools for your team.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <ToggleCard title="Lead Scoring" desc="Autonomous 0-100 evaluation of lead conversion potential." active />
-            <ToggleCard title="Conversational Transcription" desc="High-authority speech-to-text with speaker separation." active />
-            <ToggleCard title="Sentiment Velocity" desc="Real-time emotional tracking during live organizational calls." />
-            <ToggleCard title="Cognitive Coaching" desc="Automated sales performance scorecards and tactical feedback." />
+            <ToggleCard title="Lead Scoring" desc="Automatically grade leads based on their conversion potential." active />
+            <ToggleCard title="Call Transcripts" desc="Record and transcribe calls into text automatically." active />
+            <ToggleCard title="Sentiment Analysis" desc="Track customer emotions during sales calls in real-time." />
+            <ToggleCard title="Sales Coaching" desc="Get automated feedback and tips for improving sales performance." />
         </div>
 
         <div className="p-10 bg-[#0F172A] rounded-[40px] shadow-2xl space-y-8">
            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest italic">Model Deployment Registry</span>
+              <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">AI Model Settings</span>
               <span className="px-4 py-2 bg-blue-500 rounded-xl text-[9px] font-bold text-white uppercase tracking-widest">GPT-4 Omni</span>
            </div>
            <div className="grid grid-cols-2 gap-8">
-              <FormInput label="Neural API Key" placeholder="sk-proj-••••••" type="password" dark isSecret />
+              <FormInput label="OpenAI API Key" placeholder="sk-..." type="password" dark isSecret />
               <div className="space-y-4">
-                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Thermal Entropy (Temp)</label>
+                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">AI Creativity (Temperature)</label>
                  <div className="flex items-center gap-6">
                     <input type="range" className="flex-1 accent-blue-500" min="0" max="1" step="0.1" defaultValue="0.7" />
                     <span className="text-2xl font-black text-white italic">0.7</span>
@@ -341,14 +426,14 @@ const AISettings = () => {
 const BillingSettings = () => (
     <div className="space-y-12 relative z-10">
         <div>
-            <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Fiscal Hub.</h3>
-            <p className="text-sm font-bold text-slate-400 mt-2">Configure invoice generation and payment gateway protocols.</p>
+            <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">Billing & Tax</h3>
+            <p className="text-sm font-bold text-slate-400 mt-2">Manage your invoice settings and tax information.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            <FormInput label="Invoice Identifier Prefix" placeholder="ADV-" />
-            <FormInput label="Strategic Seq. Start" placeholder="10001" />
-            <FormInput label="Standard Fiscal Tax (%)" placeholder="18" />
+            <FormInput label="Invoice Prefix" placeholder="INV-" />
+            <FormInput label="Starting Number" placeholder="1001" />
+            <FormInput label="Tax Percentage (%)" placeholder="18" />
         </div>
 
         <div className="space-y-4">
@@ -405,8 +490,8 @@ const AdsSettings = () => {
     <div className="space-y-12 relative z-10">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Ad Intelligence.</h3>
-          <p className="text-sm font-bold text-slate-400 mt-2">Connect external marketing engines to the CRM core.</p>
+          <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">Ad Integration</h3>
+          <p className="text-sm font-bold text-slate-400 mt-2">Connect your Google Ads account to sync leads automatically.</p>
         </div>
         {status?.connected && (
           <button 

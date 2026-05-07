@@ -6,6 +6,7 @@ const getFrontendUrl = require('../utils/getFrontendUrl');
 const inviteUser = async (req, res) => {
   try {
     const { name, email, role } = req.body;
+    const organizationId = req.user.organizationId;
 
     if (!email || !name) {
       return res.status(400).json({ message: "Name and Email are required" });
@@ -14,20 +15,22 @@ const inviteUser = async (req, res) => {
     // Generate unique invite token (UUID)
     const token = uuidv4();
 
-    // Save or Update invite in DB
+    // Save or Update invite in DB (Scoped to Org)
     const invite = await prisma.invite.upsert({
       where: { email: email.trim().toLowerCase() },
       update: {
         token,
         status: "PENDING",
         role: role || "AGENT",
-        createdAt: new Date()
+        createdAt: new Date(),
+        organizationId // Re-bind to current requester org
       },
       create: {
         email: email.trim().toLowerCase(),
         role: role || "AGENT",
         token,
-        status: "PENDING"
+        status: "PENDING",
+        organizationId
       }
     });
 
@@ -37,12 +40,13 @@ const inviteUser = async (req, res) => {
 
     console.log(`[INVITE] Generating link for ${invite.email}: ${inviteLink}`);
 
-    // Upsert shadow user for visibility in Agent List
-    if (invite.role !== 'CLIENT') {
+    // Upsert shadow user (Scoped to Org)
+    if (invite.role !== 'SUPER_ADMIN') {
       await prisma.user.upsert({
         where: { email: invite.email },
         update: {
           name,
+          organizationId,
           agentType: 'INVITED',
           inviteStatus: 'PENDING',
           isActive: false
@@ -52,6 +56,7 @@ const inviteUser = async (req, res) => {
           email: invite.email,
           password: 'PENDING_INVITE_' + uuidv4(),
           role: invite.role,
+          organizationId,
           agentType: 'INVITED',
           inviteStatus: 'PENDING',
           isActive: false
@@ -66,31 +71,26 @@ const inviteUser = async (req, res) => {
       console.error("[INVITE ABORTED] SMTP Failure:", emailError.message);
       return res.status(500).json({ 
         success: false, 
-        message: `Failed to send email: ${emailError.message}. The invite link was generated but email delivery failed.`,
+        message: `Failed to send email: ${emailError.message}.`,
         inviteLink
       });
     }
 
-    return res.json({ 
-      success: true, 
-      message: "Invite sent successfully",
-      inviteLink 
-    });
-
+    return res.json({ success: true, message: "Invite sent successfully", inviteLink });
   } catch (error) {
     console.error("Invite Error:", error);
-    return res.status(500).json({ message: "Internal server error during invite generation" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
 const getInviteStats = async (req, res) => {
   try {
-    const total = await prisma.invite.count();
-    const joined = await prisma.invite.count({ where: { status: 'JOINED' } });
+    const organizationId = req.user.organizationId;
+    const total = await prisma.invite.count({ where: { organizationId } });
+    const joined = await prisma.invite.count({ where: { status: 'JOINED', organizationId } });
     
-    // We also pull from User table for cross-verification
     const invitedAgents = await prisma.user.findMany({
-      where: { role: 'AGENT', agentType: 'INVITED' },
+      where: { role: 'AGENT', agentType: 'INVITED', organizationId },
       select: { inviteStatus: true }
     });
 
@@ -116,6 +116,7 @@ const getInviteStats = async (req, res) => {
 const getInvites = async (req, res) => {
   try {
     const invites = await prisma.invite.findMany({
+      where: { organizationId: req.user.organizationId },
       orderBy: { createdAt: 'desc' }
     });
     res.json({ success: true, data: invites });
@@ -127,7 +128,9 @@ const getInvites = async (req, res) => {
 const deleteInvite = async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.invite.delete({ where: { id: parseInt(id) } });
+    await prisma.invite.delete({ 
+      where: { id: parseInt(id), organizationId: req.user.organizationId } 
+    });
     res.json({ success: true, message: "Invite deleted successfully" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -137,7 +140,8 @@ const deleteInvite = async (req, res) => {
 const bulkDeleteInvites = async (req, res) => {
   try {
     const { type } = req.body;
-    let where = { status: 'PENDING' };
+    const organizationId = req.user.organizationId;
+    let where = { status: 'PENDING', organizationId };
     const now = new Date();
 
     if (type === 'today') {
@@ -146,16 +150,10 @@ const bulkDeleteInvites = async (req, res) => {
     } else if (type === 'month') {
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       where.createdAt = { gte: startOfMonth };
-    } else if (type === 'year') {
-      const startOfYear = new Date(now.getFullYear(), 0, 1);
-      where.createdAt = { gte: startOfYear };
     }
 
     const result = await prisma.invite.deleteMany({ where });
-    res.json({ 
-      success: true, 
-      message: `${result.count} pending invites deleted successfully` 
-    });
+    res.json({ success: true, message: `${result.count} pending invites deleted successfully` });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

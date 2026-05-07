@@ -6,7 +6,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "dev": "nodemon src/server.js",
+    "dev": "kill-port 5000 && nodemon src/server.js",
     "build": "npx prisma generate && npx prisma db push --accept-data-loss",
     "start": "npx prisma generate && npx prisma db push --accept-data-loss && node src/server.js",
     "test": "jest"
@@ -50,6 +50,7 @@
   "devDependencies": {
     "jest": "^30.3.0",
     "jest-mock-extended": "^4.0.1",
+    "kill-port": "^2.0.1",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2"
   },

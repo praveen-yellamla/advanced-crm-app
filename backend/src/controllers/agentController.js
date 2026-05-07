@@ -9,6 +9,7 @@ const getDashboardStats = async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const organizationId = req.user.organizationId;
     const [
       callsToday,
       totalTalkTime,
@@ -18,14 +19,15 @@ const getDashboardStats = async (req, res) => {
       tasksDueToday,
       emailMetrics
     ] = await Promise.all([
-      prisma.call.count({ where: { agentId, createdAt: { gte: today } } }),
+      prisma.call.count({ where: { organizationId, agentId, createdAt: { gte: today } } }),
       prisma.call.aggregate({
-        _sum: { durationSeconds: true },
-        where: { agentId, createdAt: { gte: today } }
+        _sum: { duration: true }, // durationSeconds in older version, checking schema duration is Int
+        where: { organizationId, agentId, createdAt: { gte: today } }
       }),
-      prisma.lead.count({ where: { assignedToId: agentId, status: 'INTERESTED' } }),
+      prisma.lead.count({ where: { organizationId, assignedToId: agentId, status: 'INTERESTED' } }),
       prisma.lead.count({ 
         where: { 
+          organizationId,
           assignedToId: agentId, 
           status: 'WON',
           createdAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) }
@@ -33,13 +35,12 @@ const getDashboardStats = async (req, res) => {
       }),
       prisma.invoice.aggregate({
         _sum: { amount: true },
-        where: { raisedById: agentId, status: 'PAID' }
+        where: { organizationId, raisedById: agentId, status: 'PAID' }
       }),
-      prisma.task.count({ where: { userId: agentId, dueDate: { lte: today }, status: 'Pending' } }),
+      prisma.task.count({ where: { organizationId, assignedToId: agentId, dueDate: { lte: today }, status: 'PENDING' } }),
       prisma.email.aggregate({
         _count: true,
-        _sum: { clickCount: true },
-        where: { agentId }
+        where: { organizationId, agentId }
       })
     ]);
 
@@ -68,10 +69,10 @@ const getDashboardStats = async (req, res) => {
 const getMyLeads = async (req, res) => {
   try {
     const leads = await prisma.lead.findMany({
-      where: { assignedToId: req.user.id },
+      where: { organizationId: req.user.organizationId, assignedToId: req.user.id },
       include: {
         calls: { orderBy: { createdAt: 'desc' }, take: 5 },
-        emails: { orderBy: { sentAt: 'desc' }, take: 5 }
+        emails: { orderBy: { createdAt: 'desc' }, take: 5 }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -87,7 +88,11 @@ const updateLead = async (req, res) => {
     const { status, customerName, email, phone } = req.body;
     
     const lead = await prisma.lead.update({
-      where: { id: parseInt(id), assignedToId: req.user.id },
+      where: { 
+        id: parseInt(id), 
+        organizationId: req.user.organizationId,
+        assignedToId: req.user.id 
+      },
       data: { status, customerName, email, phone }
     });
     res.json({ success: true, data: lead });
@@ -114,10 +119,11 @@ const logCall = async (req, res) => {
     const { leadId, durationSeconds, callStatus, recordingUrl } = req.body;
     const call = await prisma.call.create({
       data: {
+        organizationId: req.user.organizationId,
         leadId: parseInt(leadId),
         agentId: req.user.id,
-        durationSeconds: parseInt(durationSeconds),
-        callStatus,
+        duration: parseInt(durationSeconds),
+        status: callStatus,
         recordingUrl
       }
     });
@@ -130,7 +136,10 @@ const logCall = async (req, res) => {
 const getCallHistory = async (req, res) => {
   try {
     const calls = await prisma.call.findMany({
-      where: { agentId: req.user.id },
+      where: { 
+        organizationId: req.user.organizationId,
+        agentId: req.user.id 
+      },
       include: { lead: { select: { customerName: true, phone: true } } },
       orderBy: { createdAt: 'desc' }
     });
@@ -146,7 +155,10 @@ const getCallHistory = async (req, res) => {
 const getMyTasks = async (req, res) => {
   try {
     const tasks = await prisma.task.findMany({
-      where: { userId: req.user.id },
+      where: { 
+        organizationId: req.user.organizationId,
+        assignedToId: req.user.id 
+      },
       orderBy: { dueDate: 'asc' }
     });
     res.json({ success: true, data: tasks });
@@ -160,13 +172,14 @@ const createTask = async (req, res) => {
     const { title, description, dueDate, priority, type, tags } = req.body;
     const task = await prisma.task.create({
       data: {
+        organizationId: req.user.organizationId,
         title, 
         description, 
         dueDate: dueDate ? new Date(dueDate) : null, 
         priority: priority || 'Normal',
         type: type || 'FOLLOWUP',
-        tags: tags || {},
-        userId: req.user.id
+        assignedToId: req.user.id,
+        createdById: req.user.id
       }
     });
     res.json({ success: true, data: task });
@@ -180,7 +193,11 @@ const updateTask = async (req, res) => {
     const { id } = req.params;
     const { status, title, description, dueDate, priority } = req.body;
     const task = await prisma.task.update({
-      where: { id: parseInt(id), userId: req.user.id },
+      where: { 
+        id: parseInt(id), 
+        organizationId: req.user.organizationId,
+        assignedToId: req.user.id 
+      },
       data: { 
         status, 
         title, 
@@ -199,7 +216,11 @@ const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
     await prisma.task.delete({
-      where: { id: parseInt(id), userId: req.user.id }
+      where: { 
+        id: parseInt(id), 
+        organizationId: req.user.organizationId,
+        assignedToId: req.user.id 
+      }
     });
     res.json({ success: true, message: "Task deleted" });
   } catch (error) {
@@ -215,6 +236,7 @@ const createInvoice = async (req, res) => {
     const { clientId, amount, dueDate, items } = req.body;
     const invoice = await prisma.invoice.create({
       data: {
+        organizationId: req.user.organizationId,
         invoiceNo: `INV-${Date.now()}`,
         clientId: parseInt(clientId),
         raisedById: req.user.id,
@@ -241,7 +263,10 @@ const createInvoice = async (req, res) => {
 const getMyInvoices = async (req, res) => {
   try {
     const invoices = await prisma.invoice.findMany({
-      where: { raisedById: req.user.id },
+      where: { 
+        organizationId: req.user.organizationId,
+        raisedById: req.user.id 
+      },
       include: { items: true },
       orderBy: { createdAt: 'desc' }
     });
@@ -257,7 +282,10 @@ const getMyInvoices = async (req, res) => {
 const getFeedback = async (req, res) => {
   try {
     const feedback = await prisma.feedback.findMany({
-      where: { agentId: req.user.id },
+      where: { 
+        organizationId: req.user.organizationId,
+        agentId: req.user.id 
+      },
       include: { manager: { select: { name: true } }, call: true },
       orderBy: { createdAt: 'desc' }
     });
@@ -272,6 +300,7 @@ const sendEmail = async (req, res) => {
     const { leadId, subject, content } = req.body;
     const email = await prisma.email.create({
       data: {
+        organizationId: req.user.organizationId,
         leadId: parseInt(leadId),
         agentId: req.user.id,
         subject,
@@ -288,7 +317,10 @@ const sendEmail = async (req, res) => {
 const getMyEmails = async (req, res) => {
   try {
     const emails = await prisma.email.findMany({
-      where: { agentId: req.user.id },
+      where: { 
+        organizationId: req.user.organizationId,
+        agentId: req.user.id 
+      },
       include: { lead: { select: { customerName: true, email: true } } },
       orderBy: { sentAt: 'desc' }
     });

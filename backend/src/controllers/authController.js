@@ -1,188 +1,257 @@
 const bcrypt = require('bcryptjs');
 const prisma = require('../config/prisma');
-const generateToken = require('../utils/generateToken');
+const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
 
-/**
- * @desc    Register a new user
- * @route   POST /api/auth/register
- * @access  Public
- */
-const register = async (req, res) => {
-  const { name, email, password, role } = req.body;
-
-  try {
-    // Check if user already exists
-    const userExists = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: role || 'AGENT',
-      }
-    });
-
-    if (user) {
-      res.status(201).json({
-        status: 'success',
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role
-        },
-        token: generateToken(user)
-      });
-    } else {
-      res.status(400).json({ message: 'Invalid user data' });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error during registration' });
-  }
+const generateToken = (user, expiresIn = '24h') => {
+  return jwt.sign(
+    { id: user.id, email: user.email, role: user.role, organizationId: user.organizationId },
+    process.env.JWT_SECRET,
+    { expiresIn }
+  );
 };
 
 /**
- * @desc    Authenticate a user & get token
+ * @desc    Authenticate a user & get token with Session Tracking
  * @route   POST /api/auth/login
  * @access  Public
  */
 const login = async (req, res) => {
-  let { email, password } = req.body;
+  let { email, password, rememberMe } = req.body;
   if (email) email = email.trim().toLowerCase();
 
   try {
-    // 1. Try to find in internal Staff repo (User Table)
-    let user = await prisma.user.findUnique({ where: { email } });
-    let role = user?.role;
+    const user = await prisma.user.findUnique({ 
+      where: { email },
+      include: { organization: true }
+    });
 
-    // 2. If not found, try to find in External Client repo (Client Table)
     if (!user) {
-      const client = await prisma.client.findUnique({ where: { email } });
-      if (client) {
-        user = client;
-        role = 'CLIENT';
-      }
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    if (user && (await bcrypt.compare(password, user.password))) {
-      // Check status for staff
-      if (user.role && !user.isActive) {
-        return res.status(401).json({ message: 'Account deactivated' });
-      }
-
-      // Check status for clients
-      if (role === 'CLIENT' && user.status !== 'ACTIVE') {
-        return res.status(401).json({ message: 'Client account inactive' });
-      }
-
-      res.json({
-        status: 'success',
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: role
-        },
-        token: generateToken({ ...user, role })
+    // Check if account is locked
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const remainingMinutes = Math.ceil((user.lockedUntil - new Date()) / 60000);
+      return res.status(403).json({ 
+        message: `Account locked due to multiple failed attempts. Try again in ${remainingMinutes} minutes.` 
       });
-    } else {
-      res.status(401).json({ message: 'Invalid email or password' });
     }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      // Increment failed attempts
+      const failedAttempts = user.failedLoginAttempts + 1;
+      let lockedUntil = null;
+      
+      if (failedAttempts >= 5) {
+        lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 mins lock
+      }
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { 
+          failedLoginAttempts: failedAttempts,
+          lockedUntil
+        }
+      });
+
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({ message: 'Account deactivated' });
+    }
+
+    // Reset failed attempts on success
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { failedLoginAttempts: 0, lockedUntil: null }
+    });
+
+    const accessToken = generateToken(user, rememberMe ? '7d' : '24h');
+    const refreshToken = uuidv4();
+    const expiresAt = rememberMe 
+      ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+      : new Date(Date.now() + 24 * 60 * 60 * 1000);    // 24 hours
+
+    // Create Active Session
+    const session = await prisma.session.create({
+      data: {
+        userId: user.id,
+        token: accessToken,
+        refreshToken,
+        isPersistent: !!rememberMe,
+        expiresAt,
+        ipAddress: req.ip || req.headers['x-forwarded-for'],
+        userAgent: req.headers['user-agent'],
+        deviceName: 'Web Browser' // Simplified for now
+      }
+    });
+
+    res.json({
+      status: 'success',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        organizationId: user.organizationId,
+        organizationName: user.organization?.name
+      },
+      token: accessToken,
+      sessionId: session.id
+    });
   } catch (error) {
-    console.error('CRITICAL AUTH ERROR:', error);
-    res.status(500).json({ message: 'Server error during login' });
+    console.error('AUTH ERROR:', error);
+    res.status(500).json({ message: 'Server error during authentication' });
+  }
+};
+
+/**
+ * @desc    Logout user & Terminate Session
+ * @route   POST /api/auth/logout
+ * @access  Private
+ */
+const logout = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      await prisma.session.updateMany({
+        where: { token, isActive: true },
+        data: { isActive: false }
+      });
+    }
+    res.status(200).json({ message: 'Logged out successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Logout failed' });
+  }
+};
+
+/**
+ * @desc    Get Active Sessions
+ * @route   GET /api/auth/sessions
+ * @access  Private
+ */
+const getSessions = async (req, res) => {
+  try {
+    const sessions = await prisma.session.findMany({
+      where: { userId: req.user.id, isActive: true },
+      orderBy: { lastUsedAt: 'desc' }
+    });
+    res.json({ success: true, data: sessions });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @desc    Revoke Session
+ * @route   DELETE /api/auth/sessions/:id
+ * @access  Private
+ */
+const revokeSession = async (req, res) => {
+  try {
+    await prisma.session.update({
+      where: { id: req.params.id, userId: req.user.id },
+      data: { isActive: false }
+    });
+    res.json({ success: true, message: 'Session revoked' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
 /**
  * @desc    Get user profile
- * @route   GET /api/auth/me
- * @access  Private
  */
 const getMe = async (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    user: req.user
-  });
+  res.json({ status: 'success', user: req.user });
+};
+
+/**
+ * @desc    Register a new user
+ */
+const register = async (req, res) => {
+  const { name, email, password, role } = req.body;
+  try {
+    const userExists = await prisma.user.findUnique({ where: { email } });
+    if (userExists) return res.status(400).json({ message: 'User already exists' });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+      data: { name, email, password: hashedPassword, role: role || 'AGENT' }
+    });
+
+    const accessToken = generateToken(user);
+    const refreshToken = uuidv4();
+    
+    await prisma.session.create({
+      data: {
+        userId: user.id,
+        token: accessToken,
+        refreshToken,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h for initial registration
+        ipAddress: req.ip || req.headers['x-forwarded-for'],
+        userAgent: req.headers['user-agent']
+      }
+    });
+
+    res.status(201).json({
+      status: 'success',
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      token: accessToken
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Registration failed' });
+  }
 };
 
 /**
  * @desc    Change password
- * @route   POST /api/auth/change-password
- * @access  Private
  */
 const changePassword = async (req, res) => {
   const { currentPassword, newPassword } = req.body;
-
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id }
-    });
-
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (user && (await bcrypt.compare(currentPassword, user.password))) {
-      const salt = await bcrypt.genSalt(10);
-      const hashedNewPassword = await bcrypt.hash(newPassword, salt);
-
+      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
       await prisma.user.update({
         where: { id: user.id },
         data: { password: hashedNewPassword }
       });
 
-      res.status(200).json({ message: 'Password changed successfully' });
+      // Security: Revoke all other sessions
+      const currentToken = req.headers.authorization?.split(' ')[1];
+      await prisma.session.updateMany({
+        where: { 
+          userId: user.id, 
+          token: { not: currentToken },
+          isActive: true 
+        },
+        data: { isActive: false }
+      });
+
+      res.status(200).json({ message: 'Password changed successfully. Other devices logged out.' });
     } else {
       res.status(401).json({ message: 'Incorrect current password' });
     }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error during password change' });
+    res.status(500).json({ message: 'Password change failed' });
   }
 };
 
 /**
- * @desc    Logout user (Stateless - client should discard token)
- * @route   POST /api/auth/logout
- * @access  Private
- */
-const logout = (req, res) => {
-  // In stateless JWT, logout is handled on client side by deleting the token.
-  // We return a success message.
-  res.status(200).json({ message: 'Successfully logged out' });
-};
-
-/**
  * @desc    Verify Invite Token
- * @route   GET /api/auth/invite/:token
- * @access  Public
  */
 const verifyInvite = async (req, res) => {
   try {
     const { token } = req.params;
-    
-    const invite = await prisma.invite.findUnique({
-      where: { token }
-    });
-
-    if (!invite) {
-      return res.status(400).json({ success: false, message: 'Invalid invite link' });
+    const invite = await prisma.invite.findUnique({ where: { token } });
+    if (!invite || invite.status !== 'PENDING') {
+      return res.status(400).json({ success: false, message: 'Invalid or expired invite' });
     }
-
-    if (invite.status !== 'PENDING') {
-      return res.status(400).json({ success: false, message: 'This invite has already been accepted' });
-    }
-
     res.json({ success: true, data: { email: invite.email, role: invite.role } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -191,102 +260,26 @@ const verifyInvite = async (req, res) => {
 
 /**
  * @desc    Accept Invite
- * @route   POST /api/auth/accept-invite
- * @access  Public
  */
-const { uploadToCloudinary } = require('../utils/cloudinary');
-
 const acceptInvite = async (req, res) => {
-  console.log("ACCEPT INVITE BODY RECEIVED:", req.body);
   try {
-    const { token, password, name: nameFromRequest, phone } = req.body;
-
-    if (!token || !password) {
-      return res.status(400).json({
-        message: "Token and Password are required"
-      });
+    const { token, password, name, phone } = req.body;
+    const invite = await prisma.invite.findUnique({ where: { token } });
+    if (!invite || invite.status !== 'PENDING') {
+      return res.status(400).json({ message: 'Invalid invite' });
     }
 
-    const invite = await prisma.invite.findUnique({
-      where: { token }
-    });
-
-    if (!invite || invite.status !== "PENDING") {
-      console.log("ACCEPT FAILED: Invalid or non-active invite");
-      return res.status(400).json({
-        message: "Invalid or already used invite"
-      });
-    }
-
-    // Check if user already exists (Allow if it's the shadow user created during invite)
-    const existingUser = await prisma.user.findUnique({ where: { email: invite.email } });
-    
-    if (existingUser && existingUser.inviteStatus === 'ACCEPTED') {
-       console.log(`ACCEPT FAILED: User already exists and is active for email ${invite.email}`);
-       return res.status(400).json({ message: 'User with this email is already active' });
-    }
-
-    if (existingUser) {
-      console.log(`[AUTH] Activating shadow user node for: ${invite.email}`);
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    let imageUrl = null;
-    if (req.file) {
-      imageUrl = await uploadToCloudinary(req.file.buffer);
-    }
-
-    const finalName = nameFromRequest || existingUser?.name || 'Agent';
-    const finalPhone = phone ? phone.trim() : existingUser?.phone || null;
-
-    // Upsert agent (Update shadow user or create new if not found)
+    const hashedPassword = await bcrypt.hash(password, 10);
     await prisma.user.upsert({
       where: { email: invite.email },
-      update: {
-        name: finalName,
-        phone: finalPhone,
-        password: hashedPassword,
-        profileImage: imageUrl,
-        role: invite.role,
-        isActive: true,
-        agentType: 'INVITED',
-        inviteStatus: 'ACCEPTED'
-      },
-      create: {
-        name: finalName,
-        email: invite.email,
-        phone: finalPhone,
-        password: hashedPassword,
-        profileImage: imageUrl,
-        role: invite.role,
-        isActive: true,
-        agentType: 'INVITED',
-        inviteStatus: 'ACCEPTED'
-      }
+      update: { name, phone, password: hashedPassword, role: invite.role, isActive: true, inviteStatus: 'ACCEPTED' },
+      create: { name, email: invite.email, phone, password: hashedPassword, role: invite.role, organizationId: invite.organizationId, isActive: true, inviteStatus: 'ACCEPTED' }
     });
 
-    // Update invite status to JOINED
-    await prisma.invite.update({
-      where: { token },
-      data: {
-        status: "JOINED"
-      }
-    });
-
-    console.log(`ACCEPT SUCCESS: User ${finalName} registered`);
-    return res.json({
-      success: true,
-      message: "Account created successfully"
-    });
-
+    await prisma.invite.update({ where: { token }, data: { status: 'JOINED' } });
+    res.json({ success: true, message: 'Account created successfully' });
   } catch (error) {
-    console.error("ACCEPT SERVER ERROR:", error);
-    return res.status(500).json({
-      message: "Failed to register user",
-      details: error.message
-    });
+    res.status(500).json({ message: 'Invite acceptance failed' });
   }
 };
 
@@ -294,6 +287,8 @@ module.exports = {
   register,
   login,
   getMe,
+  getSessions,
+  revokeSession,
   changePassword,
   logout,
   verifyInvite,

@@ -14,14 +14,8 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Verify connection configuration
-transporter.verify(function (error, success) {
-  if (error) {
-    console.error("[SMTP CONFIG ERROR] Could not connect to SMTP provider:", error);
-  } else {
-    console.log("[SMTP SUCCESS] Server is ready to take our messages");
-  }
-});
+// SMTP verification removed from startup to prevent non-fatal connection crashes.
+// Mail operations will still log errors during actual transmission attempts.
 
 /**
  * Sends a clean, user-friendly invite email to a new agent.

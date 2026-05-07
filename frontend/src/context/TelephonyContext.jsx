@@ -7,7 +7,7 @@ import { formatPhoneNumber } from '../utils/phoneUtils';
 
 const TelephonyContext = createContext();
 
-export const TelephonyProvider = ({ children }) => {
+export function TelephonyProvider({ children }) {
   const { user } = useAuth();
   const [device, setDevice] = useState(null);
   const [call, setCall] = useState(null);
@@ -205,24 +205,26 @@ export const TelephonyProvider = ({ children }) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const value = React.useMemo(() => ({
+    callState,
+    isMuted,
+    duration,
+    formatDuration,
+    makeCall,
+    endCall,
+    toggleMute,
+    sendDigits,
+    activeCall: call,
+    lastCallSid,
+    networkQuality,
+    monitorActiveCall
+  }), [callState, isMuted, duration, call, lastCallSid, networkQuality, makeCall, monitorActiveCall]);
+
   return (
-    <TelephonyContext.Provider value={{
-      callState,
-      isMuted,
-      duration,
-      formatDuration,
-      makeCall,
-      endCall,
-      toggleMute,
-      sendDigits,
-      activeCall: call,
-      lastCallSid,
-      networkQuality,
-      monitorActiveCall
-    }}>
+    <TelephonyContext.Provider value={value}>
       {children}
     </TelephonyContext.Provider>
   );
-};
+}
 
 export const useTelephony = () => useContext(TelephonyContext);
