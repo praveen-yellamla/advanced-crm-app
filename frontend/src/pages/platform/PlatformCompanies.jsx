@@ -152,7 +152,7 @@ const PlatformCompanies = () => {
                   </tr>
                </thead>
                <tbody className="divide-y divide-slate-100">
-                  {filteredOrgs?.map((org) => (
+                  {filteredOrgs?.map((org, index) => (
                     <tr key={org.id} className="hover:bg-slate-50/80 transition-all group">
                        <td className="px-10 py-10">
                           <div className="flex items-center gap-6">
@@ -225,10 +225,12 @@ const PlatformCompanies = () => {
                                      <>
                                         <div className="fixed inset-0 z-[90]" onClick={() => setActiveMenuId(null)} />
                                         <motion.div 
-                                          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                          initial={{ opacity: 0, scale: 0.95, y: index >= (filteredOrgs?.length || 0) - 2 ? -10 : 10 }}
                                           animate={{ opacity: 1, scale: 1, y: 0 }}
-                                          exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                          className="absolute right-0 mt-4 w-72 bg-white rounded-[32px] shadow-[0_25px_60px_rgba(0,0,0,0.15)] border border-slate-100 z-[100] overflow-hidden"
+                                          exit={{ opacity: 0, scale: 0.95, y: index >= (filteredOrgs?.length || 0) - 2 ? -10 : 10 }}
+                                          className={`absolute right-0 w-72 bg-white rounded-[32px] shadow-[0_25px_60px_rgba(0,0,0,0.15)] border border-slate-100 z-[100] overflow-hidden ${
+                                             index >= (filteredOrgs?.length || 0) - 2 ? 'bottom-full mb-4' : 'top-full mt-4'
+                                          }`}
                                         >
                                            <div className="p-4 space-y-1">
                                               <ActionMenuItem 
