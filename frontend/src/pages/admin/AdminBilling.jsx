@@ -592,12 +592,21 @@ const PaymentGateway = ({ plan, cycle, onBack, onSuccess }) => {
         planId: plan.id, 
         billingCycle: cycle
       });
-      const { order, proration } = res.data.data;
+      const { order, proration, key } = res.data.data;
       console.log('[RAZORPAY] Order initiated:', order);
+
+      const razorpayKey = key || import.meta.env.VITE_RAZORPAY_KEY_ID;
+      
+      if (!razorpayKey) {
+        console.error('[RAZORPAY] CRITICAL ERROR: Razorpay Key ID is missing from both API response and environment variables.');
+        toast.error('Payment Configuration Error: Missing API Key. Please contact support.');
+        setIsProcessing(false);
+        return;
+      }
 
       // 3. Open Razorpay Modal
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key: razorpayKey,
         amount: order.amount,
         currency: order.currency,
         name: 'Advanced CRM',

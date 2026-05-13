@@ -107,7 +107,12 @@ class SubscriptionService {
         }
       });
 
-      return { order, transaction, proration };
+      return { 
+        order, 
+        transaction, 
+        proration,
+        key: process.env.RAZORPAY_KEY_ID // Return the key ID for frontend initialization
+      };
     } catch (error) {
       console.error(`[RAZORPAY] Order Creation Failed:`, error);
       throw new Error(`Razorpay Order Error: ${error.description || error.message}`);
@@ -123,14 +128,23 @@ class SubscriptionService {
 
     // 1. Verify Signature
     const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+
+    if (!secret) {
+      console.error('[RAZORPAY] CRITICAL: RAZORPAY_KEY_SECRET is missing from backend environment variables.');
+      throw new Error("Payment verification failed due to server configuration error. Please contact support.");
+    }
+
     const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .createHmac("sha256", secret)
       .update(body.toString())
       .digest("hex");
 
     if (expectedSignature !== razorpay_signature) {
-      console.error(`[RAZORPAY] Signature Mismatch! Expected: ${expectedSignature}, Received: ${razorpay_signature}`);
-      throw new Error("Invalid payment signature. Transaction compromised.");
+      console.error(`[RAZORPAY] Signature Mismatch!`);
+      console.error(`Expected: ${expectedSignature}`);
+      console.error(`Received: ${razorpay_signature}`);
+      throw new Error("Invalid payment signature. The transaction security check failed.");
     }
 
     // 2. Fetch Transaction
