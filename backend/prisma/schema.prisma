@@ -27,6 +27,7 @@ model Organization {
   planId        Int?     @map("plan_id")
   plan          Plan?    @relation(fields: [planId], references: [id])
   subscriptionTier SubscriptionTier @default(STARTER) @map("subscription_tier")
+  billingCycle  BillingCycle     @default(MONTHLY) @map("billing_cycle")
   status           OrgStatus        @default(ACTIVE)
   
   // Usage Tracking (Current Overrides/Limits)
@@ -40,13 +41,17 @@ model Organization {
   
   // Billing Info
   billingEmail     String?  @map("billing_email")
+  billingAddress   Json?    @map("billing_address") // { city, country, line1, postal_code, state }
+  taxId            String?  @map("tax_id")
+  
   stripeCustomerId String? @map("stripe_customer_id")
   stripeSubscriptionId String? @map("stripe_subscription_id")
-  subscriptionExpiresAt DateTime? @map("subscription_expires_at")
   
-  // Security
-  twoFactorEnabled Boolean @default(false) @map("two_factor_enabled")
-  ipWhitelist      String?  @map("ip_whitelist")
+  currentPeriodStart DateTime? @map("current_period_start")
+  currentPeriodEnd   DateTime? @map("current_period_end")
+  subscriptionExpiresAt DateTime? @map("subscription_expires_at")
+  cancelAtPeriodEnd Boolean @default(false) @map("cancel_at_period_end")
+  autoRenew        Boolean @default(true) @map("auto_renew")
   
   // Relations
   users     User[]
@@ -56,6 +61,7 @@ model Organization {
   calls     Call[]
   invoices  Invoice[] // CRM Business Invoices
   platformInvoices PlatformInvoice[] // SaaS Subscription Invoices
+  transactions PlatformTransaction[]
   settings  OrganizationSetting[]
   auditLogs AuditLog[]
   aiUsage   AIUsage[]
@@ -68,6 +74,8 @@ model Organization {
   notifications Notification[]
   
   // Security & Compliance
+  twoFactorEnabled Boolean @default(false) @map("two_factor_enabled")
+  ipWhitelist      String?  @map("ip_whitelist")
   accessApprovalRequired Boolean @default(false) @map("access_approval_required")
   lastPlatformAccessAt   DateTime? @map("last_platform_access_at")
   lastPlatformAccessBy   String?   @map("last_platform_access_by")
@@ -138,17 +146,49 @@ model PlatformInvoice {
   
   invoiceNo      String   @unique @map("invoice_no")
   amount         Float
+  subtotal       Float?
+  tax            Float?
+  discount       Float?
   currency       String   @default("INR")
   status         PlatformInvoiceStatus @default(PENDING)
   billingDate    DateTime @map("billing_date")
   paidAt         DateTime? @map("paid_at")
   
+  periodStart    DateTime? @map("period_start")
+  periodEnd      DateTime? @map("period_end")
+  
   stripeInvoiceId String? @map("stripe_invoice_id")
   invoiceUrl     String?  @map("invoice_url")
+  pdfUrl         String?  @map("pdf_url")
   
   createdAt      DateTime @default(now()) @map("created_at")
   
   @@map("platform_invoices")
+}
+
+model PlatformTransaction {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  transactionId  String   @unique @map("transaction_id") // Provider's payment ID
+  orderId        String?  @map("order_id") // Provider's order ID
+  
+  amount         Float
+  currency       String   @default("INR")
+  status         TransactionStatus @default(PENDING)
+  gateway        String?  // stripe, razorpay
+  method         String?  // card, upi, etc.
+  
+  description    String?
+  errorMessage   String?  @map("error_message")
+  
+  metadata       Json?
+  
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  
+  @@map("platform_transactions")
 }
 
 model Notification {
@@ -190,6 +230,11 @@ enum SubscriptionTier {
   ENTERPRISE
 }
 
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
 enum OrgStatus {
   ACTIVE
   TRIAL
@@ -202,6 +247,13 @@ enum PlatformInvoiceStatus {
   PAID
   VOID
   UNCOLLECTIBLE
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
 }
 
 enum NotificationType {

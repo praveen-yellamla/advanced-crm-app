@@ -60,7 +60,7 @@ const updateAISettings = async (req, res) => {
  */
 const getAIUsage = async (req, res) => {
   try {
-    const usage = await prisma.aiUsage.aggregate({
+    const usage = await prisma.aIUsage.aggregate({
       _sum: { tokens: true, cost: true },
       _count: { _all: true }
     });
@@ -69,7 +69,7 @@ const getAIUsage = async (req, res) => {
     const lastWeek = new Date();
     lastWeek.setDate(lastWeek.getDate() - 7);
     
-    const trend = await prisma.aiUsage.findMany({
+    const trend = await prisma.aIUsage.findMany({
       where: { createdAt: { gte: lastWeek } },
       orderBy: { createdAt: 'asc' }
     });

@@ -67,7 +67,7 @@ const chatWithCRM = async (userId, message, history = []) => {
     const aiResponse = response.choices[0].message.content;
 
     // 4. USAGE TRACKING
-    await prisma.aiUsage.create({
+    await prisma.aIUsage.create({
       data: {
         userId,
         module: 'CHAT_ASSISTANT',

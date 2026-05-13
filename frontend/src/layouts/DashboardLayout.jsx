@@ -366,8 +366,8 @@ const DashboardLayout = () => {
                         <div className="px-3 py-2">
                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Account</p>
                         </div>
-                        <ProfileMenuItem icon={User} label="Profile" onClick={() => { navigate('/platform/profile'); setIsProfileOpen(false); }} />
-                        <ProfileMenuItem icon={Lock} label="Security" onClick={() => { navigate('/platform/security'); setIsProfileOpen(false); }} />
+                        <ProfileMenuItem icon={User} label="Profile" onClick={() => { navigate('/profile'); setIsProfileOpen(false); }} />
+                        <ProfileMenuItem icon={Lock} label="Security" onClick={() => { navigate('/security'); setIsProfileOpen(false); }} />
                         
                         <div className="h-px bg-slate-100 my-2 mx-2"></div>
                         
@@ -375,8 +375,12 @@ const DashboardLayout = () => {
                         <div className="px-3 py-2">
                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Platform</p>
                         </div>
-                        <ProfileMenuItem icon={Key} label="API Keys" onClick={() => { navigate('/platform/api-keys'); setIsProfileOpen(false); }} />
-                        <ProfileMenuItem icon={Settings} label="Settings" onClick={() => { navigate('/platform/settings'); setIsProfileOpen(false); }} />
+                        {user?.role === 'SUPER_ADMIN' && (
+                           <>
+                              <ProfileMenuItem icon={Key} label="API Keys" onClick={() => { navigate('/platform/api-keys'); setIsProfileOpen(false); }} />
+                              <ProfileMenuItem icon={Settings} label="Settings" onClick={() => { navigate('/platform/settings'); setIsProfileOpen(false); }} />
+                           </>
+                        )}
                         
                         <div className="h-px bg-slate-100 my-2 mx-2"></div>
 
@@ -384,7 +388,7 @@ const DashboardLayout = () => {
                         <div className="px-3 py-2">
                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Support</p>
                         </div>
-                        <ProfileMenuItem icon={HelpCircle} label="Help Center" onClick={() => { navigate('/platform/help'); setIsProfileOpen(false); }} />
+                        <ProfileMenuItem icon={HelpCircle} label="Help Center" onClick={() => { navigate('/help'); setIsProfileOpen(false); }} />
                         
                         <div className="h-px bg-slate-100 my-2 mx-2"></div>
                         

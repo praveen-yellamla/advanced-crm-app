@@ -81,11 +81,8 @@ const AppRoutes = () => {
             <Route path="subscriptions" element={<PlatformSubscriptions />} />
             <Route path="analytics" element={<ClientReports />} />
             <Route path="usage" element={<div className="font-bold text-2xl">Platform Usage Analytics</div>} />
-            <Route path="profile" element={<PlatformProfile />} />
-            <Route path="security" element={<PlatformSecurity />} />
             <Route path="api-keys" element={<PlatformAPIKeys />} />
             <Route path="settings" element={<PlatformSettings />} />
-            <Route path="help" element={<PlatformHelp />} />
           </Route>
         </Route>
 
@@ -134,7 +131,13 @@ const AppRoutes = () => {
             <Route path="performance" element={<AgentPerformance />} />
           </Route>
         </Route>
-
+        
+        {/* 5. SHARED ACCOUNT LAYER (ALL ROLES) */}
+        <Route element={<DashboardLayout />}>
+          <Route path="/profile" element={<PlatformProfile />} />
+          <Route path="/security" element={<PlatformSecurity />} />
+          <Route path="/help" element={<PlatformHelp />} />
+        </Route>
       </Route>
 
       {/* Utilities */}

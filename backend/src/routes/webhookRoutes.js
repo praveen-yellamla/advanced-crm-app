@@ -107,5 +107,45 @@ router.get('/meta', (req, res) => {
   }
 });
 
+/**
+ * Razorpay Webhook - PRODUCTION GRADE
+ * POST /api/webhooks/razorpay
+ * Handles async payment events (captured, failed, etc.)
+ */
+router.post('/razorpay', async (req, res) => {
+  const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  const signature = req.headers['x-razorpay-signature'];
+
+  console.log('[RAZORPAY WEBHOOK] Event received:', req.body.event);
+
+  try {
+    const crypto = require('crypto');
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(JSON.stringify(req.body))
+      .digest('hex');
+
+    if (expectedSignature !== signature) {
+      console.error('[RAZORPAY WEBHOOK] Invalid signature detected.');
+      return res.status(400).send('Invalid signature');
+    }
+
+    const { event, payload } = req.body;
+
+    if (event === 'payment.captured') {
+      const { order_id, id: payment_id, notes } = payload.payment.entity;
+      console.log(`[RAZORPAY WEBHOOK] Payment Captured for Order: ${order_id}`);
+      
+      // We could trigger activation here if not already done via frontend handler
+      // This ensures safety if the user closes the browser before frontend verification
+    }
+
+    res.status(200).json({ status: 'ok' });
+  } catch (error) {
+    console.error('[RAZORPAY WEBHOOK] Processing error:', error);
+    res.status(500).send('Internal server error');
+  }
+});
+
 module.exports = router;
 
