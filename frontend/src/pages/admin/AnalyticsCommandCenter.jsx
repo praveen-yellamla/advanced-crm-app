@@ -502,7 +502,7 @@ const AnalyticsCommandCenter = () => {
                      </div>
                      <div>
                        <h3 className="text-xl font-black tracking-tight">AI Insights</h3>
-                       <p className="text-[10px] font-bold text-violet-400 uppercase tracking-widest mt-0.5">Automated Neural Analysis</p>
+                       <p className="text-[10px] font-bold text-violet-400 uppercase tracking-widest mt-0.5">Automated AI Analysis</p>
                      </div>
                   </div>
                </div>

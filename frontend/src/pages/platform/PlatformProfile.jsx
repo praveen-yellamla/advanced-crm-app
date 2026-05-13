@@ -23,13 +23,13 @@ const PlatformProfile = () => {
     phone: user?.phone || '',
     timezone: 'IST',
     highVisibility: false,
-    neuralAssistance: true,
+    aiAssistantEnabled: true,
     realtimeLogs: false,
     autoReconcile: true
   });
 
   const handleUpdateProfile = () => {
-    toast.success('Identity protocols synchronized');
+    toast.success('Profile settings updated');
   };
 
   return (
@@ -58,7 +58,7 @@ const PlatformProfile = () => {
                  <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
                     <User size={24} />
                  </div>
-                 <h3 className="text-2xl font-black text-[#0F172A] uppercase italic">Identity Protocols</h3>
+                 <h3 className="text-2xl font-black text-[#0F172A] uppercase italic">Profile Settings</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -135,10 +135,10 @@ const PlatformProfile = () => {
                       onToggle={() => setProfileData({...profileData, highVisibility: !profileData.highVisibility})}
                     />
                     <PreferenceToggle 
-                      title="Neural Assistance" 
+                      title="AI Assistant" 
                       desc="Allow AI-driven suggestions in the Platform Control Center." 
-                      active={profileData.neuralAssistance}
-                      onToggle={() => setProfileData({...profileData, neuralAssistance: !profileData.neuralAssistance})}
+                      active={profileData.aiAssistantEnabled}
+                      onToggle={() => setProfileData({...profileData, aiAssistantEnabled: !profileData.aiAssistantEnabled})}
                     />
                     <PreferenceToggle 
                       title="Real-time Infrastructure Logs" 
@@ -173,7 +173,7 @@ const PlatformProfile = () => {
               <div className="space-y-8">
                  <Metric label="Operator ID" value={`OP-${user?.id?.toString().padStart(6, '0')}`} icon={Fingerprint} />
                  <Metric label="Joined Platform" value={new Date(user?.createdAt).toLocaleDateString()} icon={Calendar} />
-                 <Metric label="Default Node" value="US-EAST-1 (Primary)" icon={Globe} />
+                 <Metric label="Default Region" value="US-EAST-1 (Primary)" icon={Globe} />
               </div>
            </div>
         </div>

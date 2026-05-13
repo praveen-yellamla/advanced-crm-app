@@ -21,12 +21,12 @@ const PlatformHelp = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const categories = [
-    { id: 'start', title: 'Getting Started', icon: Zap, color: 'text-blue-600', bg: 'bg-blue-50', desc: 'Deploying your first tenant and configuring basic nodes.' },
-    { id: 'billing', title: 'Billing & Tiers', icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50', desc: 'Managing subscription protocols and resource scoping.' },
-    { id: 'ai', title: 'AI Infrastructure', icon: Cpu, color: 'text-violet-600', bg: 'bg-violet-50', desc: 'Configuring neural tokens and AI assistant modules.' },
+    { id: 'start', title: 'Getting Started', icon: Zap, color: 'text-blue-600', bg: 'bg-blue-50', desc: 'Deploying your first tenant and configuring basic settings.' },
+    { id: 'billing', title: 'Billing & Tiers', icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50', desc: 'Managing subscription plans and resource limits.' },
+    { id: 'ai', title: 'AI Infrastructure', icon: Cpu, color: 'text-violet-600', bg: 'bg-violet-50', desc: 'Configuring AI tokens and AI assistant modules.' },
     { id: 'comm', title: 'Telephony & VOIP', icon: MessageSquare, color: 'text-amber-600', bg: 'bg-amber-50', desc: 'Twilio integration, call routing, and SIP gateway setup.' },
     { id: 'security', title: 'Security Ops', icon: Shield, color: 'text-rose-600', bg: 'bg-rose-50', desc: '2FA, audit logs, and infrastructure encryption standards.' },
-    { id: 'api', title: 'Developer Hub', icon: Globe, color: 'text-indigo-600', bg: 'bg-indigo-50', desc: 'API keys, webhooks, and custom integration protocols.' }
+    { id: 'api', title: 'Developer Hub', icon: Globe, color: 'text-indigo-600', bg: 'bg-indigo-50', desc: 'API keys, webhooks, and custom integration settings.' }
   ];
 
   return (
@@ -104,7 +104,7 @@ const PlatformHelp = () => {
                />
                <SupportCard 
                  title="Troubleshooting" 
-                 desc="Automated diagnostics for common tenant and AI node errors." 
+                 desc="Automated diagnostics for common tenant and AI system errors." 
                  icon={Bug} 
                  action="Run Diagnostics" 
                  color="rose"
@@ -130,22 +130,22 @@ const PlatformHelp = () => {
       {/* FAQ SECTION */}
       <div className="bg-white rounded-[64px] border border-slate-100 p-16 space-y-12">
          <div className="text-center space-y-4">
-            <h3 className="text-4xl font-black text-[#0F172A] uppercase italic">Common Protocols & Troubleshooting</h3>
+            <h3 className="text-4xl font-black text-[#0F172A] uppercase italic">Common Procedures & Troubleshooting</h3>
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.3em]">Quick Resolution Infrastructure</p>
          </div>
          
          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <FAQItem 
-              q="How do I reset an AI node for a specific tenant?" 
-              a="Navigate to Company Hub > [Tenant] > Infrastructure and click 'Recalibrate Neural Engine'. This will re-provision the OpenAI keys and flush the context cache." 
+              q="How do I reset an AI instance for a specific tenant?" 
+              a="Navigate to Company Hub > [Tenant] > Infrastructure and click 'Recalibrate AI Engine'. This will re-provision the OpenAI keys and flush the context cache." 
             />
             <FAQItem 
               q="Twilio VOIP gateway shows 'Unauthorized' in logs." 
-              a="Verify your Infrastructure Keys in the Platform Settings. Ensure the Account SID and Auth Token match your Twilio dashboard and that the IP whitelist includes our primary node." 
+              a="Verify your System Keys in the Platform Settings. Ensure the Account SID and Auth Token match your Twilio dashboard and that the IP whitelist includes our primary system." 
             />
             <FAQItem 
-              q="What is the lead limit policy for STARTER nodes?" 
-              a="STARTER nodes are hard-capped at 1,000 leads. Exceeding this will pause ingestion until the tenant is upgraded or old records are archived." 
+              q="What is the lead limit policy for STARTER plans?" 
+              a="STARTER plans are hard-capped at 1,000 leads. Exceeding this will pause import until the tenant is upgraded or old records are archived." 
             />
             <FAQItem 
               q="How do I manually trigger a billing reconciliation?" 

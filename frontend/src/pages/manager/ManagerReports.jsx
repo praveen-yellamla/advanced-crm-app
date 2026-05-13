@@ -48,7 +48,7 @@ const ManagerReports = () => {
          />
          <ReportCard 
             title="Lead Assignment Log" 
-            desc="Audit trail of regional lead flow and agent allocation protocols."
+            desc="Audit trail of regional lead flow and agent allocation policies."
             icon={<Target className="text-violet-600" />}
             onExport={() => handleExport('excel')}
          />

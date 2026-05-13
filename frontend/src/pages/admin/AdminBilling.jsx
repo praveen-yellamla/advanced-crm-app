@@ -70,13 +70,13 @@ const AdminBilling = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
         <div>
            <h1 className="text-4xl font-black text-[#0F172A] tracking-tight uppercase italic">Billing & Subscription</h1>
-           <p className="text-[#64748B] font-bold text-sm uppercase tracking-widest mt-2">Manage your instance protocols and financial limits.</p>
+           <p className="text-[#64748B] font-bold text-sm uppercase tracking-widest mt-2">Manage your subscription plans and billing limits.</p>
         </div>
         <button 
           onClick={() => setIsUpgradeModalOpen(true)}
           className="h-16 px-10 bg-[#0F172A] text-white rounded-[22px] font-black uppercase tracking-[0.2em] italic shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-4"
         >
-           <Zap size={20} className="text-blue-400" /> Upgrade Protocol
+           <Zap size={20} className="text-blue-400" /> Upgrade Plan
         </button>
       </div>
 
@@ -90,12 +90,12 @@ const AdminBilling = () => {
               
               <div className="space-y-2 relative z-10">
                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Active Subscription</span>
-                 <h2 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">{plan?.name || subscription?.tier} Protocol</h2>
+                 <h2 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">{plan?.name || subscription?.tier} Plan</h2>
               </div>
 
               <div className="py-8 border-y border-slate-100 space-y-6 relative z-10">
                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Protocol Status</span>
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Subscription Status</span>
                     <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${subscription?.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
                        {subscription?.status}
                     </span>
@@ -114,7 +114,7 @@ const AdminBilling = () => {
               </div>
 
               <div className="space-y-4 relative z-10">
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Features</p>
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan Features</p>
                  <div className="grid grid-cols-1 gap-3">
                     {plan?.features && Object.entries(plan.features).filter(([_, enabled]) => enabled).slice(0, 5).map(([key, _]) => (
                       <div key={key} className="flex items-center gap-3 text-[11px] font-black text-slate-600 uppercase tracking-widest">
@@ -135,7 +135,7 @@ const AdminBilling = () => {
                  <h3 className="text-xl font-black uppercase italic tracking-tight">Growth Insight</h3>
               </div>
               <p className="text-slate-400 text-sm leading-relaxed font-medium">
-                 Your instance usage has increased by <span className="text-emerald-400 font-bold">24%</span> this month. Consider upgrading to the <span className="text-white font-bold">Enterprise Protocol</span> to unlock higher AI throughput and live monitoring.
+                 Your organization usage has increased by <span className="text-emerald-400 font-bold">24%</span> this month. Consider upgrading to the <span className="text-white font-bold">Enterprise Plan</span> to unlock higher AI throughput and live monitoring.
               </p>
               <button className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">
                  View Detailed Analytics
@@ -150,7 +150,7 @@ const AdminBilling = () => {
                  <h3 className="text-2xl font-black text-[#0F172A] uppercase italic flex items-center gap-4">
                     <Activity className="text-blue-600" size={28} /> Resource Utilization
                  </h3>
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 italic">Instance Real-time</span>
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 italic">Real-time Metrics</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
@@ -162,14 +162,14 @@ const AdminBilling = () => {
                     icon={Users}
                  />
                  <UsageBlock 
-                    label="Lead Protocol" 
+                    label="Lead Capacity" 
                     current={usage?.leads?.current} 
                     limit={usage?.leads?.limit} 
                     color="indigo" 
                     icon={Target}
                  />
                  <UsageBlock 
-                    label="Neural Tokens" 
+                    label="AI Tokens" 
                     current={usage?.aiTokens?.current} 
                     limit={usage?.aiTokens?.limit} 
                     color="violet" 
@@ -191,11 +191,11 @@ const AdminBilling = () => {
                  <table className="w-full text-left">
                     <thead>
                        <tr className="bg-white">
-                          <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Protocol Invoice</th>
+                          <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Plan Invoice</th>
                           <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Billing Point</th>
                           <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Gross Amount</th>
                           <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Status</th>
-                          <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-right">Vault</th>
+                          <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-right">Receipt</th>
                        </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -227,7 +227,7 @@ const AdminBilling = () => {
                             <td colSpan={5} className="px-10 py-20 text-center">
                                <div className="flex flex-col items-center gap-4 opacity-20">
                                   <AlertCircle size={48} />
-                                  <p className="text-xs font-black uppercase tracking-[0.3em] italic">Vault is currently empty</p>
+                                  <p className="text-xs font-black uppercase tracking-[0.3em] italic">Archive is currently empty</p>
                                </div>
                             </td>
                          </tr>
@@ -310,7 +310,7 @@ const UpgradeModal = ({ isOpen, onClose, plans, currentPlanId, onUpgrade, isPend
           >
              <div className="px-12 py-10 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div>
-                   <h3 className="text-3xl font-black text-[#0F172A] tracking-tight italic uppercase">Select Upgrade Protocol</h3>
+                   <h3 className="text-3xl font-black text-[#0F172A] tracking-tight italic uppercase">Select Upgrade Plan</h3>
                    <p className="text-sm font-medium text-slate-500 mt-2">Scale your instance resources instantly with automated provisioning.</p>
                 </div>
                 <button onClick={onClose} className="w-14 h-14 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all">
@@ -341,7 +341,7 @@ const UpgradeModal = ({ isOpen, onClose, plans, currentPlanId, onUpgrade, isPend
                         <div className="space-y-4 mb-12 flex-1">
                            <PlanFeature label="Agent Capacity" value={plan.userLimit >= 9999 ? 'Unlimited' : plan.userLimit} dark={currentPlanId === plan.id} />
                            <PlanFeature label="Global Lead Cap" value={plan.leadLimit >= 1000000 ? 'Unlimited' : `${(plan.leadLimit / 1000).toFixed(0)}k`} dark={currentPlanId === plan.id} />
-                           <PlanFeature label="Neural Tokens" value={`${(plan.aiTokenLimit / 1000).toFixed(0)}k`} dark={currentPlanId === plan.id} />
+                           <PlanFeature label="AI Tokens" value={`${(plan.aiTokenLimit / 1000).toFixed(0)}k`} dark={currentPlanId === plan.id} />
                         </div>
                         <button 
                           disabled={isPending || currentPlanId === plan.id}
@@ -352,7 +352,7 @@ const UpgradeModal = ({ isOpen, onClose, plans, currentPlanId, onUpgrade, isPend
                             : 'bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 active:scale-95'
                           }`}
                         >
-                           {isPending ? 'Syncing...' : currentPlanId === plan.id ? 'Current Protocol' : `Activate ${plan.name}`}
+                           {isPending ? 'Syncing...' : currentPlanId === plan.id ? 'Current Plan' : `Activate ${plan.name}`}
                         </button>
                      </div>
                    ))}

@@ -225,7 +225,7 @@ const SecuritySettings = () => {
     mutationFn: (id) => api.delete(`/auth/sessions/${id}`),
     onSuccess: () => {
       refetch();
-      toast.success('Security Protocol: Session Terminated.');
+      toast.success('Security: Session Terminated.');
     },
     onError: () => toast.error('Termination Failed.')
   });
@@ -235,7 +235,7 @@ const SecuritySettings = () => {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">Security & Sessions</h3>
-          <p className="text-sm font-bold text-slate-400 mt-2">Manage your active authentication nodes and security protocols.</p>
+          <p className="text-sm font-bold text-slate-400 mt-2">Manage your active sessions and security settings.</p>
         </div>
         <div className="flex items-center gap-3 px-4 py-2 bg-emerald-50 rounded-2xl border border-emerald-100">
           <ShieldCheck size={16} className="text-emerald-500" />
@@ -256,19 +256,19 @@ const SecuritySettings = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-           <FormInput label="Current Protocol Password" type="password" isSecret placeholder="••••••••••••" />
-           <FormInput label="New Protocol Password" type="password" isSecret placeholder="••••••••••••" />
+           <FormInput label="Current Password" type="password" isSecret placeholder="••••••••••••" />
+           <FormInput label="New Password" type="password" isSecret placeholder="••••••••••••" />
         </div>
         
         <button className="h-14 px-8 bg-[#0F172A] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">
-          Update Security Protocol
+          Update Security Settings
         </button>
       </div>
 
       {/* Active Sessions */}
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-           <h4 className="text-2xl font-black text-[#0F172A] tracking-tighter uppercase italic">Active Authentication Nodes</h4>
+           <h4 className="text-2xl font-black text-[#0F172A] tracking-tighter uppercase italic">Active Sessions</h4>
            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-4 py-2 rounded-xl border border-blue-100">
              {sessions?.length || 0} Active Sessions
            </span>
@@ -276,7 +276,7 @@ const SecuritySettings = () => {
 
         <div className="grid grid-cols-1 gap-4">
            {isLoading ? (
-             <div className="h-40 flex items-center justify-center text-slate-400 animate-pulse uppercase font-black tracking-widest">Scanning Nodes...</div>
+             <div className="h-40 flex items-center justify-center text-slate-400 animate-pulse uppercase font-black tracking-widest">Scanning Sessions...</div>
            ) : sessions?.map((session) => (
              <div key={session.id} className="p-8 bg-white border border-slate-100 rounded-[32px] shadow-sm hover:shadow-xl hover:border-blue-100 transition-all duration-500 flex items-center justify-between group">
                 <div className="flex items-center gap-6">
@@ -320,7 +320,7 @@ const SecuritySettings = () => {
               Enable Two-Factor Authentication (2FA) and biometric verification to harden your account against unauthorized access.
             </p>
             <div className="flex gap-4">
-               <button className="h-14 px-8 bg-white text-blue-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">Enable 2FA Protocol</button>
+               <button className="h-14 px-8 bg-white text-blue-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">Enable 2FA</button>
                <button className="h-14 px-8 bg-blue-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-800 transition-all">IP Whitelisting</button>
             </div>
          </div>
@@ -465,7 +465,7 @@ const AdsSettings = () => {
     mutationFn: () => api.delete('/auth/google/disconnect'),
     onSuccess: () => {
       queryClient.invalidateQueries(['googleStatus']);
-      toast.success('Google Ads Protocol Disconnected.');
+      toast.success('Google Ads Integration Disconnected.');
     },
     onError: () => toast.error('Termination Failed.')
   });
@@ -521,7 +521,7 @@ const AdsSettings = () => {
                 <div className="flex items-center gap-2 mt-1">
                   <div className={`w-2 h-2 rounded-full animate-pulse ${status?.connected ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'bg-rose-500'}`} />
                   <span className={`text-[10px] font-black uppercase tracking-widest ${status?.connected ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {status?.connected ? 'Protocol Active' : 'Offline / Not Connected'}
+                    {status?.connected ? 'Integration Active' : 'Offline / Not Connected'}
                   </span>
                 </div>
               </div>
@@ -542,13 +542,13 @@ const AdsSettings = () => {
                 onClick={handleConnect}
                 className="h-18 px-12 bg-[#0F172A] text-white rounded-[24px] font-black uppercase text-[11px] tracking-[0.2em] shadow-2xl hover:scale-105 transition-all flex items-center gap-4"
               >
-                Establish Connection <Plus size={20} />
+                Connect Account <Plus size={20} />
               </button>
             ) : (
               <button 
                 onClick={() => {
                   console.log('Attempting to disconnect Google...');
-                  if (window.confirm('Are you sure you want to terminate the Google Ads protocol? This will stop all real-time ingestion.')) {
+                  if (window.confirm('Are you sure you want to disconnect the Google Ads integration? This will stop all real-time import.')) {
                     disconnectMutation.mutate();
                   }
                 }}
@@ -559,7 +559,7 @@ const AdsSettings = () => {
                   <Loader2 className="animate-spin" size={20} />
                 ) : (
                   <>
-                    <span className="whitespace-nowrap">Terminate Protocol</span>
+                    <span className="whitespace-nowrap">Disconnect Integration</span>
                     <Trash2 size={18} />
                   </>
                 )}
@@ -572,7 +572,7 @@ const AdsSettings = () => {
            <div className="flex gap-4 p-6 bg-slate-50/50 rounded-3xl border border-slate-50">
               <CheckCircle2 className="text-emerald-500 mt-1" size={18} />
               <div className="space-y-1">
-                 <p className="text-[11px] font-black text-[#0F172A] uppercase tracking-widest">Real-time Lead Ingestion</p>
+                 <p className="text-[11px] font-black text-[#0F172A] uppercase tracking-widest">Real-time Lead Import</p>
                  <p className="text-[10px] font-medium text-slate-400 leading-relaxed uppercase italic">Sync GCLID and UTM data directly into the CRM core.</p>
               </div>
            </div>
@@ -589,8 +589,8 @@ const AdsSettings = () => {
       <div className="bg-blue-600 p-10 rounded-[48px] shadow-2xl shadow-blue-500/20 text-white relative overflow-hidden">
          <div className="absolute top-0 right-0 p-10 opacity-20"><BrainCircuit size={100} /></div>
          <div className="relative z-10 space-y-4 max-w-lg">
-            <h4 className="text-3xl font-black tracking-tighter uppercase italic italic">Neural Ad Optimization</h4>
-            <p className="text-sm font-medium opacity-80 leading-relaxed uppercase tracking-widest">Leverage Cognitive Engine to analyze Google Ads keywords and automate lead score adjustments based on search intent.</p>
+            <h4 className="text-3xl font-black tracking-tighter uppercase italic italic">AI Ad Optimization</h4>
+            <p className="text-sm font-medium opacity-80 leading-relaxed uppercase tracking-widest">Leverage our AI Engine to analyze Google Ads keywords and automate lead score adjustments based on search intent.</p>
             <button className="h-14 px-8 bg-white text-blue-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">Launch AI Audit</button>
          </div>
       </div>

@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import { TelephonyProvider } from './context/TelephonyContext';
 import AppRoutes from './routes/AppRoutes';
 import { Toaster } from 'react-hot-toast';
+import GlobalErrorBoundary from './components/common/GlobalErrorBoundary';
 
 // Initialize Query Client for caching and real-time data Refresh
 const queryClient = new QueryClient({
@@ -20,29 +21,31 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TelephonyProvider>
-          <Router>
-            <AppRoutes />
-            <Toaster 
-              position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#0F172A',
-                color: '#fff',
-                borderRadius: '16px',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-              },
-            }}
-          />
-        </Router>
-      </TelephonyProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+      <GlobalErrorBoundary>
+        <AuthProvider>
+          <TelephonyProvider>
+            <Router>
+              <AppRoutes />
+              <Toaster 
+                position="top-right"
+                toastOptions={{
+                  duration: 4000,
+                  style: {
+                    background: '#0F172A',
+                    color: '#fff',
+                    borderRadius: '16px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                  },
+                }}
+              />
+            </Router>
+          </TelephonyProvider>
+        </AuthProvider>
+      </GlobalErrorBoundary>
+    </QueryClientProvider>
   );
 }
 

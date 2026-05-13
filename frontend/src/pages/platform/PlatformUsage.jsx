@@ -46,7 +46,7 @@ const PlatformUsage = () => {
   if (healthLoading) return (
     <div className="flex flex-col items-center justify-center h-[70vh] space-y-8">
       <div className="w-16 h-16 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
-      <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Pinging System Nodes...</p>
+      <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Loading System Resources...</p>
     </div>
   );
 
@@ -129,7 +129,7 @@ const PlatformUsage = () => {
 
          <div className="bg-[#0F172A] p-12 rounded-[64px] shadow-2xl text-white flex flex-col justify-between">
             <div className="space-y-2">
-               <h3 className="text-2xl font-black uppercase italic">Node Clusters</h3>
+               <h3 className="text-2xl font-black uppercase italic">System Resources</h3>
                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-1">Live Service Distribution</p>
             </div>
             
@@ -163,7 +163,7 @@ const PlatformUsage = () => {
          <div className="px-12 py-10 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div>
                <h3 className="text-2xl font-black text-[#0F172A] uppercase italic">System Audit</h3>
-               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Live Platform Forensics</p>
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Live Platform Performance Metrics</p>
             </div>
             <div className="flex items-center gap-4">
                <div className="relative">

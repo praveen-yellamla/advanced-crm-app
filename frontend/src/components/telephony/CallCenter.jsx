@@ -164,7 +164,8 @@ const CallCenter = ({ embedded = false }) => {
                     </div>
                     <div>
                        <h4 className="text-xl font-black text-slate-900 tracking-tight">Call Finalized</h4>
-                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Duration: {formatDuration(duration)}</p>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Select account owner</p>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Duration: {formatDuration(duration)}</p>
                     </div>
                  </div>
 
@@ -188,7 +189,7 @@ const CallCenter = ({ embedded = false }) => {
                     </div>
                     <div className="space-y-3">
                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                          <FileText size={12} className="text-blue-500" /> Strategic Notes
+                          <FileText size={12} className="text-blue-500" /> Call Notes
                        </label>
                        <textarea 
                          value={disposition.notes}

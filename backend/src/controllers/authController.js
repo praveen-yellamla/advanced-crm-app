@@ -41,6 +41,19 @@ const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
+      // Audit log failed login
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          organizationId: user.organizationId,
+          action: 'LOGIN_FAILED',
+          module: 'AUTH',
+          ipAddress: req.ip || req.headers['x-forwarded-for'],
+          userAgent: req.headers['user-agent'],
+          details: { email }
+        }
+      });
+
       // Increment failed attempts
       const failedAttempts = user.failedLoginAttempts + 1;
       let lockedUntil = null;
@@ -90,6 +103,19 @@ const login = async (req, res) => {
       }
     });
 
+    // Audit log successful login
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        organizationId: user.organizationId,
+        action: 'LOGIN_SUCCESS',
+        module: 'AUTH',
+        ipAddress: req.ip || req.headers['x-forwarded-for'],
+        userAgent: req.headers['user-agent'],
+        details: { sessionId: session.id }
+      }
+    });
+
     res.json({
       status: 'success',
       user: {
@@ -98,9 +124,11 @@ const login = async (req, res) => {
         email: user.email,
         role: user.role,
         organizationId: user.organizationId,
-        organizationName: user.organization?.name
+        organizationName: user.organization?.name,
+        organizationSlug: user.organization?.slug
       },
       token: accessToken,
+      refreshToken: refreshToken, // Return refresh token for frontend persistence
       sessionId: session.id
     });
   } catch (error) {
@@ -122,10 +150,64 @@ const logout = async (req, res) => {
         where: { token, isActive: true },
         data: { isActive: false }
       });
+
+      // Audit log logout
+      await prisma.auditLog.create({
+        data: {
+          userId: req.user.id,
+          organizationId: req.user.organizationId,
+          action: 'LOGOUT',
+          module: 'AUTH',
+          ipAddress: req.ip || req.headers['x-forwarded-for'],
+          userAgent: req.headers['user-agent']
+        }
+      });
     }
     res.status(200).json({ message: 'Logged out successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Logout failed' });
+  }
+};
+
+/**
+ * @desc    Refresh Access Token
+ * @route   POST /api/auth/refresh
+ * @access  Public
+ */
+const refresh = async (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) return res.status(401).json({ message: 'Refresh token required' });
+
+  try {
+    const session = await prisma.session.findUnique({
+      where: { refreshToken, isActive: true },
+      include: { user: { include: { organization: true } } }
+    });
+
+    if (!session || session.expiresAt < new Date()) {
+      return res.status(401).json({ message: 'Invalid or expired session' });
+    }
+
+    const newAccessToken = generateToken(session.user);
+    const newRefreshToken = uuidv4();
+
+    // Rotate refresh token for security
+    await prisma.session.update({
+      where: { id: session.id },
+      data: {
+        token: newAccessToken,
+        refreshToken: newRefreshToken,
+        lastUsedAt: new Date()
+      }
+    });
+
+    res.json({
+      status: 'success',
+      token: newAccessToken,
+      refreshToken: newRefreshToken
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Refresh failed' });
   }
 };
 
@@ -222,6 +304,18 @@ const changePassword = async (req, res) => {
         data: { password: hashedNewPassword }
       });
 
+      // Audit log password change
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          organizationId: user.organizationId,
+          action: 'PASSWORD_CHANGE',
+          module: 'AUTH',
+          ipAddress: req.ip || req.headers['x-forwarded-for'],
+          userAgent: req.headers['user-agent']
+        }
+      });
+
       // Security: Revoke all other sessions
       const currentToken = req.headers.authorization?.split(' ')[1];
       await prisma.session.updateMany({
@@ -291,6 +385,7 @@ module.exports = {
   revokeSession,
   changePassword,
   logout,
+  refresh,
   verifyInvite,
   acceptInvite
 };

@@ -31,14 +31,14 @@ const PlatformAPIKeys = () => {
   };
 
   const infrastructureKeys = [
-    { id: 'openai', name: 'Neural Engine (OpenAI)', icon: Cpu, key: 'sk-proj-7a...9kL2', type: 'Production', lastUsed: '3m ago' },
+    { id: 'openai', name: 'AI Engine (OpenAI)', icon: Cpu, key: 'sk-proj-7a...9kL2', type: 'Production', lastUsed: '3m ago' },
     { id: 'twilio', name: 'VOIP Gateway (Twilio)', icon: Phone, key: 'AC89b2...99f0', type: 'Production', lastUsed: '12m ago' },
     { id: 'smtp', name: 'Mail Infrastructure (SendGrid)', icon: Mail, key: 'SG.k9j...p02q', type: 'Development', lastUsed: '2h ago' }
   ];
 
   const apiTokens = [
     { id: 'master', name: 'Master Infrastructure Key', key: 'crm_platform_live_92kd...8k2l', status: 'ACTIVE', created: '2026-05-01' },
-    { id: 'analytics', name: 'Analytics Node Connector', key: 'crm_analytics_ext_29kf...90j1', status: 'ACTIVE', created: '2026-05-04' }
+    { id: 'analytics', name: 'Analytics System Connector', key: 'crm_analytics_ext_29kf...90j1', status: 'ACTIVE', created: '2026-05-04' }
   ];
 
   return (

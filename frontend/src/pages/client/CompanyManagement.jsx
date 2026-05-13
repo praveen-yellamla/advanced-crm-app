@@ -36,7 +36,7 @@ const CompanyManagement = () => {
     mutationFn: (data) => api.post('/client/companies', data),
     onSuccess: () => {
       queryClient.invalidateQueries(['clientCompanies']);
-      toast.success('Strategic Entity Registered');
+      toast.success('Company Registered Successfully');
       setIsModalOpen(false);
       setFormData({ name: '', website: '', location: '', industry: '' });
     },
@@ -130,7 +130,7 @@ const CompanyManagement = () => {
                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#0F172A]/80 backdrop-blur-3xl" onClick={() => setIsModalOpen(false)} />
                <motion.div initial={{ opacity: 0, scale: 0.9, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 30 }} className="relative w-full max-w-xl bg-white rounded-[64px] shadow-2xl overflow-hidden p-16 space-y-12">
                   <div>
-                     <h2 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Entity Protocol.</h2>
+                     <h2 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Company Settings.</h2>
                      <p className="text-sm font-bold text-slate-400 mt-4 uppercase italic">Configuring subsidiary organizational entry</p>
                   </div>
 

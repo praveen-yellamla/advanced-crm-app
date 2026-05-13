@@ -32,7 +32,7 @@ const getPlatformStats = async (req, res) => {
     // Usage Metrics
     const [totalCalls, totalAiTokens] = await Promise.all([
       prisma.call.count(),
-      prisma.aiUsage.aggregate({ _sum: { tokens: true } })
+      prisma.aIUsage.aggregate({ _sum: { tokens: true } })
     ]);
 
     // Service Health (Real check for DB, mocked for external providers)
@@ -190,10 +190,17 @@ const getOrganizationDetails = async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
+    // Calculate AI Usage
+    const aiUsageStats = await prisma.aIUsage.aggregate({
+      where: { organizationId: parseInt(id) },
+      _sum: { tokens: true }
+    });
+
     res.json({ 
       success: true, 
       data: { 
         ...org, 
+        aiTokensUsed: aiUsageStats._sum.tokens || 0,
         breakdown: { admins, managers, agents },
         recentLogs,
         billingHistory

@@ -102,4 +102,79 @@ const sendInviteEmail = async (toEmail, inviteLink, name = "Agent", role = "Agen
   }
 };
 
-module.exports = sendInviteEmail;
+/**
+ * Sends a notification email when a task is assigned to an agent.
+ * @param {string} toEmail - Agent email
+ * @param {string} taskTitle - Title of the task
+ * @param {string} priority - Priority of the task
+ * @param {string} dueDate - Deadline
+ * @param {string} name - Agent name
+ */
+const sendTaskAssignmentEmail = async (toEmail, taskTitle, priority, dueDate, name = "Agent") => {
+  try {
+    console.log(`[SMTP] Sending task notification to: ${toEmail}`);
+    
+    await transporter.sendMail({
+      from: `"Advanced CRM" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+      to: toEmail,
+      subject: `Strategic Assignment: ${taskTitle}`,
+      text: `Hello ${name},\n\nA new strategic task has been assigned to you: ${taskTitle}.\nPriority: ${priority}\nDeadline: ${dueDate}\n\nPlease login to your dashboard to review the details.`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; border: 1px solid #e2e8f0; }
+            .header { background-color: #0f172a; padding: 40px 20px; text-align: center; }
+            .badge { display: inline-block; background-color: #2563eb; color: #ffffff; padding: 4px 12px; border-radius: 20px; font-weight: 900; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; }
+            .header h1 { color: #ffffff; margin: 0; font-size: 22px; font-weight: 900; text-transform: uppercase; italic; }
+            .content { padding: 40px 30px; }
+            .priority-box { background-color: ${priority === 'Urgent' ? '#fff1f2' : '#f1f5f9'}; border: 1px solid ${priority === 'Urgent' ? '#fda4af' : '#cbd5e1'}; padding: 15px 20px; border-radius: 16px; margin: 20px 0; }
+            .priority-text { color: ${priority === 'Urgent' ? '#e11d48' : '#334155'}; font-weight: 900; text-transform: uppercase; font-size: 11px; }
+            .button { background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 12px; font-weight: 800; font-size: 14px; display: inline-block; text-transform: uppercase; letter-spacing: 1px; }
+            .footer { padding: 20px; text-align: center; color: #94a3b8; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <span class="badge">Operational Alert</span>
+              <h1>Task Assigned</h1>
+            </div>
+            <div class="content">
+              <p style="color: #1e293b; font-size: 18px; font-weight: 700;">Hello ${name},</p>
+              <p style="color: #475569; font-size: 16px; line-height: 1.6;">
+                A new strategic objective has been added to your queue. Efficiency in execution is paramount.
+              </p>
+              <div class="priority-box">
+                <p class="priority-text">${priority} Priority</p>
+                <p style="color: #0f172a; font-size: 18px; font-weight: 900; margin: 10px 0;">${taskTitle}</p>
+                <p style="color: #64748b; font-size: 13px; font-weight: 600; margin-bottom: 0;">Deadline: ${dueDate || 'Not specified'}</p>
+              </div>
+              <div style="text-align: center; margin-top: 40px;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/agent/dashboard" class="button">Access Cockpit</a>
+              </div>
+            </div>
+            <div class="footer">
+              Advanced CRM Strategic Engine • Automated Transmission
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    });
+
+    console.log(`[SMTP SUCCESS] Task notification sent to ${toEmail}`);
+    return true;
+  } catch (error) {
+    console.error("[SMTP ERROR] Task Notification Failed:", error.message);
+    return false; // Don't crash the server for task notifications
+  }
+};
+
+module.exports = {
+  sendInviteEmail,
+  sendTaskAssignmentEmail
+};

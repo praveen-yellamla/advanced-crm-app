@@ -125,7 +125,7 @@ const AgentPerformance = () => {
                <Award size={16} />
                <span className="text-[10px] font-bold uppercase tracking-widest">Elite Achievement</span>
             </div>
-            <h2 className="text-4xl font-bold tracking-tight max-w-lg">Strategic Lead Conversion Master</h2>
+            <h2 className="text-4xl font-bold tracking-tight max-w-lg">Account Lead Conversion Master</h2>
             <p className="text-blue-100 text-sm font-medium leading-relaxed max-w-md">You've exceeded your monthly revenue quota by <span className="font-bold underline decoration-2 underline-offset-4 decoration-white/30 italic">22%</span>. Performance bonuses have been Synchronized with your next fiscal cycle.</p>
          </div>
          <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center shrink-0">

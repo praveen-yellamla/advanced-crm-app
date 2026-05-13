@@ -31,7 +31,7 @@ const ClientInvoices = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
            <h1 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase">Invoices.</h1>
-           <p className="text-sm font-bold text-slate-400 mt-2 uppercase italic tracking-widest">Financial Protocol & Transaction Archive</p>
+           <p className="text-sm font-bold text-slate-400 mt-2 uppercase italic tracking-widest">Financial Records & Transaction Archive</p>
         </div>
       </div>
 
@@ -54,7 +54,7 @@ const ClientInvoices = () => {
                <thead>
                   <tr className="bg-slate-50/50">
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Invoice Identity</th>
-                     <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Amount node</th>
+                     <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Total Amount</th>
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Temporal Cycle</th>
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Flow status</th>
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Action link</th>

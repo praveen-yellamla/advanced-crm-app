@@ -37,7 +37,7 @@ const PlatformSecurity = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
          <div>
             <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter italic uppercase">Security</h1>
-            <p className="text-sm font-medium text-slate-500 mt-2 max-w-2xl leading-relaxed">Manage your operator authentication protocols and secure access sessions.</p>
+            <p className="text-sm font-medium text-slate-500 mt-2 max-w-2xl leading-relaxed">Manage your system security settings and secure access sessions.</p>
          </div>
          <div className="flex items-center gap-3 px-6 py-3 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
             <ShieldCheck size={20} />
@@ -52,7 +52,7 @@ const PlatformSecurity = () => {
                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
                   <Lock size={24} />
                </div>
-               <h3 className="text-2xl font-black text-[#0F172A] uppercase italic">Authentication Protocols</h3>
+               <h3 className="text-2xl font-black text-[#0F172A] uppercase italic">Security Settings</h3>
             </div>
             
             <div className="space-y-8">
@@ -70,7 +70,7 @@ const PlatformSecurity = () => {
                      </div>
                      <div>
                         <h4 className="text-lg font-black text-[#0F172A] uppercase italic">Two-Factor Authentication</h4>
-                        <p className="text-sm text-slate-500 font-medium mt-1">Add an extra layer of security to your operator account using TOTP protocols.</p>
+                        <p className="text-sm text-slate-500 font-medium mt-1">Add an extra layer of security to your operator account using TOTP verification.</p>
                      </div>
                   </div>
                   <button 
@@ -166,7 +166,7 @@ const PlatformSecurity = () => {
                   <AuditItem event="Failed Login Attempt" meta="Chrome / Linux (Unknown)" time="2h ago" type="danger" />
                   <AuditItem event="Password Changed" meta="Operator System" time="3 days ago" type="success" />
                   <AuditItem event="New Session Authorized" meta="London, UK" time="5 days ago" type="info" />
-                  <AuditItem event="IP Whitelist Updated" meta="Admin Node" time="1 week ago" type="info" />
+                  <AuditItem event="IP Whitelist Updated" meta="System Admin" time="1 week ago" type="info" />
                </div>
             </div>
          </div>

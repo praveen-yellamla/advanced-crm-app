@@ -113,7 +113,7 @@ const AIControlPanel = () => {
   if (settingsLoading) return (
     <div className="p-20 flex flex-col items-center justify-center space-y-6">
       <div className="w-16 h-16 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
-      <span className="text-xs font-black uppercase tracking-[0.5em] text-slate-400 animate-pulse">Synchronizing Neural Grid...</span>
+      <span className="text-xs font-black uppercase tracking-[0.5em] text-slate-400 animate-pulse">Initializing AI System...</span>
     </div>
   );
 

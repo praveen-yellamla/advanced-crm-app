@@ -356,7 +356,7 @@ const DashboardLayout = () => {
                         <div className="absolute top-0 right-0 p-6 opacity-10">
                            <ShieldCheck size={60} />
                         </div>
-                        <span className="text-[9px] font-black text-blue-400 uppercase tracking-[0.3em] relative z-10">Operator Node</span>
+                        <span className="text-[9px] font-black text-blue-400 uppercase tracking-[0.3em] relative z-10">Operator Session</span>
                         <p className="text-sm font-black italic uppercase tracking-tight relative z-10">{user?.name}</p>
                         <p className="text-[10px] text-slate-400 font-bold relative z-10">{user?.email}</p>
                      </div>
@@ -424,7 +424,7 @@ const DashboardLayout = () => {
                 <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                    <div>
                       <h3 className="text-2xl font-black text-[#0F172A] tracking-tight uppercase italic">System Health</h3>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time Node Telemetry</p>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time System Status</p>
                    </div>
                    <button onClick={() => setIsHealthOpen(false)} className="w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-all">
                       <X size={20} />
@@ -461,7 +461,7 @@ const DashboardLayout = () => {
                    ) : (
                       <div className="py-20 text-center animate-pulse">
                          <Activity className="mx-auto text-blue-600 mb-4" size={48} />
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pinging System Nodes...</p>
+                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading System Status...</p>
                       </div>
                    )}
                 </div>

@@ -135,10 +135,10 @@ const UnifiedTasks = () => {
             <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 animate-pulse">
               <Zap size={20} />
             </div>
-            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">Operational Cockpit</span>
+            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">Task Management</span>
           </div>
           <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter leading-none mb-3">
-             Strategy <span className="text-slate-300">Hub</span>
+             Operational <span className="text-slate-300">Hub</span>
           </h1>
           <p className="text-[#64748B] font-bold text-sm tracking-tight flex items-center gap-2">
              Orchestrating <span className="text-blue-600">{tasksData?.pagination?.total || 0}</span> global activities with AI-driven prioritization
@@ -180,7 +180,7 @@ const UnifiedTasks = () => {
             <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center group-hover:rotate-90 transition-transform">
               <Plus size={20} />
             </div>
-            DEPLOY TASK
+            CREATE TASK
           </button>
         </div>
       </div>

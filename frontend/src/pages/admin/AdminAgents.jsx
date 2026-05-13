@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import TableActionMenu, { TableActionItem } from '../../components/common/TableActionMenu';
 
 const AdminAgents = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,6 +42,7 @@ const AdminAgents = () => {
   const [search, setSearch] = useState('');
   const [generatedInviteLink, setGeneratedInviteLink] = useState('');
   const [isCleanupOpen, setIsCleanupOpen] = useState(false);
+  const [activeMenuId, setActiveMenuId] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: agents, isLoading: isAgentsLoading } = useQuery({
@@ -322,21 +324,40 @@ const AdminAgents = () => {
                           )}
                        </td>
                        <td className="px-6 py-5">
-                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                             <button 
-                               onClick={() => handleEdit(agent)}
-                               className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                               title="Edit Profile"
+                          <div className="flex items-center justify-end">
+                             <TableActionMenu
+                               id={agent.id}
+                               activeId={activeMenuId}
+                               setActiveId={setActiveMenuId}
                              >
-                                <Edit3 size={18} />
-                             </button>
-                             <button 
-                               onClick={() => { if (confirm('Remove this account?')) deleteAgentMutation.mutate(agent.id); }}
-                               className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                               title="Delete Member"
-                             >
-                                <Trash2 size={18} />
-                             </button>
+                                <TableActionItem 
+                                   icon={<Edit3 size={16} />} 
+                                   label="Edit Profile" 
+                                   color="blue"
+                                   onClick={() => handleEdit(agent)} 
+                                />
+                                <TableActionItem 
+                                   icon={agent.isActive ? <XCircle size={16} /> : <CheckCircle2 size={16} />} 
+                                   label={agent.isActive ? "Deactivate" : "Activate"} 
+                                   color="amber"
+                                   onClick={() => {
+                                      updateAgentMutation.mutate({ id: agent.id, data: { isActive: !agent.isActive } });
+                                      setActiveMenuId(null);
+                                   }} 
+                                />
+                                <div className="h-px bg-slate-50 my-1 mx-2" />
+                                <TableActionItem 
+                                   icon={<Trash2 size={16} />} 
+                                   label="Remove Account" 
+                                   color="rose"
+                                   onClick={() => {
+                                      if (confirm('Remove this account?')) {
+                                         deleteAgentMutation.mutate(agent.id);
+                                         setActiveMenuId(null);
+                                      }
+                                   }} 
+                                />
+                             </TableActionMenu>
                           </div>
                        </td>
                     </tr>

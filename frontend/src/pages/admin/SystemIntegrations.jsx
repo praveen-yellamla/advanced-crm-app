@@ -71,7 +71,7 @@ const SystemIntegrations = () => {
             <IntegrationCard 
                platform="Google Ads"
                icon={<Layout className="text-amber-600" />}
-               desc="OAuth2 Synchronized campaign ingestion for real-time lead telemetry."
+               desc="OAuth2 Synchronized campaign import for real-time lead telemetry."
                status="AUTHENTICATED"
                connectedAccount="Enterprise Global (928-112-9842)"
             />
@@ -117,17 +117,17 @@ const SystemIntegrations = () => {
                   <button 
                     onClick={() => {
                       navigator.clipboard.writeText('<script src="https://cdn.advancedcrm.io/sdk/v1.js"></script>\n<script>\nACRM.init({\n  account: "AC-9827-X", \n  captureUtm: true \n});\n</script>');
-                      toast.success('Protocol Copied to Clipboard');
+                      toast.success('Integration URL Copied');
                     }}
                     className="absolute top-6 right-8 text-[10px] font-bold text-white bg-blue-600 px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    Copy Protocol
+                    Copy URL
                   </button>
                </div>
 
                <div className="flex gap-4">
                   <div className="flex-1 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 italic">Ingestion Endpoint</p>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 italic">Import Endpoint</p>
                      <p className="text-xs font-bold text-[#0F172A] truncate">https://api.acrm.io/webhook/lead/AC-9827-X</p>
                   </div>
                </div>
@@ -179,7 +179,7 @@ const MetaConnectModal = ({ isOpen, onClose, onConfirm }) => {
                   <MessageCircle size={32} />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-black text-[#0F172A] tracking-tighter uppercase">Meta Integration Protocol</h3>
+                  <h3 className="text-2xl font-black text-[#0F172A] tracking-tighter uppercase">Meta Integration Settings</h3>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Direct Leadgen API Synchronization</p>
                 </div>
               </div>

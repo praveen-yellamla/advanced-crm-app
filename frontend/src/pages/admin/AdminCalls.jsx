@@ -82,7 +82,7 @@ const AdminCalls = () => {
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
             <input 
                type="text" 
-               placeholder="Search agents, customers, or node identities..." 
+               placeholder="Search agents, customers, or call IDs..." 
                className="w-full h-16 pl-16 pr-6 bg-white border border-slate-100 rounded-[28px] focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all font-bold text-[#0F172A] shadow-sm"
                value={search}
                onChange={e => setSearch(e.target.value)}
@@ -205,7 +205,7 @@ const AdminCalls = () => {
                        </div>
                        <div>
                           <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Active Playback</p>
-                          <h4 className="text-sm font-black italic tracking-tight">Telemetry Node: {playingSid.slice(-8)}</h4>
+                          <h4 className="text-sm font-black italic tracking-tight">Call Segment: {playingSid.slice(-8)}</h4>
                        </div>
                     </div>
                     <div className="flex-1 px-4">

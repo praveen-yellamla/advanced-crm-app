@@ -143,7 +143,7 @@ const ManagerCalls = () => {
                     <RubricRow label="Product Pitch & Presentation" weight="20" value={qaScores.pitch} max={20} onChange={v => setQAScores({...qaScores, pitch: v})} />
                     <RubricRow label="Objection Handling" weight="20" value={qaScores.objectionHandling} max={20} onChange={v => setQAScores({...qaScores, objectionHandling: v})} />
                     <RubricRow label="Closing & Next Steps" weight="20" value={qaScores.closing} max={20} onChange={v => setQAScores({...qaScores, closing: v})} />
-                    <RubricRow label="Compliance & Protocol" weight="10" value={qaScores.compliance} max={10} onChange={v => setQAScores({...qaScores, compliance: v})} />
+                    <RubricRow label="Compliance & Standards" weight="10" value={qaScores.compliance} max={10} onChange={v => setQAScores({...qaScores, compliance: v})} />
 
                     <div className="space-y-4">
                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Manager Feedback & Coaching Notes</label>

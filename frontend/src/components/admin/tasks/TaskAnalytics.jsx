@@ -61,7 +61,7 @@ const TaskAnalytics = ({ analytics }) => {
         <div className="bg-white p-10 rounded-[50px] border border-slate-100 shadow-xl">
           <h3 className="text-xl font-bold text-[#0F172A] mb-10 flex items-center gap-4">
              <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
-             Strategic Distribution
+             Task Distribution
           </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">

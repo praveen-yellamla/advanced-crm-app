@@ -42,7 +42,7 @@ const AdminAuditLogs = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
            <h1 className="text-4xl font-black text-[#0F172A] tracking-tight uppercase italic">Audit Trail</h1>
-           <p className="text-[#64748B] font-bold text-[10px] uppercase tracking-widest mt-1">Complete Forensic Ledger & System Events</p>
+           <p className="text-[#64748B] font-bold text-[10px] uppercase tracking-widest mt-1">Complete Activity History & System Events</p>
         </div>
         <div className="flex items-center gap-4 px-6 py-2 bg-white border border-[#E2E8F0] rounded-2xl shadow-sm">
            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -69,15 +69,15 @@ const AdminAuditLogs = () => {
                <thead>
                   <tr className="bg-slate-50/50">
                      <th className="px-10 py-8 text-[11px] font-black uppercase tracking-widest text-slate-400">Timestamp</th>
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-widest text-slate-400">Identity</th>
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-widest text-slate-400">Event Action</th>
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-widest text-slate-400">Protocol</th>
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-widest text-slate-400">Trace Meta</th>
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-widest text-slate-400">User</th>
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-widest text-slate-400">Action</th>
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-widest text-slate-400">Module</th>
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-widest text-slate-400">Source</th>
                   </tr>
                </thead>
                <tbody>
                   {isLoading ? (
-                    <tr><td colSpan="5" className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest">Sequencing Trace Logs...</td></tr>
+                    <tr><td colSpan="5" className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest">Loading Activity Logs...</td></tr>
                   ) : filteredLogs?.map((log) => (
                     <tr key={log.id} className="border-b last:border-none border-slate-50 hover:bg-slate-50/50 transition-all duration-500 group">
                        <td className="px-10 py-8">
@@ -156,7 +156,7 @@ const AdminAuditLogs = () => {
                 <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                    <div>
                       <h3 className="text-2xl font-black text-[#0F172A] tracking-tighter uppercase italic">Event Details</h3>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Trace ID: {selectedLog.id}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Log ID: {selectedLog.id}</p>
                    </div>
                    <button onClick={() => setSelectedLog(null)} className="w-12 h-12 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all">
                       <X size={20} />
@@ -171,7 +171,7 @@ const AdminAuditLogs = () => {
                    </div>
                    
                    <div className="space-y-4">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Device Signature</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Browser Info</label>
                       <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] font-mono text-slate-600 break-all">
                          {selectedLog.userAgent || 'Unified Platform Agent'}
                       </div>
@@ -179,7 +179,7 @@ const AdminAuditLogs = () => {
 
                    {selectedLog.details && (
                      <div className="space-y-4">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Data Mutation</label>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Event Details</label>
                         <pre className="p-6 bg-[#0F172A] rounded-3xl text-blue-400 text-xs font-mono overflow-x-auto">
                            {JSON.stringify(selectedLog.details, null, 2)}
                         </pre>

@@ -68,7 +68,7 @@ const AssignAgentModal = ({ isOpen, onClose, leadId, currentAgentId }) => {
                 </div>
                 <div>
                    <h3 className="text-xl font-black text-[#0F172A] tracking-tighter uppercase">Assign Agent</h3>
-                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Select strategic owner</p>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Select account owner</p>
                 </div>
              </div>
              <button onClick={onClose} className="text-slate-300 hover:text-slate-600 transition-colors">

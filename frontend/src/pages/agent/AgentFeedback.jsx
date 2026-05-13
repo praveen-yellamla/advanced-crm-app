@@ -37,7 +37,7 @@ const AgentFeedback = () => {
          {/* FEEDBACK FEED */}
          <div className="xl:col-span-2 space-y-8">
             {isLoading ? (
-               <div className="py-20 text-center text-slate-400 font-bold uppercase tracking-widest">Hydrating Feedback Stream...</div>
+               <div className="py-20 text-center text-slate-400 font-bold uppercase tracking-widest">Loading Feedback...</div>
             ) : feedback?.map((f) => (
               <motion.div 
                 key={f.id}
@@ -57,7 +57,7 @@ const AgentFeedback = () => {
                           <h3 className="text-2xl font-bold text-[#0F172A] tracking-tight leading-relaxed">{f.content}</h3>
                           {f.suggestions && (
                             <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                               <p className="text-[10px] font-bold text-[#0F172A] uppercase tracking-widest mb-2 flex items-center gap-2 italic"><Star size={12} className="text-amber-500" /> Improvement Protocol</p>
+                               <p className="text-[10px] font-bold text-[#0F172A] uppercase tracking-widest mb-2 flex items-center gap-2 italic"><Star size={12} className="text-amber-500" /> Action Items</p>
                                <p className="text-sm font-medium text-slate-600 leading-relaxed">{f.suggestions}</p>
                             </div>
                           )}
@@ -79,7 +79,7 @@ const AgentFeedback = () => {
                        <span className="text-xs text-slate-400 font-medium">&#x2022; Regional Manager</span>
                     </div>
                     <button className="h-12 px-8 bg-slate-50 text-slate-900 border border-slate-100 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all flex items-center gap-3 shadow-sm">
-                       <AcknowledgeIcon /> Acknowledge Refresh
+                       <AcknowledgeIcon /> Acknowledge Feedback
                     </button>
                  </div>
               </motion.div>
@@ -108,8 +108,8 @@ const AgentFeedback = () => {
                   <ShieldCheck size={20} className="text-violet-600" />
                </div>
                <div className="space-y-6">
-                  <CerCard label="Strategic Selling" status="EXPERT" val={92} />
-                  <CerCard label="Compliance Protocol" status="VERIFIED" val={100} />
+                  <CerCard label="Sales Excellence" status="EXPERT" val={92} />
+                  <CerCard label="Compliance Standard" status="VERIFIED" val={100} />
                   <CerCard label="Objection Handling" status="MASTER" val={88} />
                </div>
             </div>

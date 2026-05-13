@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const PortalSelection = () => {
   const navigate = useNavigate();
-  const [hoveredNode, setHoveredNode] = useState(null);
+  const [hoveredPortal, setHoveredPortal] = useState(null);
 
   const portals = [
     {
@@ -119,8 +119,8 @@ const PortalSelection = () => {
                key={portal.id} 
                portal={portal} 
                index={i} 
-               isHovered={hoveredNode === portal.id}
-               onHover={setHoveredNode}
+               isHovered={hoveredPortal === portal.id}
+               onHover={setHoveredPortal}
                onClick={() => navigate(portal.path)} 
              />
            ))}

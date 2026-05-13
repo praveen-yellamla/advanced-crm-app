@@ -197,7 +197,7 @@ const AgentInvoices = () => {
                             <div key={idx} className="flex gap-4 items-end group">
                                <div className="flex-[3] space-y-2">
                                   <input 
-                                    placeholder="Description of Strategic Service..."
+                                    placeholder="Description of Consulting Service..."
                                     className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:border-blue-600 transition-all text-sm font-medium"
                                     value={item.description} onChange={e => updateItem(idx, 'description', e.target.value)}
                                   />

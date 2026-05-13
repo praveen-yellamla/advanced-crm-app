@@ -1,6 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const prisma = require('../config/prisma');
-const sendInviteEmail = require('../utils/emailService');
+const { sendInviteEmail } = require('../utils/emailService');
 const getFrontendUrl = require('../utils/getFrontendUrl');
 
 const inviteUser = async (req, res) => {

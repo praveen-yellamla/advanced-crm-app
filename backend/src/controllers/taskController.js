@@ -1,4 +1,5 @@
 const prisma = require('../config/prisma');
+const { sendTaskAssignmentEmail } = require('../utils/emailService');
 
 // Get Tasks with Pagination, Filtering, Sorting
 const getTasks = async (req, res) => {
@@ -94,7 +95,7 @@ const getTaskById = async (req, res) => {
       },
       include: {
         lead: true,
-        assignedTo: { select: { id: true, name: true, profileImage: true } },
+        assignedTo: { select: { id: true, name: true, email: true, profileImage: true } },
         createdBy: { select: { id: true, name: true } }
       }
     });
@@ -139,10 +140,21 @@ const createTask = async (req, res) => {
         }]
       },
       include: {
-        assignedTo: { select: { name: true, profileImage: true } },
+        assignedTo: { select: { name: true, email: true, profileImage: true } },
         lead: { select: { customerName: true } }
       }
     });
+
+    // Notify Agent via Email
+    if (task.assignedTo?.email) {
+      sendTaskAssignmentEmail(
+        task.assignedTo.email,
+        task.title,
+        task.priority,
+        task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A',
+        task.assignedTo.name
+      ).catch(e => console.error("[ASYNC EMAIL FAIL] Task assignment notification:", e.message));
+    }
     
     res.status(201).json({ success: true, data: task, message: "Task created successfully" });
   } catch (error) {
@@ -185,10 +197,21 @@ const updateTask = async (req, res) => {
         completedAt: status === 'COMPLETED' && existing.status !== 'COMPLETED' ? new Date() : existing.completedAt
       },
       include: {
-        assignedTo: { select: { name: true, profileImage: true } },
+        assignedTo: { select: { name: true, email: true, profileImage: true } },
         lead: { select: { customerName: true } }
       }
     });
+
+    // Notify if assignment changed
+    if (assignedToId && parseInt(assignedToId) !== existing.assignedToId && task.assignedTo?.email) {
+      sendTaskAssignmentEmail(
+        task.assignedTo.email,
+        task.title,
+        task.priority,
+        task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A',
+        task.assignedTo.name
+      ).catch(e => console.error("[ASYNC EMAIL FAIL] Task reassignment notification:", e.message));
+    }
     
     res.json({ success: true, data: task, message: "Task updated successfully" });
   } catch (error) {

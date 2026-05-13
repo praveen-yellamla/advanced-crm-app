@@ -314,7 +314,7 @@ const SaaSKPICard = ({ label, value, trend, icon: Icon, color }) => {
              <Icon size={32} />
           </div>
           <div className="flex flex-col items-end">
-             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Stats</span>
+             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Stats</span>
              <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase italic mt-2 border border-emerald-100 shadow-sm">
                 <TrendingUp size={12} />
                 <span>{trend}</span>

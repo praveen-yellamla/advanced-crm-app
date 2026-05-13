@@ -97,9 +97,9 @@ const AdminLeadsImport = () => {
         <div className="space-y-1">
            <div className="flex items-center gap-3">
               <div className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse shadow-[0_0_10px_rgba(37,99,235,0.4)]" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600 italic">Import Gateway Active</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600 italic">Import System Active</span>
            </div>
-           <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter leading-none uppercase">Lead Ingestion</h1>
+           <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter leading-none uppercase">Lead Import</h1>
         </div>
       </div>
 
@@ -123,7 +123,7 @@ const AdminLeadsImport = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
          
-         {/* INGESTION CANVAS */}
+         {/* IMPORT AREA */}
          <div className="lg:col-span-2 space-y-10">
             <div className="bg-white p-12 rounded-[48px] border border-[#E2E8F0] shadow-sm relative overflow-hidden">
                <div className="absolute top-0 right-0 p-16 opacity-5 italic text-[#0F172A] text-9xl font-black tracking-tighter uppercase pointer-events-none">{activeTab}</div>
@@ -132,8 +132,8 @@ const AdminLeadsImport = () => {
                   {activeTab === 'CSV' && !importResults && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12 relative z-10">
                         <div className="space-y-1">
-                           <h3 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase italic">CSV Sync Protocol</h3>
-                           <p className="text-sm font-bold text-[#64748B] uppercase tracking-widest">Supports Structured Datasets (Tier-IV Validation Enabled)</p>
+                           <h3 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase italic">CSV Import Settings</h3>
+                           <p className="text-sm font-bold text-[#64748B] uppercase tracking-widest">Supports Structured Datasets (Advanced Validation Enabled)</p>
                         </div>
 
                        <input 
@@ -162,9 +162,9 @@ const AdminLeadsImport = () => {
                           </div>
                           <div>
                              <p className="text-xl font-black text-[#0F172A] uppercase italic">
-                               {uploadMutation.isPending ? 'Synchronizing Nodes...' : 'Drop dataset or browse center'}
+                               {uploadMutation.isPending ? 'Importing Leads...' : 'Drop dataset or browse files'}
                              </p>
-                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-3">Node capacity: 10,000 leads per ingestion cycle</p>
+                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-3">Capacity: 10,000 leads per import cycle</p>
                           </div>
                        </div>
                     </motion.div>
@@ -173,7 +173,7 @@ const AdminLeadsImport = () => {
                   {activeTab === 'CSV' && importResults && (
                     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-12 relative z-10">
                        <div className="flex items-center justify-between">
-                          <h3 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase italic">Ingestion Report</h3>
+                          <h3 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase italic">Import Report</h3>
                           <button 
                             onClick={() => setImportResults(null)}
                             className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-[#0F172A] transition-colors"
@@ -189,7 +189,7 @@ const AdminLeadsImport = () => {
                              <p className="text-3xl font-black text-[#0F172A] tracking-tighter">{importResults.total}</p>
                           </div>
                           <div className="bg-emerald-50 p-6 rounded-[32px] border border-emerald-100">
-                             <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-2">Successfully Synced</p>
+                             <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-2">Successfully Imported</p>
                              <p className="text-3xl font-black text-emerald-700 tracking-tighter">{importResults.inserted}</p>
                           </div>
                           <div className={`p-6 rounded-[32px] border ${importResults.duplicates > 0 ? 'bg-amber-50 border-amber-100' : 'bg-slate-50 border-slate-100'}`}>
@@ -197,7 +197,7 @@ const AdminLeadsImport = () => {
                              <p className={`text-3xl font-black tracking-tighter ${importResults.duplicates > 0 ? 'text-amber-700' : 'text-slate-400'}`}>{importResults.duplicates}</p>
                           </div>
                           <div className={`p-6 rounded-[32px] border ${importResults.errors > 0 ? 'bg-rose-50 border-rose-100' : 'bg-slate-50 border-slate-100'}`}>
-                             <p className={`text-[9px] font-black uppercase tracking-widest mb-2 ${importResults.errors > 0 ? 'text-rose-600' : 'text-slate-400'}`}>Logic Errors</p>
+                             <p className={`text-[9px] font-black uppercase tracking-widest mb-2 ${importResults.errors > 0 ? 'text-rose-600' : 'text-slate-400'}`}>Validation Errors</p>
                              <p className={`text-3xl font-black tracking-tighter ${importResults.errors > 0 ? 'text-rose-700' : 'text-slate-400'}`}>{importResults.errors}</p>
                           </div>
                        </div>
@@ -207,15 +207,15 @@ const AdminLeadsImport = () => {
                           <div className="space-y-6 mt-12">
                              <div className="flex items-center gap-3 text-amber-600">
                                 <Users size={20} />
-                                <span className="text-[11px] font-black uppercase tracking-widest">Registry Identity Conflicts (Skipped)</span>
+                                <span className="text-[11px] font-black uppercase tracking-widest">Duplicate Lead Records (Skipped)</span>
                              </div>
                              <div className="bg-white border border-amber-100 rounded-[32px] overflow-hidden shadow-sm opacity-80">
                                 <div className="max-h-[300px] overflow-y-auto">
                                    <table className="w-full text-left">
                                       <thead className="bg-amber-50 sticky top-0 z-10">
                                          <tr>
-                                            <th className="px-8 py-6 text-[9px] font-black uppercase tracking-widest text-amber-600">Identity</th>
-                                            <th className="px-8 py-6 text-[9px] font-black uppercase tracking-widest text-amber-600">Deduplication Reason</th>
+                                            <th className="px-8 py-6 text-[9px] font-black uppercase tracking-widest text-amber-600">Lead Name</th>
+                                            <th className="px-8 py-6 text-[9px] font-black uppercase tracking-widest text-amber-600">Duplicate Reason</th>
                                          </tr>
                                       </thead>
                                       <tbody className="divide-y divide-amber-50 text-[11px]">
@@ -243,7 +243,7 @@ const AdminLeadsImport = () => {
                              <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3 text-rose-600">
                                    <AlertCircle size={20} />
-                                   <span className="text-[11px] font-black uppercase tracking-widest">Logic Protocol Errors</span>
+                                   <span className="text-[11px] font-black uppercase tracking-widest">Validation Errors</span>
                                 </div>
                                 <button 
                                   onClick={downloadFailedCSV}
@@ -259,8 +259,8 @@ const AdminLeadsImport = () => {
                                       <thead className="bg-rose-50 sticky top-0 z-10">
                                          <tr>
                                             <th className="px-8 py-6 text-[9px] font-black uppercase tracking-widest text-rose-600">Row</th>
-                                            <th className="px-8 py-6 text-[9px] font-black uppercase tracking-widest text-rose-600">Identity / Data</th>
-                                            <th className="px-8 py-6 text-[9px] font-black uppercase tracking-widest text-rose-600">Protocol Errors</th>
+                                            <th className="px-8 py-6 text-[9px] font-black uppercase tracking-widest text-rose-600">Lead Data</th>
+                                            <th className="px-8 py-6 text-[9px] font-black uppercase tracking-widest text-rose-600">Validation Errors</th>
                                          </tr>
                                       </thead>
                                       <tbody className="divide-y divide-rose-50">
@@ -293,8 +293,8 @@ const AdminLeadsImport = () => {
                                 <CheckCircle2 size={32} />
                              </div>
                              <div>
-                                <h4 className="text-2xl font-black text-emerald-800 tracking-tighter uppercase italic">Perfect Ingestion</h4>
-                                <p className="text-sm font-medium text-emerald-600 mt-2">All scanned nodes successfully synchronized with the Global Registry.</p>
+                                <h4 className="text-2xl font-black text-emerald-800 tracking-tighter uppercase italic">Import Successful</h4>
+                                <p className="text-sm font-medium text-emerald-600 mt-2">All leads successfully imported and synchronized with the CRM.</p>
                              </div>
                           </div>
                        )}
@@ -306,10 +306,10 @@ const AdminLeadsImport = () => {
                        <div className="w-24 h-24 bg-rose-50 border border-rose-100 rounded-[32px] mx-auto flex items-center justify-center text-rose-600 mb-10 shadow-sm">
                           <Globe size={40} />
                        </div>
-                        <h3 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase italic mb-4">Google Ads Protocol</h3>
-                        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest max-w-sm mx-auto italic">Cloud-to-Cloud Ingestion Engine</p>
+                        <h3 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase italic mb-4">Google Ads Integration</h3>
+                        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest max-w-sm mx-auto italic">Direct Lead Import System</p>
                        <div className="mt-12 p-8 bg-slate-50 rounded-3xl border border-[#E2E8F0] max-w-xs mx-auto">
-                          <button className="w-full py-6 bg-white border border-[#E2E8F0] rounded-2xl text-[10px] font-black uppercase text-[#0F172A] tracking-widest shadow-sm hover:bg-slate-50 transition-all">Authorize Node</button>
+                          <button className="w-full py-6 bg-white border border-[#E2E8F0] rounded-2xl text-[10px] font-black uppercase text-[#0F172A] tracking-widest shadow-sm hover:bg-slate-50 transition-all">Connect Account</button>
                        </div>
                     </motion.div>
                   )}
@@ -319,11 +319,11 @@ const AdminLeadsImport = () => {
                        <div className="w-24 h-24 bg-blue-50 border border-blue-100 rounded-[32px] mx-auto flex items-center justify-center text-blue-600 mb-10 shadow-sm">
                           <Target size={40} />
                        </div>
-                        <h3 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase italic mb-4">Meta Ingestion</h3>
-                        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest max-w-sm mx-auto italic">Secure Social Pipeline Initialization</p>
+                        <h3 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase italic mb-4">Meta Ads Import</h3>
+                        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest max-w-sm mx-auto italic">Social Integration Setup</p>
                        <div className="mt-12 p-8 bg-slate-50 rounded-3xl border border-[#E2E8F0] max-w-xs mx-auto">
                           <div className="flex justify-between text-[10px] font-black text-slate-400 mb-4 tracking-widest">
-                             <span>REFRESHING ARCHITECTURE</span>
+                             <span>CONNECTING...</span>
                              <span className="text-blue-600 italic">44%</span>
                           </div>
                           <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden shadow-inner">
@@ -337,12 +337,12 @@ const AdminLeadsImport = () => {
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12 relative z-10">
                         <div className="space-y-1">
                            <h3 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase italic">API Webhooks</h3>
-                           <p className="text-sm font-bold text-[#64748B] uppercase tracking-widest">Real-time Node Synchronization Matrix</p>
+                           <p className="text-sm font-bold text-[#64748B] uppercase tracking-widest">Live Integration Settings</p>
                         </div>
 
                        <div className="p-10 bg-[#0F172A] rounded-[32px] border border-[#0F172A] space-y-8 flex items-center justify-between shadow-2xl">
                            <div className="space-y-2">
-                              <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest italic">Production Secure Endpoint</p>
+                              <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest italic">Production Webhook URL</p>
                               <p className="text-lg font-mono text-white opacity-90 select-all tracking-tighter">https://api.adv-crm.ai/v1/ingest/8842-X10...</p>
                            </div>
                           <button className="h-14 px-8 bg-white/10 hover:bg-white/20 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Copy Secure Key</button>
@@ -359,7 +359,7 @@ const AdminLeadsImport = () => {
                           <div className="p-8 bg-slate-50 border border-slate-100 rounded-[32px] flex items-center gap-6 group hover:shadow-xl transition-all">
                              <div className="w-14 h-14 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-blue-500 shadow-sm group-hover:scale-110 transition-transform"><Clock size={24}/></div>
                              <div className="space-y-1">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Ingestion Latency</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Processing Speed</p>
                                 <p className="text-2xl font-black text-[#0F172A] tracking-tighter">14ms</p>
                              </div>
                           </div>
@@ -382,7 +382,7 @@ const AdminLeadsImport = () => {
                   {[
                     { source: 'CSV Upload', count: '482', time: '12m ago', status: 'COMPLETE' },
                     { source: 'Google Ads API', count: '14', time: '1h ago', status: 'Loading' },
-                    { source: 'Webhook Ingest', count: '102', time: '5h ago', status: 'COMPLETE' },
+                    { source: 'Webhook Import', count: '102', time: '5h ago', status: 'COMPLETE' },
                   ].map((log, i) => (
                     <div key={i} className="flex gap-6 relative z-10 group cursor-default">
                        <div className={`w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center group-hover:scale-110 transition-transform ${log.status === 'Loading' ? 'text-blue-500 animate-pulse' : 'text-slate-300'}`}>
@@ -391,7 +391,7 @@ const AdminLeadsImport = () => {
                        <div className="flex-1 bg-slate-50 border border-transparent hover:border-slate-100 hover:bg-white p-6 rounded-3xl transition-all duration-700">
                           <p className="text-[11px] font-black text-[#0F172A] uppercase italic tracking-wider">{log.source}</p>
                           <div className="flex justify-between items-center mt-3">
-                             <span className="text-[10px] font-black text-blue-600 italic">{log.count} Nodes</span>
+                             <span className="text-[10px] font-black text-blue-600 italic">{log.count} Records</span>
                              <span className="text-[9px] font-bold text-slate-400 uppercase italic">{log.time}</span>
                           </div>
                        </div>
@@ -409,9 +409,9 @@ const AdminLeadsImport = () => {
                <div className="relative z-10">
                   <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60 mb-4">Registry Integrity</p>
                   <h4 className="text-3xl font-black tracking-tighter uppercase leading-none mb-2">99.9% Clean Data</h4>
-                  <p className="text-[11px] font-medium opacity-80 leading-relaxed uppercase tracking-wider">Tier-IV Validation prevents duplicate identity shards from entering the CRM core.</p>
+                  <p className="text-[11px] font-medium opacity-80 leading-relaxed uppercase tracking-wider">Advanced Validation prevents duplicate leads from entering the CRM core.</p>
                </div>
-               <button className="w-full py-5 bg-white text-blue-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">Audit Core</button>
+               <button className="w-full py-5 bg-white text-blue-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">View Data Quality</button>
             </div>
          </div>
 

@@ -7,6 +7,7 @@ const {
   revokeSession,
   changePassword,
   logout,
+  refresh,
   verifyInvite,
   acceptInvite
 } = require('../controllers/authController');
@@ -26,6 +27,7 @@ const router = express.Router();
  */
 router.post('/register', registerValidationRules(), validate, register);
 router.post('/login', loginValidationRules(), validate, login);
+router.post('/refresh', refresh);
 router.get('/invite/:token', verifyInvite);
 router.post('/accept-invite', upload.single('image'), acceptInvite);
 

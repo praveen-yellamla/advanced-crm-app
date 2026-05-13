@@ -394,6 +394,17 @@ model Task {
   priority    String?   @default("Normal")
   status      String?   @default("PENDING")
   
+  type        String?   @default("FOLLOWUP")
+  tags        String[]  @default([])
+  notes       String?   @db.Text
+  
+  reminderTime DateTime? @map("reminder_time")
+  isRecurring Boolean   @default(false) @map("is_recurring")
+  recurringType String?  @map("recurring_type") // DAILY, WEEKLY, MONTHLY
+  
+  activityLogs Json?     @map("activity_logs")
+  completedAt  DateTime? @map("completed_at")
+
   assignedToId Int      @map("assigned_to_id")
   assignedTo  User      @relation("TaskAssignee", fields: [assignedToId], references: [id])
   createdById Int?      @map("created_by_id")

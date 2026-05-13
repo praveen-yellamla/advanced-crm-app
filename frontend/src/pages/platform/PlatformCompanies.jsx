@@ -29,6 +29,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import TableActionMenu, { TableActionItem } from '../../components/common/TableActionMenu';
 
 const PlatformCompanies = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -76,14 +77,14 @@ const PlatformCompanies = () => {
 
   const handleAccessWorkspace = async (orgId) => {
     try {
-      const loadingToast = toast.loading('Establishing Secure Support Access...');
+      const loadingToast = toast.loading('Connecting to company workspace...');
       const res = await api.post(`/platform/organizations/${orgId}/access`);
       
       if (res.data.success) {
         const { token, redirectUrl } = res.data.data;
         setImpersonationToken(token);
         toast.dismiss(loadingToast);
-        toast.success('Support Session Started');
+        toast.success('Support Access Granted');
         window.location.href = redirectUrl;
       }
     } catch (error) {
@@ -209,73 +210,49 @@ const PlatformCompanies = () => {
                                 Details
                              </button>
                              
-                             <div className="relative">
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveMenuId(activeMenuId === org.id ? null : org.id);
-                                  }}
-                                  className={`w-12 h-12 rounded-2xl transition-all flex items-center justify-center ${activeMenuId === org.id ? 'bg-[#0F172A] text-white shadow-xl' : 'bg-slate-50 text-slate-400 hover:bg-slate-200'}`}
-                                >
-                                   <MoreVertical size={20} />
-                                </button>
-                                
-                                <AnimatePresence>
-                                   {activeMenuId === org.id && (
-                                     <>
-                                        <div className="fixed inset-0 z-[90]" onClick={() => setActiveMenuId(null)} />
-                                        <motion.div 
-                                          initial={{ opacity: 0, scale: 0.95, y: index >= (filteredOrgs?.length || 0) - 2 ? -10 : 10 }}
-                                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                                          exit={{ opacity: 0, scale: 0.95, y: index >= (filteredOrgs?.length || 0) - 2 ? -10 : 10 }}
-                                          className={`absolute right-0 w-72 bg-white rounded-[32px] shadow-[0_25px_60px_rgba(0,0,0,0.15)] border border-slate-100 z-[100] overflow-hidden ${
-                                             index >= (filteredOrgs?.length || 0) - 2 ? 'bottom-full mb-4' : 'top-full mt-4'
-                                          }`}
-                                        >
-                                           <div className="p-4 space-y-1">
-                                              <ActionMenuItem 
-                                                 icon={<Zap size={18} />} 
-                                                 label="Support Access" 
-                                                 color="blue"
-                                                 onClick={() => handleAccessWorkspace(org.id)} 
-                                              />
-                                              <ActionMenuItem 
-                                                 icon={<CreditCard size={18} />} 
-                                                 label="Manage Billing" 
-                                                 color="indigo"
-                                                 onClick={() => {
-                                                   setSelectedOrg(org);
-                                                   setIsSubscriptionModalOpen(true);
-                                                   setActiveMenuId(null);
-                                                 }} 
-                                              />
-                                              <div className="h-px bg-slate-50 my-2" />
-                                              <ActionMenuItem 
-                                                 icon={org.status === 'SUSPENDED' ? <ShieldCheck size={18} /> : <ShieldAlert size={18} />} 
-                                                 label={org.status === 'SUSPENDED' ? "Restore Access" : "Suspend Access"} 
-                                                 color="amber"
-                                                 onClick={() => {
-                                                   updateOrgMutation.mutate({ id: org.id, data: { status: org.status === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED' } });
-                                                   setActiveMenuId(null);
-                                                 }} 
-                                              />
-                                              <ActionMenuItem 
-                                                 icon={<Trash2 size={18} />} 
-                                                 label="Archive Company" 
-                                                 color="rose"
-                                                 onClick={() => {
-                                                   if (confirm('Are you sure you want to archive this company? All active sessions will be terminated.')) {
-                                                      deleteOrgMutation.mutate(org.id);
-                                                      setActiveMenuId(null);
-                                                   }
-                                                  }} 
-                                              />
-                                           </div>
-                                        </motion.div>
-                                     </>
-                                   )}
-                                </AnimatePresence>
-                             </div>
+                             <TableActionMenu 
+                                id={org.id} 
+                                activeId={activeMenuId} 
+                                setActiveId={setActiveMenuId}
+                             >
+                                <TableActionItem 
+                                   icon={<Zap size={16} />} 
+                                   label="Support Access" 
+                                   color="blue"
+                                   onClick={() => handleAccessWorkspace(org.id)} 
+                                />
+                                <TableActionItem 
+                                   icon={<CreditCard size={16} />} 
+                                   label="Manage Billing" 
+                                   color="indigo"
+                                   onClick={() => {
+                                     setSelectedOrg(org);
+                                     setIsSubscriptionModalOpen(true);
+                                     setActiveMenuId(null);
+                                   }} 
+                                />
+                                <div className="h-px bg-slate-50 my-1 mx-2" />
+                                <TableActionItem 
+                                   icon={org.status === 'SUSPENDED' ? <ShieldCheck size={16} /> : <ShieldAlert size={16} />} 
+                                   label={org.status === 'SUSPENDED' ? "Restore Access" : "Suspend Access"} 
+                                   color="amber"
+                                   onClick={() => {
+                                     updateOrgMutation.mutate({ id: org.id, data: { status: org.status === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED' } });
+                                     setActiveMenuId(null);
+                                   }} 
+                                />
+                                <TableActionItem 
+                                   icon={<Trash2 size={16} />} 
+                                   label="Archive Company" 
+                                   color="rose"
+                                   onClick={() => {
+                                     if (confirm('Are you sure you want to archive this company? All active sessions will be terminated.')) {
+                                        deleteOrgMutation.mutate(org.id);
+                                        setActiveMenuId(null);
+                                     }
+                                    }} 
+                                />
+                             </TableActionMenu>
                           </div>
                        </td>
                     </tr>
@@ -300,130 +277,214 @@ const PlatformCompanies = () => {
         onClose={() => setIsSubscriptionModalOpen(false)}
         organization={selectedOrg}
         plans={plansData}
-        onUpdate={(planId) => updateOrgMutation.mutate({ id: selectedOrg.id, data: { planId } })}
+        onUpdate={(data) => updateOrgMutation.mutate({ id: selectedOrg.id, data })}
         isUpdating={updateOrgMutation.isPending}
       />
     </div>
   );
 };
 
-const ActionMenuItem = ({ icon, label, onClick, color = 'slate' }) => {
-  const colors = {
-    blue: 'text-blue-600 hover:bg-blue-50',
-    indigo: 'text-indigo-600 hover:bg-indigo-50',
-    amber: 'text-amber-600 hover:bg-amber-50',
-    rose: 'text-rose-600 hover:bg-rose-50',
-    slate: 'text-slate-600 hover:bg-slate-50'
-  };
-
-  return (
-    <button 
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-      className={`w-full flex items-center gap-4 p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${colors[color]}`}
-    >
-      {icon}
-      {label}
-    </button>
-  );
-};
-
 const ManageSubscriptionModal = ({ isOpen, onClose, organization, plans, onUpdate, isUpdating }) => {
+  const [activeTab, setActiveTab] = useState('plans'); // 'plans' or 'overrides'
+  const [overrides, setOverrides] = useState({
+    agentLimit: 0,
+    leadLimit: 0,
+    aiTokenLimit: 0,
+    storageLimitMb: 0
+  });
+
+  React.useEffect(() => {
+    if (organization) {
+      setOverrides({
+        agentLimit: organization.agentLimit,
+        leadLimit: organization.leadLimit,
+        aiTokenLimit: organization.aiTokenLimit,
+        storageLimitMb: organization.storageLimitMb
+      });
+    }
+  }, [organization, isOpen]);
+
   if (!organization) return null;
+
+  const handleApplyOverrides = () => {
+    onUpdate(overrides);
+  };
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-8">
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[#0F172A]/80 backdrop-blur-xl"
+            className="absolute inset-0 bg-[#0F172A]/90 backdrop-blur-2xl"
             onClick={onClose}
           />
           <motion.div 
             initial={{ opacity: 0, scale: 0.95, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 40 }}
-            className="relative w-full max-w-5xl bg-white rounded-[64px] shadow-2xl overflow-hidden"
+            className="relative w-full max-w-6xl bg-white rounded-[64px] shadow-2xl overflow-hidden flex flex-col md:h-[800px]"
           >
-            <div className="flex flex-col lg:flex-row h-[750px]">
-              {/* LEFT: CURRENT PLAN */}
-              <div className="w-full lg:w-[400px] bg-slate-50 p-12 flex flex-col justify-between border-r border-slate-100">
-                <div className="space-y-12">
+            <div className="flex flex-col lg:flex-row h-full">
+              {/* LEFT: CURRENT CONTEXT */}
+              <div className="w-full lg:w-[400px] bg-slate-900 p-12 flex flex-col justify-between shrink-0 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-12 opacity-5">
+                   <CreditCard size={300} />
+                </div>
+                
+                <div className="space-y-12 relative z-10">
                   <div>
-                    <h3 className="text-3xl font-black text-[#0F172A] uppercase italic leading-none">Subscription</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-3">Manage billing & limits</p>
+                    <div className="flex items-center gap-3 mb-4">
+                       <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
+                          <Zap size={22} className="text-white" />
+                       </div>
+                       <span className="text-white font-black text-xl tracking-tighter italic uppercase">BILLING SETTINGS</span>
+                    </div>
+                    <h3 className="text-4xl font-black text-white uppercase italic tracking-tighter leading-none">Subscription</h3>
+                    <p className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em] mt-4 italic">Managing: {organization.name}</p>
                   </div>
 
-                  <div className="p-10 bg-[#0F172A] rounded-[48px] text-white space-y-8 shadow-2xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform duration-1000">
-                       <CreditCard size={100} />
-                    </div>
-                    <div className="relative z-10">
-                       <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Active Plan</span>
-                       <p className="text-4xl font-black italic uppercase mt-2 tracking-tighter">{organization.plan?.name || organization.subscriptionTier}</p>
-                    </div>
-                    <div className="space-y-6 relative z-10">
-                       <PlanLimit label="Agents" value={organization._count?.users} limit={organization.agentLimit} />
-                       <PlanLimit label="Leads Cap" value={organization._count?.leads} limit={organization.leadLimit} />
-                    </div>
+                  <div className="space-y-8">
+                     <div className="p-8 bg-white/5 rounded-[40px] border border-white/10 space-y-6">
+                        <div className="flex items-center justify-between">
+                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Plan</span>
+                           <span className="px-3 py-1 bg-blue-600 rounded-lg text-[9px] font-black text-white uppercase">L3 Secured</span>
+                        </div>
+                        <p className="text-4xl font-black italic uppercase tracking-tighter text-white">{organization.plan?.name || organization.subscriptionTier}</p>
+                        <div className="h-px bg-white/10" />
+                        <div className="space-y-4">
+                           <PlanLimit label="Agents" value={organization._count?.users} limit={organization.agentLimit} />
+                           <PlanLimit label="Leads Cap" value={organization._count?.leads} limit={organization.leadLimit} />
+                        </div>
+                     </div>
                   </div>
                 </div>
 
-                <button 
-                  onClick={onClose}
-                  className="w-full h-18 bg-white border border-slate-200 rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all shadow-sm"
-                >
-                  Close
-                </button>
+                <div className="space-y-4 relative z-10">
+                   <button 
+                     onClick={() => setActiveTab(activeTab === 'plans' ? 'overrides' : 'plans')}
+                     className="w-full h-16 bg-white/5 border border-white/10 rounded-3xl text-[10px] font-black text-white uppercase tracking-[0.2em] hover:bg-white/10 transition-all flex items-center justify-center gap-3"
+                   >
+                     {activeTab === 'plans' ? <Settings size={16} /> : <Zap size={16} />}
+                     {activeTab === 'plans' ? 'Manual Limit Overrides' : 'Standard Plan Tiers'}
+                   </button>
+                   <button 
+                     onClick={onClose}
+                     className="w-full h-16 bg-white text-slate-900 rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-100 transition-all shadow-xl"
+                   >
+                     Exit Management
+                   </button>
+                </div>
               </div>
 
-              {/* RIGHT: UPGRADE OPTIONS */}
-              <div className="flex-1 p-12 overflow-y-auto bg-white">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                  {plans?.map(plan => (
-                    <div 
-                      key={plan.id}
-                      className={`p-10 rounded-[56px] border-2 transition-all cursor-pointer relative group ${
-                        organization.planId === plan.id 
-                        ? 'border-blue-600 bg-blue-50/30' 
-                        : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'
-                      }`}
-                      onClick={() => !isUpdating && organization.planId !== plan.id && onUpdate(plan.id)}
-                    >
-                      {organization.planId === plan.id && (
-                        <div className="absolute top-8 right-10 flex items-center gap-2 px-4 py-1.5 bg-blue-600 rounded-full text-[9px] font-black text-white uppercase tracking-widest">
-                          <ShieldCheck size={12} /> Active
-                        </div>
-                      )}
-
-                      <div className="space-y-8">
-                        <div>
-                          <h4 className="text-2xl font-black text-[#0F172A] uppercase italic leading-none">{plan.name}</h4>
-                          <p className="text-4xl font-black text-[#0F172A] mt-3 tracking-tighter italic">₹{plan.priceMonthly.toLocaleString()}<span className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-2 not-italic">/ Mo</span></p>
-                        </div>
-
-                        <div className="space-y-4 py-6 border-y border-slate-100">
-                          <PlanFeature label="Agent Capacity" value={plan.userLimit === 9999 ? 'Unlimited' : plan.userLimit} />
-                          <PlanFeature label="Lead Cap" value={plan.leadLimit >= 1000000 ? 'Unlimited' : `${(plan.leadLimit / 1000).toFixed(0)}k`} />
-                          {plan.aiAssistant && <PlanFeature label="AI Suite" checked />}
-                          {plan.callingEnabled && <PlanFeature label="Telephony" checked />}
-                        </div>
-
-                        <button 
-                          disabled={isUpdating || organization.planId === plan.id}
-                          className={`w-full h-16 rounded-[28px] text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-xl ${
-                            organization.planId === plan.id 
-                            ? 'bg-emerald-500 text-white cursor-default'
-                            : 'bg-[#0F172A] text-white hover:scale-105 active:scale-95'
-                          }`}
-                        >
-                          {isUpdating ? 'Switching...' : organization.planId === plan.id ? 'Current Plan' : `Switch to ${plan.name}`}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+              {/* RIGHT: CONFIGURATION SPACE */}
+              <div className="flex-1 flex flex-col min-w-0 bg-white">
+                <div className="px-12 py-10 border-b border-slate-100 flex items-center justify-between shrink-0">
+                   <div>
+                      <h4 className="text-2xl font-black text-[#0F172A] uppercase italic leading-none">{activeTab === 'plans' ? 'Plan Tiers' : 'Advanced Limit Overrides'}</h4>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">{activeTab === 'plans' ? 'Select standardized resource allocation model' : 'Precision control for enterprise resource limits'}</p>
+                   </div>
                 </div>
+
+                <div className="flex-1 overflow-y-auto p-12">
+                  {activeTab === 'plans' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {plans?.map(plan => (
+                        <div 
+                          key={plan.id}
+                          className={`p-10 rounded-[56px] border-2 transition-all cursor-pointer relative group flex flex-col justify-between ${
+                            organization.planId === plan.id 
+                            ? 'border-blue-600 bg-blue-50/30' 
+                            : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'
+                          }`}
+                          onClick={() => !isUpdating && organization.planId !== plan.id && onUpdate({ planId: plan.id })}
+                        >
+                          <div className="space-y-8">
+                             <div className="flex items-center justify-between">
+                                <h4 className="text-2xl font-black text-[#0F172A] uppercase italic leading-none">{plan.name}</h4>
+                                {organization.planId === plan.id && (
+                                  <div className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 rounded-full text-[9px] font-black text-white uppercase">Active</div>
+                                )}
+                             </div>
+                             <p className="text-4xl font-black text-[#0F172A] tracking-tighter italic leading-none">₹{plan.priceMonthly.toLocaleString()}<span className="text-xs font-bold text-slate-400 uppercase ml-2 not-italic">/ Mo</span></p>
+                             
+                             <div className="space-y-4 py-6 border-y border-slate-100">
+                                <PlanFeature label="Agent Capacity" value={plan.userLimit >= 9999 ? 'Unlimited' : plan.userLimit} />
+                                <PlanFeature label="Lead Cap" value={plan.leadLimit >= 1000000 ? 'Unlimited' : `${(plan.leadLimit / 1000).toFixed(0)}k`} />
+                                <PlanFeature label="AI Assistant" checked={plan.aiAssistant} />
+                                <PlanFeature label="VoIP Calls" checked={plan.callingEnabled} />
+                             </div>
+                          </div>
+
+                          <button 
+                            disabled={isUpdating || organization.planId === plan.id}
+                            className={`w-full h-14 mt-8 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+                              organization.planId === plan.id 
+                              ? 'bg-emerald-500 text-white cursor-default'
+                              : 'bg-slate-900 text-white hover:scale-105 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0'
+                            }`}
+                          >
+                             {isUpdating ? 'Saving...' : organization.planId === plan.id ? 'Active' : 'Select Plan'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="max-w-3xl space-y-12">
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                          <OverrideField 
+                             label="Max Agent Capacity" 
+                             description="Total licensed seat count for this workspace."
+                             value={overrides.agentLimit} 
+                             onChange={v => setOverrides({...overrides, agentLimit: v})}
+                             icon={Users}
+                          />
+                          <OverrideField 
+                             label="Lead Generation Cap" 
+                             description="Maximum leads recordable in the CRM engine."
+                             value={overrides.leadLimit} 
+                             onChange={v => setOverrides({...overrides, leadLimit: v})}
+                             icon={Target}
+                          />
+                          <OverrideField 
+                             label="AI Token Quota" 
+                             description="Platform-wide AI processing credits."
+                             value={overrides.aiTokenLimit} 
+                             onChange={v => setOverrides({...overrides, aiTokenLimit: v})}
+                             icon={BrainCircuit}
+                          />
+                          <OverrideField 
+                             label="Storage Expansion (MB)" 
+                             description="Secure data residency storage limit."
+                             value={overrides.storageLimitMb} 
+                             onChange={v => setOverrides({...overrides, storageLimitMb: v})}
+                             icon={Database}
+                          />
+                       </div>
+                       
+                       <div className="p-10 bg-blue-50 rounded-[40px] border border-blue-100 flex items-center gap-8">
+                          <div className="w-16 h-16 rounded-[24px] bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-600/20">
+                             <ShieldCheck size={28} />
+                          </div>
+                          <div>
+                             <p className="text-sm font-black text-[#0F172A] uppercase italic">Manual Limit Override</p>
+                             <p className="text-[11px] text-blue-600 font-bold leading-relaxed mt-1">Manual overrides bypass standard plan constraints. These changes are recorded in the platform audit logs and will affect billing cycles if not properly documented.</p>
+                          </div>
+                       </div>
+                    </div>
+                  )}
+                </div>
+
+                {activeTab === 'overrides' && (
+                  <div className="px-12 py-10 border-t border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
+                     <button onClick={() => setActiveTab('plans')} className="text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-all">Cancel</button>
+                     <button 
+                        onClick={handleApplyOverrides}
+                        disabled={isUpdating}
+                        className="h-18 px-16 bg-[#0F172A] text-white rounded-3xl text-[11px] font-black italic uppercase tracking-[0.2em] shadow-2xl shadow-slate-900/30 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                     >
+                        {isUpdating ? 'Applying changes...' : 'Save Limit Overrides'}
+                     </button>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
@@ -432,6 +493,29 @@ const ManageSubscriptionModal = ({ isOpen, onClose, organization, plans, onUpdat
     </AnimatePresence>
   );
 };
+
+const OverrideField = ({ label, description, value, onChange, icon: Icon }) => (
+  <div className="space-y-4">
+     <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400">
+           <Icon size={16} />
+        </div>
+        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
+     </div>
+     <div className="relative group">
+        <input 
+           type="number" 
+           value={value} 
+           onChange={e => onChange(parseInt(e.target.value) || 0)}
+           className="w-full h-16 px-8 bg-slate-50 border border-slate-100 rounded-3xl outline-none focus:border-blue-600 focus:bg-white transition-all font-black text-lg italic text-[#0F172A]"
+        />
+        <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+           <Settings size={18} className="text-slate-300" />
+        </div>
+     </div>
+     <p className="text-[10px] text-slate-400 font-bold ml-1 italic">{description}</p>
+  </div>
+);
 
 const PlanLimit = ({ label, value, limit }) => (
   <div className="space-y-3">
@@ -487,12 +571,12 @@ const CreateCompanyModal = ({ isOpen, onClose, plans, onSuccess }) => {
   const startProvisioning = async () => {
     setIsSubmitting(true);
     const steps = [
-      'Allocating Dedicated Infrastructure...',
-      'Provisioning Isolated Database Nodes...',
-      'Synchronizing Tenant Security Protocols...',
-      'Configuring Neural AI Engine...',
-      'Initializing Telephony Gateway...',
-      'Creating Primary Administrative Node...'
+      'Setting up company workspace...',
+      'Creating database...',
+      'Configuring security...',
+      'Configuring AI features...',
+      'Setting up phone system...',
+      'Creating admin account...'
     ];
 
     for (let i = 0; i < steps.length; i++) {
@@ -503,9 +587,9 @@ const CreateCompanyModal = ({ isOpen, onClose, plans, onSuccess }) => {
     try {
       const res = await api.post('/platform/organizations', formData);
       if (res.data.success) {
-        setProvisioningStatus(prev => [...prev, '✓ Platform Deployment Complete!']);
+        setProvisioningStatus(prev => [...prev, '✓ Company Setup Complete!']);
         await new Promise(r => setTimeout(r, 1000));
-        toast.success('Company Provisioned Successfully');
+        toast.success('Company Created Successfully');
         onSuccess?.();
         onClose();
         resetForm();
@@ -570,7 +654,7 @@ const CreateCompanyModal = ({ isOpen, onClose, plans, onSuccess }) => {
 
                    <div className="relative z-10 p-8 bg-white/5 rounded-3xl border border-white/10">
                       <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Platform Security</p>
-                      <p className="text-xs text-slate-400 font-medium leading-relaxed">All workspaces are isolated at the infrastructure level with dedicated security nodes.</p>
+                      <p className="text-xs text-slate-400 font-medium leading-relaxed">All workspaces are isolated at the system level with dedicated security policies.</p>
                    </div>
                 </div>
 
@@ -590,7 +674,7 @@ const CreateCompanyModal = ({ isOpen, onClose, plans, onSuccess }) => {
                             {step === 2 && "Choose the optimized infrastructure tier"}
                             {step === 3 && "Review active modules and capabilities"}
                             {step === 4 && "Configure the primary workspace administrator"}
-                            {step === 5 && "Establishing secure multi-tenant infrastructure"}
+                            {step === 5 && "Establishing secure multi-tenant environment"}
                          </p>
                       </div>
                       {!isSubmitting && (
@@ -618,7 +702,7 @@ const CreateCompanyModal = ({ isOpen, onClose, plans, onSuccess }) => {
                               </div>
                               <div className="flex justify-end pt-12">
                                  <button onClick={() => setStep(2)} className="h-18 px-12 bg-[#0F172A] text-white rounded-[28px] text-[11px] font-black uppercase tracking-widest flex items-center gap-4 hover:scale-105 transition-all">
-                                    Next Protocol <ChevronRight size={18} />
+                                    Next <ChevronRight size={18} />
                                  </button>
                               </div>
                            </motion.div>
@@ -657,7 +741,7 @@ const CreateCompanyModal = ({ isOpen, onClose, plans, onSuccess }) => {
                                  <FeatureToggle label="AI Assistant" checked={selectedPlan?.aiAssistant} />
                                  <FeatureToggle label="Call Telephony" checked={selectedPlan?.callingEnabled} />
                                  <FeatureToggle label="Advanced Analytics" checked={selectedPlan?.analyticsEnabled} />
-                                 <FeatureToggle label="API Infrastructure" checked={selectedPlan?.apiAccess} />
+                                 <FeatureToggle label="API Access" checked={selectedPlan?.apiAccess} />
                               </div>
                               <div className="flex justify-between items-center pt-8">
                                  <button onClick={() => setStep(2)} className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Back to Plans</button>
@@ -684,7 +768,7 @@ const CreateCompanyModal = ({ isOpen, onClose, plans, onSuccess }) => {
                                     setStep(5);
                                     startProvisioning();
                                  }} className="h-18 px-12 bg-blue-600 text-white rounded-[28px] text-[11px] font-black uppercase tracking-widest flex items-center gap-4 hover:scale-105 transition-all shadow-xl shadow-blue-600/20">
-                                    Start Platform Deployment <Zap size={18} />
+                                    Start Company Setup <Zap size={18} />
                                  </button>
                               </div>
                            </motion.div>

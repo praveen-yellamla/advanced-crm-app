@@ -51,13 +51,13 @@ const PlatformSubscriptions = () => {
       setIsModalOpen(false);
       setEditingPlan(null);
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Protocol Failure')
+    onError: (err) => toast.error(err.response?.data?.message || 'Update failed')
   });
 
   if (isLoading) return (
     <div className="flex flex-col items-center justify-center h-[70vh] space-y-8">
       <div className="w-16 h-16 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
-      <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] italic animate-pulse">Syncing Billing Protocols...</p>
+      <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] italic animate-pulse">Syncing Subscription Plans...</p>
     </div>
   );
 
@@ -71,7 +71,7 @@ const PlatformSubscriptions = () => {
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
                 <span className="text-[10px] font-black uppercase tracking-widest">Revenue Hub</span>
               </div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Secure Billing Protocols</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Standard Billing Systems</span>
            </div>
            <h1 className="text-6xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">Subscription Plans</h1>
            <p className="text-sm font-medium text-slate-500 max-w-2xl leading-relaxed italic">Architect global subscription tiers with precision-engineered resource limits and modular feature gating.</p>
@@ -81,7 +81,7 @@ const PlatformSubscriptions = () => {
           className="h-18 px-12 bg-[#0F172A] text-white rounded-[32px] text-[11px] font-black uppercase tracking-[0.2em] italic flex items-center gap-4 shadow-2xl shadow-slate-900/20 hover:scale-105 transition-all active:scale-95 group"
         >
            <Plus size={20} className="group-hover:rotate-180 transition-transform duration-500" /> 
-           Architect New Tier
+           Create New Plan
         </button>
       </div>
 
@@ -103,8 +103,8 @@ const PlatformSubscriptions = () => {
                <Plus size={40} />
             </div>
             <div className="text-center">
-               <p className="text-[12px] font-black uppercase tracking-[0.3em] italic">Deploy New Infrastructure</p>
-               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Initialize Billing Component</p>
+               <p className="text-[12px] font-black uppercase tracking-[0.3em] italic">Add New Plan</p>
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Initialize Plan Configuration</p>
             </div>
          </button>
       </div>
@@ -129,7 +129,7 @@ const PlanCard = ({ plan, onEdit }) => (
            plan.tier === 'ENTERPRISE' ? 'bg-[#0F172A] text-white' : 
            plan.tier === 'PROFESSIONAL' ? 'bg-violet-100 text-violet-600 border border-violet-200' : 'bg-blue-50 text-blue-600 border border-blue-100'
         }`}>
-           {plan.tier} NODE
+           {plan.tier} PLAN
         </div>
         <button onClick={onEdit} className="w-12 h-12 rounded-2xl bg-white border border-slate-100 text-slate-400 hover:bg-[#0F172A] hover:text-white hover:rotate-12 transition-all flex items-center justify-center shadow-sm">
            <Edit3 size={18} />
@@ -144,18 +144,18 @@ const PlanCard = ({ plan, onEdit }) => (
               <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">/ MONTHLY</span>
            </div>
         </div>
-        <p className="text-sm text-slate-500 font-medium leading-relaxed italic">{plan.description || 'Optimized enterprise node for scalable operations and resource management.'}</p>
+        <p className="text-sm text-slate-500 font-medium leading-relaxed italic">{plan.description || 'Optimized enterprise plan for scalable operations and resource management.'}</p>
      </div>
 
      <div className="grid grid-cols-2 gap-8 py-10 border-y border-slate-100 relative z-10">
         <MetricSmall label="Agent Capacity" value={plan.userLimit >= 9999 ? '∞' : plan.userLimit} icon={Users} color="blue" />
         <MetricSmall label="Lead Engine" value={plan.leadLimit >= 1000000 ? '∞' : `${(plan.leadLimit / 1000).toFixed(0)}k`} icon={Target} color="emerald" />
-        <MetricSmall label="Neural Tokens" value={`${(plan.aiTokenLimit / 1000).toFixed(0)}k`} icon={BrainCircuit} color="violet" />
-        <MetricSmall label="Storage Node" value={`${plan.storageLimitMb}MB`} icon={HardDrive} color="amber" />
+        <MetricSmall label="AI Tokens" value={`${(plan.aiTokenLimit / 1000).toFixed(0)}k`} icon={BrainCircuit} color="violet" />
+        <MetricSmall label="Storage Limit" value={`${plan.storageLimitMb}MB`} icon={HardDrive} color="amber" />
      </div>
 
      <div className="space-y-6 relative z-10">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic">Active Protocols</p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic">Plan Features</p>
         <div className="grid grid-cols-1 gap-4">
            <FeatureItem label="AI Assistant Engine" active={plan.aiAssistant} />
            <FeatureItem label="VoIP Telephony Gateway" active={plan.callingEnabled} />
@@ -278,21 +278,21 @@ const PlanBuilderModal = ({ isOpen, onClose, onSubmit, initialData, isSubmitting
                           <span className="text-white font-black text-2xl tracking-tighter italic uppercase">BILLING</span>
                        </div>
                        <div className="space-y-4">
-                          <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">Module Configuration</p>
-                          <h4 className="text-4xl font-black text-white italic uppercase tracking-tighter leading-tight">Plan Architecture Engine</h4>
+                          <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">Plan Configuration</p>
+                          <h4 className="text-4xl font-black text-white italic uppercase tracking-tighter leading-tight">Plan Management Engine</h4>
                        </div>
                     </div>
                     <div className="relative z-10 p-8 xl:p-10 bg-white/5 rounded-[40px] border border-white/10 space-y-4">
                        <ShieldCheck size={32} className="text-blue-500" />
-                       <p className="text-xs text-slate-400 font-medium leading-relaxed italic">Changes to plan protocols will take effect immediately for all new organization deployments.</p>
+                       <p className="text-xs text-slate-400 font-medium leading-relaxed italic">Changes to subscription plans will take effect immediately for all new organizations.</p>
                     </div>
                  </div>
 
                  <div className="flex-1 flex flex-col min-w-0 bg-white">
                     <div className="px-8 md:px-16 py-8 md:py-12 flex items-center justify-between border-b border-slate-100 shrink-0">
                        <div>
-                          <h3 className="text-3xl md:text-4xl font-black text-[#0F172A] uppercase italic leading-none">{initialData ? 'Edit Tier Configuration' : 'Architect New Node'}</h3>
-                          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-4">Defining multi-tenant infrastructure constraints</p>
+                          <h3 className="text-3xl md:text-4xl font-black text-[#0F172A] uppercase italic leading-none">{initialData ? 'Edit Plan Configuration' : 'Create New Plan'}</h3>
+                          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-4">Defining multi-tenant subscription constraints</p>
                        </div>
                        <button onClick={onClose} className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100"><X size={28} /></button>
                     </div>
@@ -301,26 +301,26 @@ const PlanBuilderModal = ({ isOpen, onClose, onSubmit, initialData, isSubmitting
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
                           <Input label="Plan Identifier" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. Enterprise Plus" />
                           <div className="space-y-4">
-                             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Tier Protocol</label>
+                             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Plan Tier</label>
                              <select className="w-full h-18 px-8 bg-slate-50 border border-slate-100 rounded-[28px] outline-none focus:border-blue-600 transition-all font-black text-sm italic uppercase" value={formData.tier} onChange={e => setFormData({...formData, tier: e.target.value})}>
-                                <option value="STARTER">STARTER NODE</option>
-                                <option value="PROFESSIONAL">PROFESSIONAL NODE</option>
-                                <option value="ENTERPRISE">ENTERPRISE NODE</option>
+                                <option value="STARTER">STARTER PLAN</option>
+                                <option value="PROFESSIONAL">PROFESSIONAL PLAN</option>
+                                <option value="ENTERPRISE">ENTERPRISE PLAN</option>
                              </select>
                           </div>
                           <div className="md:col-span-2">
-                             <Input label="Protocol Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Detailed description of the billing tier capabilities..." />
+                             <Input label="Plan Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Detailed description of the plan capabilities..." />
                           </div>
                           <Input label="Monthly MRR (₹)" type="number" value={formData.priceMonthly} onChange={e => setFormData({...formData, priceMonthly: parseFloat(e.target.value)})} />
                           <Input label="Yearly ARR (₹)" type="number" value={formData.priceYearly} onChange={e => setFormData({...formData, priceYearly: parseFloat(e.target.value)})} />
                        </div>
 
                        <div className="space-y-10">
-                          <h4 className="text-lg font-black uppercase tracking-widest italic text-blue-600">Resource Scoping Protocols</h4>
+                          <h4 className="text-lg font-black uppercase tracking-widest italic text-blue-600">Resource Limits</h4>
                           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
                              <LimitField label="Agent Capacity" value={formData.userLimit} onChange={v => setFormData({...formData, userLimit: v})} />
                              <LimitField label="Lead Cap" value={formData.leadLimit} onChange={v => setFormData({...formData, leadLimit: v})} />
-                             <LimitField label="Neural Tokens" value={formData.aiTokenLimit} onChange={v => setFormData({...formData, aiTokenLimit: v})} />
+                             <LimitField label="AI Tokens" value={formData.aiTokenLimit} onChange={v => setFormData({...formData, aiTokenLimit: v})} />
                              <LimitField label="Storage (MB)" value={formData.storageLimitMb} onChange={v => setFormData({...formData, storageLimitMb: v})} />
                           </div>
                        </div>
@@ -341,7 +341,7 @@ const PlanBuilderModal = ({ isOpen, onClose, onSubmit, initialData, isSubmitting
 
                        {/* DYNAMIC FEATURE DEPLOYMENT */}
                        <div className="space-y-10 pb-12">
-                          <h4 className="text-lg font-black uppercase tracking-widest italic text-blue-600">Custom Deployment Modules</h4>
+                          <h4 className="text-lg font-black uppercase tracking-widest italic text-blue-600">Custom Feature Modules</h4>
                           <div className="p-8 bg-slate-50 rounded-[40px] border border-slate-100 space-y-8">
                              <div className="flex gap-4">
                                 <input 
@@ -350,7 +350,7 @@ const PlanBuilderModal = ({ isOpen, onClose, onSubmit, initialData, isSubmitting
                                   className="flex-1 h-16 px-8 bg-white border border-slate-200 rounded-3xl outline-none focus:border-blue-600 transition-all font-bold text-sm"
                                   onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCustomFeature())}
                                 />
-                                <button type="button" onClick={addCustomFeature} className="h-16 px-8 bg-blue-600 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">Add Protocol</button>
+                                <button type="button" onClick={addCustomFeature} className="h-16 px-8 bg-blue-600 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">Add Feature</button>
                              </div>
                              <div className="flex flex-wrap gap-3">
                                 {formData.features.map(f => (
@@ -372,7 +372,7 @@ const PlanBuilderModal = ({ isOpen, onClose, onSubmit, initialData, isSubmitting
                          disabled={isSubmitting}
                          className="px-12 md:px-16 h-18 md:h-20 bg-[#0F172A] text-white rounded-[28px] md:rounded-[32px] text-[11px] font-black italic uppercase tracking-[0.2em] shadow-2xl shadow-slate-900/30 hover:scale-105 transition-all disabled:opacity-50"
                        >
-                          {isSubmitting ? 'Syncing...' : initialData ? 'Commit Protocol' : 'Deploy Node'}
+                          {isSubmitting ? 'Saving...' : initialData ? 'Save Changes' : 'Create Plan'}
                        </button>
                     </div>
                  </div>

@@ -64,7 +64,7 @@ const LeadModal = ({ isOpen, onClose, lead = null }) => {
     onSuccess: () => {
       queryClient.invalidateQueries(['globalLeads']);
       queryClient.invalidateQueries(['leads-pipeline']);
-      toast.success(lead ? 'Lead Identity Updated' : 'New Lead Synchronized');
+      toast.success(lead ? 'Lead Updated' : 'Lead Created');
       onClose();
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Operation failed')
@@ -98,10 +98,10 @@ const LeadModal = ({ isOpen, onClose, lead = null }) => {
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-3xl font-bold text-[#0F172A] tracking-tight uppercase">
-                    {lead ? 'Modify Lead' : 'Initialize Lead'}
+                    {lead ? 'Edit Lead' : 'Create New Lead'}
                   </h2>
                   <p className="text-sm font-medium text-slate-400 mt-1">
-                    {lead ? 'Update lead lifecycle parameters' : 'Onboard new potential account into the ecosystem'}
+                    {lead ? 'Update lead information and status' : 'Add a new potential customer to the system'}
                   </p>
                 </div>
                 <button onClick={onClose} className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 hover:text-[#0F172A] transition-all">
@@ -112,7 +112,7 @@ const LeadModal = ({ isOpen, onClose, lead = null }) => {
               <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Customer Identity</label>
+                    <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Customer Name</label>
                     <div className="relative">
                       <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                       <input 
@@ -124,7 +124,7 @@ const LeadModal = ({ isOpen, onClose, lead = null }) => {
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Digital Endpoint</label>
+                    <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Email Address</label>
                     <div className="relative">
                       <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                       <input 
@@ -136,7 +136,7 @@ const LeadModal = ({ isOpen, onClose, lead = null }) => {
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Telephony Marker</label>
+                    <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Phone Number</label>
                     <div className="relative">
                       <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                       <input 
@@ -148,7 +148,7 @@ const LeadModal = ({ isOpen, onClose, lead = null }) => {
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Ingestion Source</label>
+                    <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Lead Source</label>
                     <div className="relative">
                       <Globe className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                       <select 
@@ -166,7 +166,7 @@ const LeadModal = ({ isOpen, onClose, lead = null }) => {
                   </div>
 
                   <div className="space-y-3 md:col-span-2">
-                    <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Ownership Assignment</label>
+                    <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest ml-1">Assigned Agent</label>
                     <div className="relative">
                       <ShieldCheck className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                       <select 
@@ -183,12 +183,12 @@ const LeadModal = ({ isOpen, onClose, lead = null }) => {
                 </div>
 
                 <div className="flex gap-6 pt-6">
-                  <button type="button" onClick={onClose} className="flex-1 h-18 rounded-[24px] bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all">Abort</button>
+                  <button type="button" onClick={onClose} className="flex-1 h-18 rounded-[24px] bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all">Cancel</button>
                   <button 
                     type="submit" disabled={mutation.isPending}
                     className="flex-[2] h-18 rounded-[24px] bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-4"
                   >
-                    {mutation.isPending ? 'SYNCHRONIZING...' : <>{lead ? 'Update Identity' : 'Initialize Protocol'} <ArrowRight size={20}/></>}
+                    {mutation.isPending ? 'SAVING...' : <>{lead ? 'Save Changes' : 'Create Lead'} <ArrowRight size={20}/></>}
                   </button>
                 </div>
               </form>

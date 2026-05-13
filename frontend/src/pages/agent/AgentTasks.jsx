@@ -26,7 +26,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 const COLUMNS = [
-  { id: 'PENDING', label: 'Strategic Backlog', color: 'bg-slate-500' },
+  { id: 'PENDING', label: 'Pending Backlog', color: 'bg-slate-500' },
   { id: 'IN_PROGRESS', label: 'Active Engagement', color: 'bg-blue-600' },
   { id: 'COMPLETED', label: 'Mission Accomplished', color: 'bg-emerald-600' }
 ];

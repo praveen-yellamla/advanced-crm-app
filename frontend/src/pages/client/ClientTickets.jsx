@@ -45,7 +45,7 @@ const ClientTickets = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
            <h1 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase">Support Terminal.</h1>
-           <p className="text-sm font-bold text-slate-400 mt-2 uppercase italic tracking-widest">Protocol Resolution & Issue Tracking</p>
+           <p className="text-sm font-bold text-slate-400 mt-2 uppercase italic tracking-widest">Issue Resolution & Ticket History</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
@@ -121,7 +121,7 @@ const ClientTickets = () => {
                      <div className="space-y-3">
                         <label className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest italic ml-1">Issue Subject</label>
                         <input 
-                           type="text" placeholder="e.g. Lead Export Protocol Failure"
+                           type="text" placeholder="e.g. Lead Export System Failure"
                            className="w-full h-16 px-8 bg-slate-50 border border-slate-100 rounded-[24px] outline-none focus:border-indigo-600 transition-all font-black text-sm italic"
                            value={formData.subject} onChange={e => setFormData({...formData, subject: e.target.value})}
                         />

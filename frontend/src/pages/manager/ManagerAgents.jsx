@@ -47,7 +47,7 @@ const ManagerAgents = () => {
       setIsFeedbackModalOpen(false);
       setFeedbackData({ content: '', priority: 'NORMAL', suggestions: '' });
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Dispatch failed')
+    onError: (err) => toast.error(err.response?.data?.message || 'Submission failed')
   });
 
   const filteredAgents = agents?.filter(a => 
@@ -61,7 +61,7 @@ const ManagerAgents = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
            <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Team Performance</h1>
-           <p className="text-[#64748B] font-medium text-sm mt-1">Operational Readiness & Agent Development Track</p>
+           <p className="text-[#64748B] font-medium text-sm mt-1">Operational Status & Agent Development</p>
         </div>
       </div>
 
@@ -70,7 +70,7 @@ const ManagerAgents = () => {
          <div className="flex-1 relative group">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-600 transition-colors" size={20} />
             <input 
-               type="text" placeholder="Search team agents by identity or role..." 
+               type="text" placeholder="Search team agents by name or role..." 
                className="w-full h-16 pl-16 pr-6 bg-white border border-[#E2E8F0] rounded-2xl focus:ring-[12px] focus:ring-violet-500/5 focus:border-violet-600 outline-none transition-all font-semibold text-[#0F172A] shadow-sm"
                value={search} onChange={e => setSearch(e.target.value)}
             />
@@ -80,7 +80,7 @@ const ManagerAgents = () => {
       {/* AGENTS GRID */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
          {isLoading ? (
-            <div className="col-span-full py-20 text-center text-slate-400 uppercase font-bold tracking-[0.3em]">Synchronizing Human Resources...</div>
+            <div className="col-span-full py-20 text-center text-slate-400 uppercase font-bold tracking-[0.3em]">Loading Team Members...</div>
          ) : filteredAgents?.map((agent) => (
            <motion.div 
              key={agent.id}
@@ -96,7 +96,7 @@ const ManagerAgents = () => {
                     <div>
                        <h3 className="text-3xl font-bold text-[#0F172A] tracking-tight">{agent.name}</h3>
                        <div className="flex flex-wrap items-center gap-4 mt-2 justify-center sm:justify-start">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><Award size={12} className="text-amber-500"/> Senior Strategic Agent</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><Award size={12} className="text-amber-500"/> Senior Account Agent</p>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><ShieldCheck size={12} className="text-violet-600"/> Verified Account</p>
                        </div>
                     </div>
@@ -140,7 +140,7 @@ const ManagerAgents = () => {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#0F172A]/70 backdrop-blur-3xl" onClick={() => setIsFeedbackModalOpen(false)} />
               <motion.div initial={{ opacity: 0, scale: 0.95, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 30 }} className="relative w-full max-w-lg bg-white rounded-[40px] shadow-2xl overflow-hidden p-12">
                  <h2 className="text-3xl font-bold text-[#0F172A] tracking-tight mb-2">Issue Coaching Feedback</h2>
-                 <p className="text-[#64748B] font-medium text-sm mb-10">Direct communication to <span className="text-violet-600 font-bold">{selectedAgent?.name}</span>'s workbench.</p>
+                 <p className="text-[#64748B] font-medium text-sm mb-10">Direct communication to <span className="text-violet-600 font-bold">{selectedAgent?.name}</span>'s dashboard.</p>
 
                  <form onSubmit={(e) => {
                     e.preventDefault();
@@ -183,9 +183,9 @@ const ManagerAgents = () => {
                     </div>
 
                     <div className="flex gap-4 pt-4">
-                       <button type="button" onClick={() => setIsFeedbackModalOpen(false)} className="flex-1 h-16 bg-slate-100 text-slate-500 rounded-2xl font-bold uppercase text-xs tracking-widest hover:bg-slate-200 transition-all">Cancel Dispatch</button>
+                       <button type="button" onClick={() => setIsFeedbackModalOpen(false)} className="flex-1 h-16 bg-slate-100 text-slate-500 rounded-2xl font-bold uppercase text-xs tracking-widest hover:bg-slate-200 transition-all">Cancel</button>
                        <button type="submit" disabled={feedbackMutation.isPending} className="flex-1 h-16 bg-[#0F172A] text-white rounded-2xl font-bold uppercase text-xs tracking-widest shadow-2xl hover:brightness-125 transition-all">
-                          {feedbackMutation.isPending ? 'Loading...' : 'Dispatch Feedback'}
+                          {feedbackMutation.isPending ? 'Loading...' : 'Send Feedback'}
                        </button>
                     </div>
                  </form>

@@ -113,7 +113,7 @@ const CompanyDetails = () => {
                     <div className={`w-1.5 h-1.5 rounded-full ${org.status === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
                     {org.status}
                  </div>
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Company ID: {org.id.slice(-8).toUpperCase()}</span>
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Company ID: {String(org.id).slice(-8).toUpperCase()}</span>
               </div>
               <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">{org.name}</h1>
               <p className="text-blue-600 font-bold text-sm mt-2 flex items-center gap-2 uppercase tracking-widest">

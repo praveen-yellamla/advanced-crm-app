@@ -180,7 +180,7 @@ const AgentEmails = () => {
                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Digital Subject Header</label>
                        <input 
                          required
-                         placeholder="Strategic value proposition header..."
+                         placeholder="Value proposition header..."
                          className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:border-blue-600 transition-all font-semibold"
                          value={emailData.subject} onChange={e => setEmailData({...emailData, subject: e.target.value})}
                        />

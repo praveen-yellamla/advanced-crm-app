@@ -33,7 +33,7 @@ const QualityControlCenter = () => {
   });
 
   const scores = [
-    { label: 'Opening Protocol', score: 9 },
+    { label: 'Initial Engagement', score: 9 },
     { label: 'Value Prop Clarity', score: 8 },
     { label: 'Objection Mitigation', score: 10 },
     { label: 'Closure Precision', score: 7 },
@@ -46,7 +46,7 @@ const QualityControlCenter = () => {
         <div className="p-10 border-b border-slate-200/60 flex items-center justify-between bg-white/40">
            <div>
               <h2 className="text-2xl font-black text-[#0F172A] tracking-tighter uppercase">Call Archive</h2>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Audit Stream Analysis</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Review Stream Analysis</p>
            </div>
            <button className="p-3 bg-white border border-slate-200/60 rounded-xl hover:bg-slate-50 transition-all shadow-sm">
               <ListFilter size={18} className="text-slate-600" />
@@ -55,7 +55,7 @@ const QualityControlCenter = () => {
 
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4">
            {isLoading ? (
-             <div className="p-20 text-center text-slate-300 font-black uppercase tracking-widest text-[10px]">Accessing Voice Vault...</div>
+             <div className="p-20 text-center text-slate-300 font-black uppercase tracking-widest text-[10px]">Loading Recordings...</div>
            ) : calls?.map((call) => (
              <motion.div
                key={call.id}
@@ -109,7 +109,7 @@ const QualityControlCenter = () => {
                            <Play size={32} />
                         </div>
                         <div>
-                           <h1 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase mb-1">{selectedCall.lead?.customerName || 'Strategic Session'}</h1>
+                           <h1 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase mb-1">{selectedCall.lead?.customerName || 'Account Session'}</h1>
                            <div className="flex items-center gap-3">
                               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SID: {selectedCall.sid?.slice(0, 12)}...</span>
                               <span className="text-slate-200">|</span>
@@ -155,7 +155,7 @@ const QualityControlCenter = () => {
                <div className="flex-1 p-12 overflow-y-auto grid grid-cols-2 gap-12">
                   <div className="space-y-10">
                      <div>
-                        <h3 className="text-sm font-black text-[#0F172A] uppercase tracking-widest mb-8 border-b border-slate-100 pb-4">Audit Scoring Rubric</h3>
+                        <h3 className="text-sm font-black text-[#0F172A] uppercase tracking-widest mb-8 border-b border-slate-100 pb-4">Quality Scoring Rubric</h3>
                         <div className="space-y-8">
                            {scores.map((s, i) => (
                              <div key={i} className="space-y-4">
@@ -177,7 +177,7 @@ const QualityControlCenter = () => {
 
                      <div className="p-8 bg-blue-600 rounded-[40px] text-white shadow-2xl shadow-blue-200 flex items-center justify-between">
                         <div>
-                           <p className="text-[10px] font-black uppercase opacity-60 tracking-widest mb-1">Human QA Score</p>
+                           <p className="text-[10px] font-black uppercase opacity-60 tracking-widest mb-1">Manager Quality Score</p>
                            <h4 className="text-5xl font-black tracking-tighter">84%</h4>
                         </div>
                         <ShieldCheck size={64} className="opacity-20" />
@@ -197,7 +197,7 @@ const QualityControlCenter = () => {
                      <div className="h-full bg-slate-50 border border-slate-100 rounded-[40px] p-10 flex flex-col">
                         <div className="flex items-center gap-3 mb-8">
                            <MessageSquare size={18} className="text-slate-400" />
-                           <h3 className="text-sm font-black text-[#0F172A] uppercase tracking-widest">Audit Annotations</h3>
+                           <h3 className="text-sm font-black text-[#0F172A] uppercase tracking-widest">Review Notes</h3>
                         </div>
                         <div className="flex-1 space-y-6">
                            <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm">
@@ -225,9 +225,9 @@ const QualityControlCenter = () => {
                   </div>
                   <div className="flex gap-4">
                      <button className="px-8 py-5 bg-violet-600 text-white rounded-[24px] font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-violet-200 hover:-translate-y-1 transition-all flex items-center gap-3">
-                        <Sparkles size={16} /> Trigger AI Audit
+                        <Sparkles size={16} /> Trigger AI Review
                      </button>
-                     <button className="px-12 py-5 bg-[#0F172A] text-white rounded-[24px] font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-slate-300 hover:-translate-y-1 transition-all">Submit Professional Audit</button>
+                     <button className="px-12 py-5 bg-[#0F172A] text-white rounded-[24px] font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-slate-300 hover:-translate-y-1 transition-all">Submit Quality Review</button>
                   </div>
                </div>
             </motion.div>
@@ -236,8 +236,8 @@ const QualityControlCenter = () => {
                <div className="w-32 h-32 bg-slate-100 rounded-[40px] flex items-center justify-center mb-10 border border-slate-200/40 shadow-inner">
                   <ShieldCheck size={48} className="text-slate-300" />
                </div>
-               <h2 className="text-3xl font-black text-[#0F172A] mb-4 tracking-tighter uppercase">Audit Protocol Initialized</h2>
-               <p className="text-slate-400 max-w-md font-bold text-sm leading-relaxed">Select a high-fidelity voice stream from the archive to begin your quality assurance audit. Your evaluation ensures institutional excellence.</p>
+               <h2 className="text-3xl font-black text-[#0F172A] mb-4 tracking-tighter uppercase">Review System Initialized</h2>
+               <p className="text-slate-400 max-w-md font-bold text-sm leading-relaxed">Select a call recording from the archive to begin your quality assurance review. Your evaluation ensures service excellence.</p>
             </div>
           )}
         </AnimatePresence>

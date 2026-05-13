@@ -26,6 +26,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import TableActionMenu, { TableActionItem } from '../../components/common/TableActionMenu';
 import LeadModal from '../../components/admin/LeadModal';
 import LeadDetailModal from '../../components/admin/LeadDetailModal';
 import AssignAgentModal from '../../components/admin/AssignAgentModal';
@@ -42,6 +43,7 @@ const LeadManagement = () => {
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [assigningLeadId, setAssigningLeadId] = useState(null);
   const [currentAgentId, setCurrentAgentId] = useState(null);
+  const [activeMenuId, setActiveMenuId] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -234,35 +236,38 @@ const LeadManagement = () => {
                           </div>
                        </td>
                        <td className="px-10 py-6">
-                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                             <button 
-                                onClick={() => handleViewDetails(lead.id)}
-                                title="View Details"
-                                className="w-9 h-9 rounded-lg bg-white border border-slate-200 shadow-sm hover:border-blue-600 hover:text-blue-600 transition-all flex items-center justify-center"
+                          <div className="flex justify-end">
+                             <TableActionMenu
+                                id={lead.id}
+                                activeId={activeMenuId}
+                                setActiveId={setActiveMenuId}
                              >
-                                <Eye size={16} />
-                             </button>
-                             <button 
-                                onClick={() => handleAssignClick(lead)}
-                                title="Assign Agent"
-                                className="w-9 h-9 rounded-lg bg-white border border-slate-200 shadow-sm hover:border-blue-600 hover:text-blue-600 transition-all flex items-center justify-center"
-                             >
-                                <UserPlus size={16} />
-                             </button>
-                             <button 
-                                onClick={() => handleEdit(lead)}
-                                title="Edit Lead"
-                                className="w-9 h-9 rounded-lg bg-white border border-slate-200 shadow-sm hover:border-emerald-600 hover:text-emerald-600 transition-all flex items-center justify-center"
-                             >
-                                <Pencil size={16} />
-                             </button>
-                             <button 
-                                onClick={() => handleDelete(lead.id)}
-                                title="Delete Lead"
-                                className="w-9 h-9 rounded-lg bg-white border border-slate-200 shadow-sm hover:border-rose-600 hover:text-rose-600 transition-all flex items-center justify-center"
-                             >
-                                <Trash2 size={16} />
-                             </button>
+                                <TableActionItem 
+                                   icon={<Eye size={16} />} 
+                                   label="View Details" 
+                                   color="blue"
+                                   onClick={() => handleViewDetails(lead.id)} 
+                                />
+                                <TableActionItem 
+                                   icon={<UserPlus size={16} />} 
+                                   label="Assign Agent" 
+                                   color="indigo"
+                                   onClick={() => handleAssignClick(lead)} 
+                                />
+                                <TableActionItem 
+                                   icon={<Pencil size={16} />} 
+                                   label="Edit Lead" 
+                                   color="emerald"
+                                   onClick={() => handleEdit(lead)} 
+                                />
+                                <div className="h-px bg-slate-50 my-1 mx-2" />
+                                <TableActionItem 
+                                   icon={<Trash2 size={16} />} 
+                                   label="Delete Lead" 
+                                   color="rose"
+                                   onClick={() => handleDelete(lead.id)} 
+                                />
+                             </TableActionMenu>
                           </div>
                        </td>
                     </tr>

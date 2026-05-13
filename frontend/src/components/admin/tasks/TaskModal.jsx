@@ -112,7 +112,7 @@ const TaskModal = ({ task, isOpen, onClose, onSave, onDelete, onDuplicate, onArc
           <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div>
               <h2 className="text-2xl font-bold text-[#0F172A]">
-                {task ? 'Edit Strategy Task' : 'Orchestrate New Task'}
+                {task ? 'Edit Task Details' : 'Create New Task'}
               </h2>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
                 Enterprise Task Management System
@@ -135,18 +135,18 @@ const TaskModal = ({ task, isOpen, onClose, onSave, onDelete, onDuplicate, onArc
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    placeholder="Enter strategic objective..."
+                    placeholder="Enter task title..."
                     className="w-full h-16 px-6 bg-white border border-slate-200 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                    <MessageSquare size={12} /> Strategic Description
+                    <MessageSquare size={12} /> Task Description
                   </label>
                   <textarea 
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    placeholder="Elaborate on the task objectives..."
+                    placeholder="Provide detailed instructions for this task..."
                     className="w-full h-32 p-6 bg-white border border-slate-200 rounded-3xl outline-none focus:border-blue-600 transition-all font-medium text-slate-600 resize-none"
                   />
                 </div>
@@ -190,7 +190,7 @@ const TaskModal = ({ task, isOpen, onClose, onSave, onDelete, onDuplicate, onArc
               {/* DUE DATE & REMINDER */}
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                  <CalendarIcon size={12} /> Strategic Deadline
+                  <CalendarIcon size={12} /> Due Date
                 </label>
                 <input 
                   type="date"
@@ -202,7 +202,7 @@ const TaskModal = ({ task, isOpen, onClose, onSave, onDelete, onDuplicate, onArc
 
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                  <Clock size={12} /> AI Reminder Pulse
+                  <Clock size={12} /> Reminder Schedule
                 </label>
                 <input 
                   type="date"
@@ -246,7 +246,7 @@ const TaskModal = ({ task, isOpen, onClose, onSave, onDelete, onDuplicate, onArc
                     <Repeat size={20} />
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-900 text-sm">Recurring Orchestration</h4>
+                    <h4 className="font-bold text-slate-900 text-sm">Recurring Task</h4>
                     <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Auto-generate this task periodically</p>
                   </div>
                 </div>
@@ -283,7 +283,7 @@ const TaskModal = ({ task, isOpen, onClose, onSave, onDelete, onDuplicate, onArc
                 Cancel
               </button>
               <button onClick={handleSubmit} className="h-14 px-10 bg-[#0F172A] text-white rounded-2xl font-bold text-sm shadow-xl hover:brightness-125 transition-all">
-                {task ? 'Update Strategy' : 'Deploy Task'}
+                {task ? 'Save Changes' : 'Create Task'}
               </button>
             </div>
           </div>

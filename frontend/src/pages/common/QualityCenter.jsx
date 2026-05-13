@@ -65,23 +65,23 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
               <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-600 italic">Quality Assurance</span>
            </div>
-           <h1 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase underline decoration-indigo-600 decoration-8 underline-offset-8">Quality Center.</h1>
-           <p className="text-sm font-bold text-slate-400 mt-5 max-w-xl leading-relaxed uppercase italic">High-Authority Call Monitoring & Communication Performance Audit Infrastructure</p>
+            <h1 className="text-4xl font-black text-[#0F172A] tracking-tighter italic uppercase underline decoration-indigo-600 decoration-8 underline-offset-8">Quality Center.</h1>
+            <p className="text-sm font-bold text-slate-400 mt-5 max-w-xl leading-relaxed uppercase italic">Advanced Call Monitoring & Quality Assurance Dashboard</p>
         </div>
         <div className="flex gap-4">
            <button className="h-16 px-10 bg-[#0F172A] text-white rounded-[24px] text-[10px] font-black uppercase tracking-widest shadow-2xl flex items-center gap-4 hover:scale-105 transition-all">
-              <Download size={18} /> Export Protocol Logs
+              <Download size={18} /> Export Quality Logs
            </button>
         </div>
       </div>
 
       {/* KPI TOP GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-         <KPICard label="Strategic Reviews" value={stats.totalReviewed} icon={ShieldCheck} color="indigo" />
+         <KPICard label="Total Reviews" value={stats.totalReviewed} icon={ShieldCheck} color="indigo" />
          <KPICard label="Avg Performance Score" value={`${Math.round(stats.avgScore)}%`} icon={Star} color="amber" />
          <KPICard label="Compliance Rate" value={`${stats.complianceRate}%`} icon={CheckCircle2} color="emerald" />
          <KPICard label="Pending QA Audit" value={stats.pendingReviews} icon={Clock} color="slate" />
-         <KPICard label="Tactical Flags" value={stats.flagged} icon={Flag} color="rose" />
+         <KPICard label="Priority Flags" value={stats.flagged} icon={Flag} color="rose" />
       </div>
 
       {/* SEARCH & FILTERS */}
@@ -89,7 +89,7 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
          <div className="flex-1 relative group">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={20} />
             <input 
-               type="text" placeholder="Search operational agent, target lead or call identifier..." 
+               type="text" placeholder="Search by agent name, customer, or call ID..." 
                className="w-full h-18 pl-16 pr-6 bg-white border border-[#E2E8F0] rounded-[32px] focus:ring-[12px] focus:ring-indigo-600/5 focus:border-indigo-600 outline-none transition-all font-bold text-[#0F172A] shadow-sm italic"
                value={search} onChange={e => setSearch(e.target.value)}
             />
@@ -118,19 +118,19 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
             <table className="w-full text-left border-collapse">
                <thead>
                   <tr className="bg-slate-50/50">
-                     <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Call Identity</th>
-                     <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Strategic Agent</th>
+                     <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Call ID</th>
+                     <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Agent Name</th>
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Duration</th>
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Sentiment Score</th>
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Compliance Status</th>
-                     <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Audit Action</th>
+                     <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Actions</th>
                   </tr>
                </thead>
                <tbody>
                   {isLoading ? (
-                    <tr><td colSpan="6" className="p-32 text-center text-slate-400 font-black uppercase tracking-widest animate-pulse italic">Interrogating Voice Archive...</td></tr>
+                    <tr><td colSpan="6" className="p-32 text-center text-slate-400 font-black uppercase tracking-widest animate-pulse italic">Accessing Call Records...</td></tr>
                   ) : filteredCalls?.length === 0 ? (
-                    <tr><td colSpan="6" className="p-32 text-center text-slate-300 font-bold italic uppercase">Zero operational telemetry Accounts discovered.</td></tr>
+                    <tr><td colSpan="6" className="p-32 text-center text-slate-300 font-bold italic uppercase">No call history discovered.</td></tr>
                   ) : filteredCalls?.map((call) => (
                     <tr key={call.id} className="border-b last:border-none border-slate-50 hover:bg-slate-50/30 transition-all duration-700 group">
                        <td className="px-10 py-10">
@@ -139,7 +139,7 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
                                 <Headphones size={24} />
                              </div>
                              <div>
-                                <p className="text-sm font-black text-[#0F172A] uppercase italic">REC-{call.id}</p>
+                                <p className="text-sm font-black text-[#0F172A] uppercase italic">CALL-{call.id}</p>
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 italic">{new Date(call.createdAt).toLocaleString()}</p>
                              </div>
                           </div>
@@ -204,8 +204,8 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
                              <ShieldCheck size={28} />
                           </div>
                           <div>
-                             <h2 className="text-3xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Session Audit.</h2>
-                             <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Recording ID: REC-{selectedCall?.id} &#x2022; Strategic Agent: <span className="text-indigo-600 font-black italic">{selectedCall?.agent.name}</span></p>
+                             <h2 className="text-3xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Review Session.</h2>
+                             <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Call ID: CALL-{selectedCall?.id} &#x2022; Agent: <span className="text-indigo-600 font-black italic">{selectedCall?.agent.name}</span></p>
                           </div>
                        </div>
                     </div>
@@ -222,7 +222,7 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
                           <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
                              <div className="space-y-4">
                                 <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest italic">Live Recording Feed</p>
-                                <p className="text-4xl font-black text-white italic tracking-tighter cursor-default">Strategic Call Protocol</p>
+                                <p className="text-4xl font-black text-white italic tracking-tighter cursor-default">Call Recording</p>
                              </div>
                              <div className="flex items-center gap-4">
                                 <div className="h-10 px-4 bg-white/10 rounded-xl flex items-center gap-3 text-[10px] font-bold text-white uppercase tracking-widest border border-white/10 italic">
@@ -256,15 +256,15 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
                        {/* RUBRIC */}
                        <div className="space-y-10">
-                          <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] flex items-center gap-6">Strategic Rubric <div className="h-px flex-1 bg-slate-100" /></h4>
+                          <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] flex items-center gap-6">Quality Rubric <div className="h-px flex-1 bg-slate-100" /></h4>
                           <div className="space-y-8">
                              {[
-                               { label: 'Strategic Greeting', max: 10 },
+                               { label: 'Opening Script', max: 10 },
                                { label: 'Discovery Phase', max: 20 },
                                { label: 'Proposition Pitch', max: 20 },
                                { label: 'Objection Handling', max: 20 },
-                               { label: 'Closing Terminal', max: 20 },
-                               { label: 'Compliance Protocol', max: 10 },
+                               { label: 'Closing Phase', max: 20 },
+                               { label: 'Compliance Check', max: 10 },
                              ].map((rubric, i) => (
                                <div key={i} className="space-y-4 group">
                                   <div className="flex justify-between text-sm font-black text-[#0F172A] uppercase italic transition-all group-hover:text-indigo-600">
@@ -290,7 +290,7 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
                              <div className="space-y-6 pt-6 border-t border-slate-200">
                                 <div className="flex items-center gap-4 text-emerald-600">
                                    <CheckCircle2 size={18} />
-                                   <span className="text-[10px] font-black uppercase tracking-widest">Greeting Protocol Verified</span>
+                                   <span className="text-[10px] font-black uppercase tracking-widest">Opening Script Verified</span>
                                 </div>
                                 <div className="flex items-center gap-4 text-rose-500">
                                    <AlertCircle size={18} />
@@ -303,7 +303,7 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
 
                     {/* COACHING TERMINAL */}
                     <div className="space-y-6">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Tactical Coaching Feedback</label>
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Coaching Feedback</label>
                        <textarea 
                           placeholder="Provide institutional feedback to the operational agent..."
                           className="w-full h-48 p-10 bg-slate-50 border border-slate-200 rounded-[48px] outline-none focus:border-indigo-600 transition-all font-black text-sm text-[#0F172A] leading-relaxed italic placeholder:text-slate-300"
@@ -322,7 +322,7 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
                           Flag Escalation
                        </button>
                        <button className="h-20 px-12 bg-[#0F172A] text-white rounded-[32px] text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-indigo-500/20 hover:scale-105 transition-all italic">
-                          Refreshhronize Evaluation
+                          Save Evaluation
                        </button>
                     </div>
                  </div>

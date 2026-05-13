@@ -26,7 +26,7 @@ const PlatformSettings = () => {
     { id: 'branding', label: 'Branding', icon: Palette, desc: 'Global visual identity and logos.' },
     { id: 'registration', label: 'Onboarding', icon: UserPlus, desc: 'Signup flow and tenant provisioning.' },
     { id: 'maintenance', label: 'Maintenance', icon: ShieldAlert, desc: 'System status and access control.' },
-    { id: 'ai', label: 'AI Configuration', icon: Cpu, desc: 'Neural node and token policies.' },
+    { id: 'ai', label: 'AI Configuration', icon: Cpu, desc: 'AI engine and token policies.' },
   ];
 
   return (
@@ -40,7 +40,7 @@ const PlatformSettings = () => {
               <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Portal Config</span>
            </div>
            <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">Settings</h1>
-           <p className="text-sm font-medium text-slate-500 mt-4 max-w-2xl">Configure platform-wide branding, tenant registration, and global infrastructure protocols.</p>
+           <p className="text-sm font-medium text-slate-500 mt-4 max-w-2xl">Configure platform-wide branding, tenant registration, and global system settings.</p>
         </div>
         
         <button className="h-16 px-10 bg-[#0F172A] text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] italic flex items-center gap-4 shadow-2xl shadow-slate-900/40 hover:scale-105 transition-all">
@@ -183,12 +183,12 @@ const AISettings = () => (
   <div className="space-y-12">
      <div className="space-y-3">
         <h3 className="text-3xl font-black text-[#0F172A] uppercase italic leading-none">AI Infrastructure</h3>
-        <p className="text-sm text-slate-500 font-medium">Global policies for neural assistance and token usage.</p>
+        <p className="text-sm text-slate-500 font-medium">Global policies for AI assistance and token usage.</p>
      </div>
 
      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="p-8 bg-slate-50 rounded-[40px] border border-slate-100 space-y-6">
-           <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Master Neural Node</h4>
+           <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Master AI Engine</h4>
            <select className="w-full h-16 px-8 bg-white border border-slate-200 rounded-3xl outline-none focus:border-blue-600 font-black italic uppercase">
               <option>GPT-4o (Standard)</option>
               <option>Claude 3.5 Sonnet</option>
@@ -204,7 +204,7 @@ const AISettings = () => (
      <div className="h-px bg-slate-100" />
      
      <ToggleRow 
-       label="Neural Caching" 
+       label="AI Data Caching" 
        description="Enable global response caching to reduce infrastructure latency and costs." 
        enabled 
      />

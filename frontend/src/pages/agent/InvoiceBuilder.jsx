@@ -19,7 +19,7 @@ import { useNavigate } from 'react-router-dom';
 const InvoiceBuilder = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState([
-    { id: 1, description: 'Strategic Consulting', quantity: 1, unitPrice: 1500 }
+    { id: 1, description: 'Business Consulting', quantity: 1, unitPrice: 1500 }
   ]);
   const [taxRate, setTaxRate] = useState(18);
   const [discount, setDiscount] = useState(0);
@@ -188,7 +188,7 @@ const InvoiceBuilder = () => {
                   </div>
 
                   <div className="space-y-2">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Strategic Discount</label>
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Business Discount</label>
                      <div className="relative">
                         <DollarSign className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                         <input 
@@ -207,7 +207,7 @@ const InvoiceBuilder = () => {
                   <CheckCircle2 size={24} />
                   <h3 className="text-sm font-black uppercase tracking-widest">Compliance Check</h3>
                </div>
-               <p className="text-xs font-bold text-blue-800/60 leading-relaxed italic">"All fiscal documents are generated with tier-IV encryption and follow regional compliance protocols for enterprise SaaS architectures."</p>
+               <p className="text-xs font-bold text-blue-800/60 leading-relaxed italic">"All fiscal documents are generated with enterprise-grade encryption and follow regional compliance standards for enterprise SaaS architectures."</p>
             </div>
          </div>
       </div>
