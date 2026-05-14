@@ -39,6 +39,8 @@ To make the pipeline work, you must add the following **GitHub Secrets** in your
 | `RENDER_BACKEND_DEPLOY_HOOK` | The Deploy Hook URL from your Render Backend service. |
 | `DATABASE_URL` | Your production/staging database connection string (required for CI validation). |
 | `JWT_SECRET` | Secret key for JWT authentication (required for CI validation). |
+| `RAZORPAY_KEY_ID` | Your Razorpay API Key ID (required for billing integration). |
+| `RAZORPAY_KEY_SECRET` | Your Razorpay API Key Secret (required for secure payment verification). |
 
 ### 🔄 How to Manually Rerun Workflows
 If a build fails due to transient issues or you want to redeploy manually:
