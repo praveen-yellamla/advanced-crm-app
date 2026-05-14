@@ -31,7 +31,7 @@ const PlatformAPIKeys = () => {
   };
 
   const infrastructureKeys = [
-    { id: 'openai', name: 'AI Engine (OpenAI)', icon: Cpu, key: 'sk-proj-7a...9kL2', type: 'Production', lastUsed: '3m ago' },
+    { id: 'gemini', name: 'AI Engine (Gemini)', icon: Cpu, key: 'AIzaSy...Keps', type: 'Production', lastUsed: '3m ago' },
     { id: 'twilio', name: 'VOIP Gateway (Twilio)', icon: Phone, key: 'AC89b2...99f0', type: 'Production', lastUsed: '12m ago' },
     { id: 'smtp', name: 'Mail Infrastructure (SendGrid)', icon: Mail, key: 'SG.k9j...p02q', type: 'Development', lastUsed: '2h ago' }
   ];

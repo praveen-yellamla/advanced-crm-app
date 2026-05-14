@@ -104,7 +104,7 @@ const getPlatformHealth = async (req, res) => {
         services: [
           { name: 'Core API', status: 'ONLINE', uptime: '99.99%', latency: '8ms' },
           { name: 'Database (PostgreSQL)', status: dbLatency < 100 ? 'OPTIMAL' : 'DEGRADED', load: '14%', latency: `${dbLatency}ms` },
-          { name: 'AI Services', status: 'ACTIVE', provider: 'OpenAI', regional: 'us-east-1' },
+          { name: 'AI Services', status: 'ACTIVE', provider: 'Gemini', regional: 'asia-southeast1' },
           { name: 'Telephony (Twilio)', status: 'READY', provider: 'Twilio', signal: 'EXCELLENT' },
           { name: 'Realtime WebSocket', status: 'SYNCED', activeConnections: 42 }
         ],

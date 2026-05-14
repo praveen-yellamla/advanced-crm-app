@@ -6,9 +6,41 @@ const prisma = require('../config/prisma');
  */
 const chatAssistant = async (req, res) => {
   try {
-    const { message, history } = req.body;
-    const response = await aiService.chatWithCRM(req.user.id, message, history);
-    res.json({ success: true, data: response });
+    const { message, query, history } = req.body;
+    const finalMessage = message || query;
+    const { organizationId, id: userId } = req.user;
+    
+    if (!finalMessage) {
+      return res.status(400).json({ success: false, message: "No query provided" });
+    }
+
+    // Save User Message
+    await prisma.chatMessage.create({
+      data: { userId, role: 'user', content: finalMessage }
+    });
+
+    const response = await aiService.chatWithCRM(userId, organizationId, finalMessage, history);
+    
+    // Save Assistant Response
+    await prisma.chatMessage.create({
+      data: { userId, role: 'assistant', content: response }
+    });
+
+    res.json({ success: true, results: response });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getChatHistory = async (req, res) => {
+  try {
+    const { id: userId } = req.user;
+    const history = await prisma.chatMessage.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'asc' },
+      take: 50 // Limit to last 50 for performance
+    });
+    res.json({ success: true, data: history });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -90,6 +122,7 @@ const getAIUsage = async (req, res) => {
 
 module.exports = {
   chatAssistant,
+  getChatHistory,
   getLeadScore,
   getAISettings,
   updateAISettings,

@@ -1,157 +1,138 @@
-const { OpenAI } = require('openai');
 const prisma = require('../config/prisma');
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'missing-key',
-});
+const aiProvider = require('./ai/aiProvider');
 
 /**
- * CORE AI CONVERSATIONAL ENGINE
- * Analyzes CRM context and provides intelligent responses
+ * STRATEGIC CRM INTELLIGENCE SERVICE (ORCHESTRATOR)
+ * Routes requests through the dynamic AI Provider and manages CRM context.
  */
-const chatWithCRM = async (userId, message, history = []) => {
-  try {
-    // 1. DATA AGGREGATION LAYER
-    // We fetch a snapshot of the CRM to give the AI context
-    const [leadsCount, callsCount, tasksCount, recentLeads, performance] = await Promise.all([
-      prisma.lead.count(),
-      prisma.call.count(),
-      prisma.task.count(),
-      prisma.lead.findMany({ take: 5, orderBy: { createdAt: 'desc' }, select: { customerName: true, status: true, source: true } }),
-      prisma.call.groupBy({
-        by: ['status'],
-        _count: { _all: true }
-      })
-    ]);
+class AIService {
+  /**
+   * CORE CONVERSATIONAL ENGINE
+   */
+  async chatWithCRM(userId, organizationId, message, history = []) {
+    try {
+      // 1. TENANT-SCOPED DATA AGGREGATION
+      const [leadsCount, callsCount, tasksCount, recentLeads, performance, revenue] = await Promise.all([
+        prisma.lead.count({ where: { organizationId } }),
+        prisma.call.count({ where: { organizationId } }),
+        prisma.task.count({ where: { organizationId } }),
+        prisma.lead.findMany({ 
+          where: { organizationId },
+          take: 5, 
+          orderBy: { createdAt: 'desc' }, 
+          select: { customerName: true, status: true, source: true } 
+        }),
+        prisma.call.groupBy({
+          by: ['status'],
+          where: { organizationId },
+          _count: { _all: true }
+        }),
+        prisma.invoice.aggregate({
+          where: { organizationId },
+          _sum: { amount: true }
+        })
+      ]);
 
-    const crmContext = `
-      CURRENT CRM SNAPSHOT:
-      - Total Leads: ${leadsCount}
-      - Total Calls: ${callsCount}
-      - Total Tasks: ${tasksCount}
-      - Recent Leads: ${JSON.stringify(recentLeads)}
-      - Call Status Distribution: ${JSON.stringify(performance)}
-      - System Date: ${new Date().toISOString()}
-    `;
+      const crmContext = `
+        CURRENT CRM SNAPSHOT (TENANT: ${organizationId}):
+        - Your Total Leads: ${leadsCount}
+        - Your Total Calls: ${callsCount}
+        - Your Total Tasks: ${tasksCount}
+        - Total CRM Revenue: ${revenue._sum.amount || 0}
+        - Recent Leads: ${JSON.stringify(recentLeads)}
+        - Call Status Distribution: ${JSON.stringify(performance)}
+        - System Date: ${new Date().toISOString()}
+      `;
 
-    // 2. PROMPT CONSTRUCTION
-    const systemPrompt = `
-      You are "Zia", the Advanced CRM Intelligence Assistant. 
-      You have access to real-time CRM data and operations.
-      Your goal is to help administrators manage the platform, optimize sales, and analyze performance.
+      const systemPrompt = `
+        You are "Zia", the Advanced CRM Intelligence Assistant. 
+        You have access to real-time CRM data and operations for this workspace.
+        Your goal is to help users manage their pipeline and analyze performance.
+        
+        CRITICAL INSTRUCTIONS:
+        - Use the provided CRM Context to answer accurately.
+        - NEVER mention other companies or data outside this context.
+        - Be professional, data-driven, and concise.
+        - Format responses in clean Markdown.
+        
+        ${crmContext}
+      `;
+
+      // 2. EXECUTION VIA PROVIDER ABSTRACTION
+      const result = await aiProvider.chat(systemPrompt, message, history);
+
+      // 3. USAGE TRACKING
+      await prisma.aIUsage.create({
+        data: {
+          userId,
+          organizationId,
+          module: 'CHAT_ASSISTANT',
+          tokens: result.tokens,
+          cost: (result.tokens / 1000) * 0.005 // Standard Gemini Flash pricing
+        }
+      });
+
+      return result.content;
+    } catch (error) {
+      console.error("[AI SERVICE ERROR]:", error);
       
-      CRITICAL INSTRUCTIONS:
-      - Use the provided CRM Context to answer questions accurately.
-      - If you need to perform an action (like creating a task), explain that you can do it.
-      - Be professional, concise, and data-driven.
-      - Format your responses in clean Markdown.
-      - If data is missing, offer to find it or explain what is needed.
-      
-      ${crmContext}
-    `;
-
-    // 3. EXECUTION
-    const messages = [
-      { role: "system", content: systemPrompt },
-      ...history.slice(-10), // Keep last 10 messages for context
-      { role: "user", content: message }
-    ];
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4-turbo-preview",
-      messages,
-      temperature: 0.5,
-      max_tokens: 1000
-    });
-
-    const aiResponse = response.choices[0].message.content;
-
-    // 4. USAGE TRACKING
-    await prisma.aIUsage.create({
-      data: {
-        userId,
-        module: 'CHAT_ASSISTANT',
-        tokens: response.usage.total_tokens,
-        cost: (response.usage.total_tokens / 1000) * 0.01 // Simplified cost calculation
+      // Professional Error Mapping
+      if (error.message.includes('quota') || error.message.includes('429')) {
+        throw new Error("AI Budget Exceeded (Quota). Please upgrade your plan or check API limits.");
       }
-    });
-
-    return aiResponse;
-  } catch (error) {
-    console.error("AI Chat Error:", error);
-    throw new Error("Intelligence core is currently calibrating. Please retry in a moment.");
-  }
-};
-
-/**
- * DYNAMIC LEAD SCORING
- */
-const scoreLead = async (leadId) => {
-  try {
-    const lead = await prisma.lead.findUnique({
-      where: { id: leadId },
-      include: {
-        calls: { take: 10, orderBy: { createdAt: 'desc' } },
-        activities: { take: 10, orderBy: { createdAt: 'desc' } }
+      if (error.message.includes('API key') || error.message.includes('invalid_api_key')) {
+        throw new Error("Intelligence core configuration error (Invalid API Key). Contact administrator.");
       }
-    });
-
-    if (!lead) return null;
-
-    const prompt = `
-      Analyze this lead for conversion probability (0-100):
-      Lead: ${JSON.stringify(lead)}
       
-      Return JSON only: { "score": number, "priority": "Low|Medium|High|Urgent", "reasoning": "string", "nextAction": "string" }
-    `;
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4-turbo-preview",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" }
-    });
-
-    const result = JSON.parse(response.choices[0].message.content);
-
-    await prisma.lead.update({
-      where: { id: leadId },
-      data: { score: result.score }
-    });
-
-    return result;
-  } catch (error) {
-    console.error("AI Scoring Error:", error);
-    return null;
+      throw new Error(`Intelligence core failure: ${error.message}`);
+    }
   }
-};
 
-/**
- * CALL TRANSCRIPTION ANALYSIS
- */
-const analyzeCall = async (callId, transcript) => {
-  try {
-    const prompt = `
-      Analyze this sales call transcript:
-      "${transcript}"
-      
-      Return JSON: { "sentiment": "Positive|Negative|Neutral", "objections": [], "summary": "string", "rating": 1-5 }
-    `;
+  /**
+   * DYNAMIC LEAD SCORING
+   */
+  async scoreLead(leadId) {
+    try {
+      const lead = await prisma.lead.findUnique({
+        where: { id: leadId },
+        include: {
+          calls: { take: 10, orderBy: { createdAt: 'desc' } },
+          activities: { take: 10, orderBy: { createdAt: 'desc' } }
+        }
+      });
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4-turbo-preview",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" }
-    });
+      if (!lead) return null;
 
-    return JSON.parse(response.choices[0].message.content);
-  } catch (error) {
-    console.error("AI Call Analysis Error:", error);
-    return null;
+      const prompt = `
+        Analyze this lead for conversion probability (0-100):
+        Lead: ${JSON.stringify(lead)}
+        Return JSON only: { "score": number, "priority": "Low|Medium|High|Urgent", "reasoning": "string", "nextAction": "string" }
+      `;
+
+      return await aiProvider.generateJSON(prompt);
+    } catch (error) {
+      console.error("AI Scoring Error:", error);
+      return null;
+    }
   }
-};
 
-module.exports = {
-  chatWithCRM,
-  scoreLead,
-  analyzeCall
-};
+  /**
+   * CALL TRANSCRIPTION ANALYSIS
+   */
+  async analyzeCall(callId, transcript) {
+    try {
+      const prompt = `
+        Analyze this sales call transcript:
+        "${transcript}"
+        Return JSON: { "sentiment": "Positive|Negative|Neutral", "objections": [], "summary": "string", "rating": 1-5 }
+      `;
+
+      return await aiProvider.generateJSON(prompt);
+    } catch (error) {
+      console.error("AI Call Analysis Error:", error);
+      return null;
+    }
+  }
+}
+
+module.exports = new AIService();

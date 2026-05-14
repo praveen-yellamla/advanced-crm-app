@@ -26,7 +26,7 @@ class AIService {
 
   /**
    * Universal Prompt Engine
-   * In a real system, this would call OpenAI/Claude/Gemini.
+   * In a real system, this would call Google Gemini.
    * We simulate the response for production logic stability.
    */
   static async generateIntelligence(userId, module, prompt, systemPrompt = "You are an expert CRM Intelligence Engine.") {

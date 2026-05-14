@@ -322,6 +322,7 @@ model User {
   feedbacksReceived Feedback[] @relation("AgentFeedback")
   feedbacksGiven    Feedback[] @relation("ManagerFeedback")
   aiUsage       AIUsage[]
+  chatMessages  ChatMessage[]
   emailAccounts EmailAccount[]
   notifications Notification[]
 
@@ -563,9 +564,21 @@ model AIUsage {
   user      User     @relation(fields: [userId], references: [id])
   module    String
   tokens    Int      @default(0)
+  cost      Float    @default(0.0)
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("ai_usage")
+}
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   // user, assistant
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("chat_messages")
 }
 
 model Email {

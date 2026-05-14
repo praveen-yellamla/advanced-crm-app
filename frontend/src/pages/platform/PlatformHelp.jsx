@@ -137,7 +137,7 @@ const PlatformHelp = () => {
          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <FAQItem 
               q="How do I reset an AI instance for a specific tenant?" 
-              a="Navigate to Company Hub > [Tenant] > Infrastructure and click 'Recalibrate AI Engine'. This will re-provision the OpenAI keys and flush the context cache." 
+              a="Navigate to Company Hub > [Tenant] > Infrastructure and click 'Recalibrate AI Engine'. This will re-provision the Gemini keys and flush the context cache." 
             />
             <FAQItem 
               q="Twilio VOIP gateway shows 'Unauthorized' in logs." 

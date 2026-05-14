@@ -11,7 +11,9 @@ router.patch('/settings', authorize('ADMIN'), aiController.updateAISettings);
 router.get('/usage', authorize('ADMIN'), aiController.getAIUsage);
 
 // Strategic Intelligence
+router.post('/query', aiController.chatAssistant);
 router.post('/chat', aiController.chatAssistant);
+router.get('/history', aiController.getChatHistory);
 router.post('/lead/score/:leadId', aiController.getLeadScore);
 
 module.exports = router;

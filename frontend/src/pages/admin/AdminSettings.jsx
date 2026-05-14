@@ -406,10 +406,10 @@ const AISettings = () => {
         <div className="p-10 bg-[#0F172A] rounded-[40px] shadow-2xl space-y-8">
            <div className="flex items-center justify-between">
               <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">AI Model Settings</span>
-              <span className="px-4 py-2 bg-blue-500 rounded-xl text-[9px] font-bold text-white uppercase tracking-widest">GPT-4 Omni</span>
+              <span className="px-4 py-2 bg-blue-500 rounded-xl text-[9px] font-bold text-white uppercase tracking-widest">Gemini Pro</span>
            </div>
            <div className="grid grid-cols-2 gap-8">
-              <FormInput label="OpenAI API Key" placeholder="sk-..." type="password" dark isSecret />
+              <FormInput label="Gemini API Key" placeholder="AIzaSy..." type="password" dark isSecret />
               <div className="space-y-4">
                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">AI Creativity (Temperature)</label>
                  <div className="flex items-center gap-6">
