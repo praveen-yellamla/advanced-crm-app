@@ -1,39 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { 
-  Plus, 
-  Calendar, 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle, 
-  Search,
-  Filter,
-  MoreVertical,
-  ChevronRight,
-  Bell,
-  CheckCircle,
-  LayoutGrid,
-  List,
-  Calendar as CalendarIcon,
-  Trash2,
-  Tag,
-  Flag,
-  User,
-  ArrowRight
+  Plus, Calendar, Clock, CheckCircle2, AlertCircle, Search,
+  Filter, MoreVertical, ChevronRight, Bell, LayoutGrid, 
+  List as ListIcon, Trash2, Tag, Flag, User, ArrowRight, 
+  Calendar as CalendarIcon, X, CheckCircle, Sparkles, Phone,
+  ChevronLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 const COLUMNS = [
-  { id: 'PENDING', label: 'Pending Backlog', color: 'bg-slate-500' },
-  { id: 'IN_PROGRESS', label: 'Active Engagement', color: 'bg-blue-600' },
-  { id: 'COMPLETED', label: 'Mission Accomplished', color: 'bg-emerald-600' }
+  { id: 'PENDING', label: 'Strategy Backlog', color: 'blue' },
+  { id: 'IN_PROGRESS', label: 'Active Engagement', color: 'amber' },
+  { id: 'COMPLETED', label: 'Verified Complete', color: 'emerald' }
 ];
 
 const AgentTasks = () => {
-  const [view, setView] = useState('kanban'); // kanban, list
+  const [viewMode, setViewMode] = useState('KANBAN'); // KANBAN, LIST, CALENDAR
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const queryClient = useQueryClient();
 
   const { data: tasks, isLoading } = useQuery({
@@ -56,17 +43,17 @@ const AgentTasks = () => {
     mutationFn: (data) => api.post('/agent/tasks', data),
     onSuccess: () => {
       queryClient.invalidateQueries(['agentTasks']);
-      toast.success('Strategy Task Orchestrated');
+      toast.success('Strategic Objective Initialized');
       setIsModalOpen(false);
       setNewTask({ title: '', description: '', dueDate: '', priority: 'Normal', type: 'FOLLOWUP' });
     }
   });
 
   const updateTaskMutation = useMutation({
-    mutationFn: ({ id, ...data }) => api.patch(`/agent/tasks/${id}`, data),
+    mutationFn: ({ id, data }) => api.patch(`/agent/tasks/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['agentTasks']);
-      toast.success('Alignment Synchronized');
+      toast.success('Tactical Alignment Synchronized');
     }
   });
 
@@ -74,199 +61,227 @@ const AgentTasks = () => {
     mutationFn: (id) => api.delete(`/agent/tasks/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries(['agentTasks']);
-      toast.success('Task Dissolved');
+      toast.success('Objective Decommissioned');
     }
   });
 
-  const getPriorityStyles = (priority) => {
-    switch (priority) {
-      case 'Urgent': return 'bg-rose-50 text-rose-600 border-rose-100';
-      case 'High': return 'bg-amber-50 text-amber-600 border-amber-100';
-      default: return 'bg-slate-50 text-slate-500 border-slate-100';
-    }
-  };
-
-  const renderKanban = () => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-      {COLUMNS.map(col => (
-        <div key={col.id} className="space-y-8">
-          <div className="flex items-center justify-between px-4">
-             <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${col.color} shadow-lg shadow-blue-200`} />
-                <h3 className="text-sm font-black text-[#0F172A] uppercase tracking-widest">{col.label}</h3>
-             </div>
-             <span className="text-[10px] font-black bg-slate-100 px-3 py-1 rounded-lg text-slate-500">
-               {tasks?.filter(t => (t.status || 'PENDING') === col.id).length || 0}
-             </span>
-          </div>
-
-          <div className="space-y-6 min-h-[600px] p-2 bg-slate-50/30 rounded-[40px] border border-dashed border-slate-200">
-            {tasks?.filter(t => (t.status || 'PENDING') === col.id).map(task => (
-              <motion.div
-                layoutId={task.id.toString()}
-                key={task.id}
-                className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group"
-              >
-                <div className="flex justify-between items-start mb-6">
-                   <span className={`px-3 py-1 rounded-xl text-[9px] font-black uppercase border ${getPriorityStyles(task.priority)}`}>
-                     {task.priority}
-                   </span>
-                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
-                        onClick={() => deleteTaskMutation.mutate(task.id)}
-                        className="p-2 hover:bg-rose-50 hover:text-rose-600 rounded-lg transition-all"
-                      >
-                         <Trash2 size={14} />
-                      </button>
-                      <button className="p-2 hover:bg-slate-50 rounded-lg transition-all text-slate-400">
-                         <MoreVertical size={14} />
-                      </button>
-                   </div>
-                </div>
-
-                <h4 className="text-lg font-bold text-[#0F172A] mb-2 tracking-tight group-hover:text-blue-600 transition-colors">{task.title}</h4>
-                <p className="text-xs text-slate-400 font-medium mb-8 line-clamp-2">{task.description}</p>
-
-                <div className="flex items-center justify-between pt-6 border-t border-slate-50">
-                   <div className="flex items-center gap-2 text-slate-400">
-                      <Clock size={12} />
-                      <span className="text-[10px] font-bold">{new Date(task.dueDate).toLocaleDateString()}</span>
-                   </div>
-                   
-                   <div className="flex gap-2">
-                     {col.id !== 'COMPLETED' && (
-                       <button 
-                         onClick={() => updateTaskMutation.mutate({ id: task.id, status: col.id === 'PENDING' ? 'IN_PROGRESS' : 'COMPLETED' })}
-                         className="p-3 bg-slate-50 text-slate-400 hover:bg-blue-600 hover:text-white rounded-xl transition-all shadow-sm"
-                       >
-                          <ArrowRight size={16} />
-                       </button>
-                     )}
-                     {col.id === 'COMPLETED' && (
-                       <div className="p-3 bg-emerald-50 text-emerald-500 rounded-xl">
-                          <CheckCircle2 size={16} />
-                       </div>
-                     )}
-                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  const filteredTasks = useMemo(() => {
+    return (tasks || []).filter(t => 
+      t.title.toLowerCase().includes(search.toLowerCase()) || 
+      (t.description || '').toLowerCase().includes(search.toLowerCase())
+    );
+  }, [tasks, search]);
 
   return (
-    <div className="space-y-12 pb-16">
+    <div className="space-y-10 pb-20">
       {/* ELITE HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
-        <div>
-           <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter mb-2">Strategy Ledger</h1>
-           <p className="text-[#64748B] font-bold text-sm flex items-center gap-2">
-             <Bell size={14} className="text-blue-500 animate-pulse" /> 
-             Operational command center for team coordination and lead engagement.
-           </p>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+        <div className="space-y-1">
+           <h1 className="text-4xl font-black text-slate-900 tracking-tight italic uppercase">Task Manager</h1>
+           <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.3em] ml-1">Workforce Coordination & Strategy</p>
         </div>
-
-        <div className="flex items-center gap-4 bg-white/40 backdrop-blur-xl p-2 rounded-[24px] border border-white/60 shadow-xl">
-           <div className="flex bg-slate-100 p-1 rounded-2xl">
-              <button 
-                onClick={() => setView('kanban')}
-                className={`p-3 rounded-xl transition-all ${view === 'kanban' ? 'bg-white shadow-md text-blue-600' : 'text-slate-400'}`}
-              >
-                <LayoutGrid size={18} />
-              </button>
-              <button 
-                onClick={() => setView('list')}
-                className={`p-3 rounded-xl transition-all ${view === 'list' ? 'bg-white shadow-md text-blue-600' : 'text-slate-400'}`}
-              >
-                <List size={18} />
-              </button>
+        <div className="flex gap-4">
+           <div className="flex p-1.5 bg-slate-100 rounded-2xl">
+              <NavBtn active={viewMode === 'KANBAN'} icon={LayoutGrid} onClick={() => setViewMode('KANBAN')} />
+              <NavBtn active={viewMode === 'LIST'} icon={ListIcon} onClick={() => setViewMode('LIST')} />
+              <NavBtn active={viewMode === 'CALENDAR'} icon={CalendarIcon} onClick={() => setViewMode('CALENDAR')} />
            </div>
            <button 
              onClick={() => setIsModalOpen(true)}
-             className="h-14 px-10 bg-[#0F172A] text-white rounded-[20px] font-black text-xs uppercase tracking-widest shadow-2xl shadow-slate-300 hover:-translate-y-1 transition-all flex items-center gap-3"
+             className="h-14 px-8 bg-slate-900 text-white rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-slate-900/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
            >
-             <Plus size={20} /> Orchestrate Task
+              <Plus size={20} className="text-blue-400" /> Create Task
            </button>
         </div>
       </div>
 
-      {/* SEARCH & FILTERS */}
-      <div className="flex flex-wrap items-center gap-6">
-         <div className="flex-1 min-w-[300px] relative group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" size={20} />
+      {/* FILTER & SEARCH */}
+      <div className="flex flex-col xl:flex-row gap-6">
+         <div className="flex-1 relative group">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
             <input 
-              type="text" 
-              placeholder="Search strategy ledger..."
-              className="w-full h-16 pl-16 pr-6 bg-white/40 backdrop-blur-xl border border-slate-200/60 rounded-[24px] outline-none focus:border-blue-500 transition-all font-bold text-sm shadow-sm"
+               type="text" placeholder="Search strategy backlog by objective or context..." 
+               className="w-full h-16 pl-16 pr-6 bg-white border border-slate-100 rounded-[32px] focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all font-bold text-slate-900 placeholder:text-slate-300"
+               value={search} onChange={e => setSearch(e.target.value)}
             />
          </div>
-         <button className="h-16 px-8 bg-white border border-slate-200/60 rounded-[24px] flex items-center gap-3 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
-            <Filter size={18} /> Filters
-         </button>
       </div>
 
-      {/* MAIN VIEW AREA */}
-      {isLoading ? (
-        <div className="h-[600px] flex flex-col items-center justify-center space-y-6">
-           <div className="w-16 h-16 border-8 border-blue-500/10 border-t-blue-500 rounded-full animate-spin" />
-           <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Synchronizing Workforce Data...</p>
-        </div>
-      ) : (
-        <AnimatePresence mode="wait">
-           {view === 'kanban' ? renderKanban() : (
-             <div className="p-20 text-center bg-white/40 backdrop-blur-xl border border-slate-200/60 rounded-[40px]">
-                <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">List View Implementation in Progress</p>
-             </div>
-           )}
-        </AnimatePresence>
-      )}
+      <AnimatePresence mode="wait">
+         {viewMode === 'KANBAN' && (
+           <motion.div 
+             key="kanban"
+             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+             className="grid grid-cols-1 md:grid-cols-3 gap-10"
+           >
+              {COLUMNS.map(col => (
+                <div key={col.id} className="space-y-6">
+                   <div className="flex items-center justify-between px-6">
+                      <div className="flex items-center gap-3">
+                         <div className={`w-3 h-3 rounded-full bg-${col.color}-500 shadow-[0_0_10px_currentColor]`} />
+                         <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] italic">{col.label}</h3>
+                      </div>
+                      <span className="text-[10px] font-black text-slate-300">{(filteredTasks || []).filter(t => (t.status || 'PENDING') === col.id).length}</span>
+                   </div>
+                   <div className="space-y-6 min-h-[600px] p-4 bg-slate-50/30 rounded-[48px] border-2 border-dashed border-slate-100/50">
+                      {(filteredTasks || []).filter(t => (t.status || 'PENDING') === col.id).map(task => (
+                        <TaskCard 
+                          key={task.id} 
+                          task={task} 
+                          onUpdate={(data) => updateTaskMutation.mutate({ id: task.id, data })}
+                          onDelete={() => deleteTaskMutation.mutate(task.id)}
+                        />
+                      ))}
+                   </div>
+                </div>
+              ))}
+           </motion.div>
+         )}
+
+         {viewMode === 'LIST' && (
+            <motion.div 
+              key="list"
+              initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+              className="bg-white rounded-[48px] border border-slate-100 shadow-xl shadow-slate-200/20 overflow-hidden"
+            >
+               <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                     <thead>
+                        <tr className="bg-slate-50/50 border-b border-slate-100">
+                           <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Objective</th>
+                           <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Priority</th>
+                           <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Deadline</th>
+                           <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Status</th>
+                           <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Actions</th>
+                        </tr>
+                     </thead>
+                     <tbody className="divide-y divide-slate-50">
+                        {filteredTasks.map(task => (
+                          <tr key={task.id} className="hover:bg-slate-50/50 transition-colors group">
+                             <td className="px-10 py-8">
+                                <div className="flex items-center gap-6">
+                                   <div className="w-12 h-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                                      <CheckCircle2 size={18} />
+                                   </div>
+                                   <div>
+                                      <p className="text-sm font-black text-slate-900 uppercase italic tracking-tight">{task.title}</p>
+                                      <p className="text-[10px] text-slate-400 font-bold mt-1 line-clamp-1">{task.description}</p>
+                                   </div>
+                                </div>
+                             </td>
+                             <td className="px-10 py-8">
+                                <span className={`px-4 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest ${
+                                   task.priority === 'Urgent' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                   task.priority === 'High' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                   'bg-slate-50 text-slate-400 border-slate-100'
+                                }`}>
+                                   {task.priority}
+                                </span>
+                             </td>
+                             <td className="px-10 py-8 text-xs font-black text-slate-900 italic uppercase">
+                                {new Date(task.dueDate).toLocaleDateString()}
+                             </td>
+                             <td className="px-10 py-8">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{task.status || 'PENDING'}</span>
+                             </td>
+                             <td className="px-10 py-8 text-right">
+                                <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+                                   <button className="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-blue-600 transition-all flex items-center justify-center">
+                                      <MoreVertical size={16} />
+                                   </button>
+                                </div>
+                             </td>
+                          </tr>
+                        ))}
+                     </tbody>
+                  </table>
+               </div>
+            </motion.div>
+         )}
+
+         {viewMode === 'CALENDAR' && (
+            <motion.div 
+              key="calendar"
+              initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }}
+              className="bg-white p-12 rounded-[48px] border border-slate-100 shadow-xl shadow-slate-200/20"
+            >
+               <div className="flex items-center justify-between mb-12">
+                  <div className="flex items-center gap-6">
+                     <button className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"><ChevronLeft size={20}/></button>
+                     <h2 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">May 2026</h2>
+                     <button className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"><ChevronRight size={20}/></button>
+                  </div>
+                  <div className="flex items-center gap-2 px-6 py-2 bg-blue-50 text-blue-600 rounded-xl font-black text-[10px] uppercase tracking-widest">
+                     <Clock size={14} className="mr-2" /> Today: May 15
+                  </div>
+               </div>
+               <div className="grid grid-cols-7 gap-6">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+                    <div key={d} className="text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] pb-6">{d}</div>
+                  ))}
+                  {Array.from({ length: 31 }).map((_, i) => (
+                    <div key={i} className="aspect-square bg-slate-50/50 rounded-3xl border border-slate-50 p-4 hover:border-blue-200 hover:bg-white transition-all cursor-pointer relative group">
+                       <span className="text-[11px] font-black text-slate-400 group-hover:text-blue-600 transition-colors">{i + 1}</span>
+                       <div className="absolute bottom-4 left-4 right-4 flex gap-1">
+                          {(filteredTasks || []).filter(t => new Date(t.dueDate).getDate() === (i + 1)).map((t, idx) => (
+                            idx < 3 && <div key={idx} className={`h-1.5 flex-1 rounded-full ${t.priority === 'Urgent' ? 'bg-rose-500' : 'bg-blue-500'}`} />
+                          ))}
+                       </div>
+                    </div>
+                  ))}
+               </div>
+            </motion.div>
+         )}
+      </AnimatePresence>
 
       {/* CREATE TASK MODAL */}
       <AnimatePresence>
          {isModalOpen && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-slate-900/40 backdrop-blur-md">
-              <motion.div initial={{ opacity: 0, scale: 0.95, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 30 }} className="relative w-full max-w-xl bg-white rounded-[48px] shadow-2xl p-16">
-                 <div className="flex justify-between items-center mb-10">
-                    <h2 className="text-4xl font-black text-[#0F172A] tracking-tighter">New Strategy</h2>
-                    <button onClick={() => setIsModalOpen(false)} className="p-4 hover:bg-slate-50 rounded-2xl transition-all">
-                       <XCircle size={24} className="text-slate-300" />
+           <div className="fixed inset-0 z-[5000] flex items-center justify-center p-8 bg-[#0F172A]/40 backdrop-blur-xl">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="relative w-full max-w-2xl bg-white rounded-[64px] shadow-2xl p-16 overflow-hidden"
+              >
+                 <div className="flex justify-between items-center mb-12">
+                    <div>
+                       <h2 className="text-4xl font-black text-slate-900 uppercase italic tracking-tighter">New Strategy</h2>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Initializing Tactical Engagement Objective</p>
+                    </div>
+                    <button onClick={() => setIsModalOpen(false)} className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-300 hover:text-blue-600 transition-all">
+                       <X size={24} />
                     </button>
                  </div>
                  
-                 <form onSubmit={(e) => { e.preventDefault(); createTaskMutation.mutate(newTask); }} className="space-y-8">
-                    <div className="space-y-3">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Engagement Objective</label>
+                 <form onSubmit={(e) => { e.preventDefault(); createTaskMutation.mutate(newTask); }} className="space-y-10">
+                    <div className="space-y-4">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Objective Title</label>
                        <input 
-                          required
-                          placeholder="What needs to be achieved?"
-                          className="w-full h-16 px-8 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-sm"
+                          required placeholder="Identify core focus..."
+                          className="w-full h-18 px-8 bg-slate-50 border-none rounded-[24px] outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold text-lg text-slate-900"
                           value={newTask.title} onChange={e => setNewTask({...newTask, title: e.target.value})}
                        />
                     </div>
-                    <div className="space-y-3">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tactical Details</label>
+                    <div className="space-y-4">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Strategic Context</label>
                        <textarea 
-                          placeholder="Context and supporting intelligence..."
-                          className="w-full h-32 p-8 bg-slate-50 border border-slate-100 rounded-3xl outline-none focus:border-blue-600 transition-all font-medium text-sm leading-relaxed"
+                          placeholder="Describe the operational parameters..."
+                          className="w-full h-40 p-8 bg-slate-50 border-none rounded-[32px] outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold text-slate-900 text-lg leading-relaxed italic"
                           value={newTask.description} onChange={e => setNewTask({...newTask, description: e.target.value})}
                        />
                     </div>
                     <div className="grid grid-cols-2 gap-8">
-                       <div className="space-y-3">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Deadline Sequence</label>
+                       <div className="space-y-4">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Sequence Deadline</label>
                           <input 
                              required type="date"
-                             className="w-full h-16 px-8 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-sm"
+                             className="w-full h-18 px-8 bg-slate-50 border-none rounded-[24px] outline-none focus:ring-2 focus:ring-blue-600/10 font-bold text-sm text-slate-900"
                              value={newTask.dueDate} onChange={e => setNewTask({...newTask, dueDate: e.target.value})}
                           />
                        </div>
-                       <div className="space-y-3">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Priority Logic</label>
+                       <div className="space-y-4">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Priority Protocol</label>
                           <select 
-                             className="w-full h-16 px-8 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-black text-[10px] uppercase tracking-widest"
+                             className="w-full h-18 px-8 bg-slate-50 border-none rounded-[24px] outline-none focus:ring-2 focus:ring-blue-600/10 font-black text-[11px] uppercase tracking-widest text-slate-900"
                              value={newTask.priority} onChange={e => setNewTask({...newTask, priority: e.target.value})}
                           >
                              <option>Normal</option>
@@ -275,13 +290,15 @@ const AgentTasks = () => {
                           </select>
                        </div>
                     </div>
-                    <div className="flex gap-6 pt-10">
-                       <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-16 bg-slate-50 text-slate-500 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all">Abort</button>
-                       <button type="submit" className="flex-1 h-16 bg-[#0F172A] text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-slate-300 hover:scale-105 transition-all">
-                          {createTaskMutation.isPending ? 'Deploying...' : 'Initiate Task'}
+                    <div className="flex gap-6 pt-6">
+                       <button type="submit" className="flex-1 h-20 bg-slate-900 text-white rounded-[32px] font-black uppercase text-xs tracking-[0.3em] shadow-2xl hover:brightness-125 transition-all">
+                          {createTaskMutation.isPending ? 'Synchronizing...' : 'Initialize Objective'}
                        </button>
                     </div>
                  </form>
+                 <div className="absolute top-0 right-0 p-16 opacity-5 pointer-events-none">
+                    <Sparkles size={200} className="text-blue-600" />
+                 </div>
               </motion.div>
            </div>
          )}
@@ -290,12 +307,61 @@ const AgentTasks = () => {
   );
 };
 
-const XCircle = ({ size, className }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="12" cy="12" r="10" />
-    <line x1="15" y1="9" x2="9" y2="15" />
-    <line x1="9" y1="9" x2="15" y2="15" />
-  </svg>
+const TaskCard = ({ task, onUpdate, onDelete }) => (
+  <motion.div 
+    whileHover={{ y: -6, scale: 1.02 }}
+    className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 group relative"
+  >
+     <div className="flex justify-between items-start mb-6">
+        <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border ${
+           task.priority === 'Urgent' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+           task.priority === 'High' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+           'bg-slate-50 text-slate-400 border-slate-100'
+        }`}>
+           {task.priority}
+        </span>
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+           <button onClick={onDelete} className="p-2 hover:bg-rose-50 hover:text-rose-600 rounded-lg transition-all"><Trash2 size={14}/></button>
+           <button className="p-2 hover:bg-slate-50 rounded-lg transition-all text-slate-400"><MoreVertical size={14}/></button>
+        </div>
+     </div>
+
+     <h4 className="text-lg font-black text-slate-900 italic uppercase tracking-tight group-hover:text-blue-600 transition-colors">{task.title}</h4>
+     <p className="text-xs text-slate-400 font-bold mt-2 line-clamp-2 leading-relaxed italic">{task.description}</p>
+
+     <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+           <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-300">
+              <CalendarIcon size={14} />
+           </div>
+           <span className="text-[10px] font-black text-slate-900 italic tabular-nums">{new Date(task.dueDate).toLocaleDateString()}</span>
+        </div>
+        
+        <div className="flex gap-2">
+           {task.status !== 'COMPLETED' ? (
+              <button 
+                 onClick={() => onUpdate({ status: task.status === 'PENDING' ? 'IN_PROGRESS' : 'COMPLETED' })}
+                 className="w-12 h-12 bg-slate-50 text-slate-400 hover:bg-blue-600 hover:text-white rounded-2xl transition-all shadow-sm flex items-center justify-center"
+              >
+                 <ArrowRight size={18} />
+              </button>
+           ) : (
+              <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center shadow-inner">
+                 <CheckCircle size={18} />
+              </div>
+           )}
+        </div>
+     </div>
+  </motion.div>
+);
+
+const NavBtn = ({ active, icon: Icon, onClick }) => (
+  <button 
+    onClick={onClick}
+    className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${active ? 'bg-white shadow-md text-blue-600' : 'text-slate-400 hover:text-slate-900'}`}
+  >
+    <Icon size={18} />
+  </button>
 );
 
 export default AgentTasks;

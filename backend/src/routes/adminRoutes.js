@@ -25,6 +25,7 @@ const {
   getInvites, 
   getInviteStats, 
   deleteInvite, 
+  resendInvite,
   bulkDeleteInvites 
 } = require('../controllers/inviteController');
 const {
@@ -71,6 +72,7 @@ router.route('/invites')
 
 router.post('/invite-agent', inviteUser);
 
+router.post('/invites/:id/resend', resendInvite);
 router.delete('/invites/:id', deleteInvite);
 
 router.route('/invoices')

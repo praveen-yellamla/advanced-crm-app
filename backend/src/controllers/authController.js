@@ -343,10 +343,10 @@ const verifyInvite = async (req, res) => {
   try {
     const { token } = req.params;
     const invite = await prisma.invite.findUnique({ where: { token } });
-    if (!invite || invite.status !== 'PENDING') {
+    if (!invite || invite.status !== 'PENDING' || (invite.expiresAt && invite.expiresAt < new Date())) {
       return res.status(400).json({ success: false, message: 'Invalid or expired invite' });
     }
-    res.json({ success: true, data: { email: invite.email, role: invite.role } });
+    res.json({ success: true, data: { name: invite.name, email: invite.email, role: invite.role } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -359,21 +359,58 @@ const acceptInvite = async (req, res) => {
   try {
     const { token, password, name, phone } = req.body;
     const invite = await prisma.invite.findUnique({ where: { token } });
-    if (!invite || invite.status !== 'PENDING') {
-      return res.status(400).json({ message: 'Invalid invite' });
+    if (!invite || invite.status !== 'PENDING' || (invite.expiresAt && invite.expiresAt < new Date())) {
+      return res.status(400).json({ message: 'Invalid or expired invite' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    await prisma.user.upsert({
-      where: { email: invite.email },
-      update: { name, phone, password: hashedPassword, role: invite.role, isActive: true, inviteStatus: 'ACCEPTED' },
-      create: { name, email: invite.email, phone, password: hashedPassword, role: invite.role, organizationId: invite.organizationId, isActive: true, inviteStatus: 'ACCEPTED' }
-    });
+    
+    // Use data from invite if not provided in body
+    const finalName = name || invite.name || 'New User';
+    const finalPhone = phone || null;
 
-    await prisma.invite.update({ where: { token }, data: { status: 'JOINED' } });
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({ where: { email: invite.email } });
+
+    if (existingUser) {
+      await prisma.user.update({
+        where: { id: existingUser.id },
+        data: { 
+          name: finalName, 
+          phone: finalPhone || existingUser.phone, 
+          password: hashedPassword, 
+          role: invite.role, 
+          organizationId: invite.organizationId,
+          isActive: true, 
+          inviteStatus: 'ACCEPTED',
+          agentType: 'INVITED'
+        }
+      });
+    } else {
+      await prisma.user.create({
+        data: { 
+          name: finalName, 
+          email: invite.email, 
+          phone: finalPhone, 
+          password: hashedPassword, 
+          role: invite.role, 
+          organizationId: invite.organizationId, 
+          isActive: true, 
+          inviteStatus: 'ACCEPTED',
+          agentType: 'INVITED'
+        }
+      });
+    }
+
+    await prisma.invite.update({ where: { id: invite.id }, data: { status: 'JOINED' } });
     res.json({ success: true, message: 'Account created successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Invite acceptance failed' });
+    console.error('INVITE ACCEPTANCE CRITICAL ERROR:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Invite acceptance failed',
+      error: error.message 
+    });
   }
 };
 

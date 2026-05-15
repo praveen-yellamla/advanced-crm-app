@@ -370,7 +370,9 @@ enum Role {
   PLATFORM_SUPPORT // SaaS Technical Support
   ADMIN            // Company Admin
   MANAGER          // Company Manager
+  TEAM_LEAD        // Team Supervisor
   AGENT            // Company Agent
+  VIEWER           // Read-only Access
 }
 
 enum AgentType {
@@ -484,6 +486,9 @@ model Call {
   status          String     @default("ringing")
   duration        Int        @default(0)
   recordingUrl    String?    @map("recording_url")
+  transcript      String?    @db.Text
+  summary         String?    @db.Text
+  sentiment       String?    @default("NEUTRAL")
   
   createdAt       DateTime   @default(now()) @map("created_at")
   agent           User       @relation(fields: [agentId], references: [id])
@@ -654,14 +659,17 @@ model Feedback {
 
 model Invite {
   id             Int      @id @default(autoincrement())
-  email          String   @unique
+  name           String?  // Name of the invitee
+  email          String
   token          String   @unique
   role           Role     @default(AGENT)
-  status         String   @default("PENDING")
+  status         InviteStatus @default(PENDING)
   organizationId Int      @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id])
+  expiresAt      DateTime @default(now()) @map("expires_at")
   createdAt      DateTime @default(now()) @map("created_at")
 
+  @@unique([email, organizationId])
   @@map("invites")
 }
 
@@ -683,4 +691,11 @@ enum LeadStatus {
   QUALIFIED
   WON
   LOST
+}
+
+enum InviteStatus {
+  PENDING
+  JOINED
+  EXPIRED
+  REVOKED
 }

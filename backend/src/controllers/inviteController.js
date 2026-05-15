@@ -17,20 +17,28 @@ const inviteUser = async (req, res) => {
 
     // Save or Update invite in DB (Scoped to Org)
     const invite = await prisma.invite.upsert({
-      where: { email: email.trim().toLowerCase() },
+      where: { 
+        email_organizationId: {
+          email: email.trim().toLowerCase(),
+          organizationId
+        }
+      },
       update: {
+        name,
         token,
         status: "PENDING",
         role: role || "AGENT",
         createdAt: new Date(),
-        organizationId // Re-bind to current requester org
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 Days Expiry
       },
       create: {
+        name,
         email: email.trim().toLowerCase(),
         role: role || "AGENT",
         token,
         status: "PENDING",
-        organizationId
+        organizationId,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       }
     });
 
@@ -78,8 +86,17 @@ const inviteUser = async (req, res) => {
 
     return res.json({ success: true, message: "Invite sent successfully", inviteLink });
   } catch (error) {
-    console.error("Invite Error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    console.error("INVITE SYSTEM CRITICAL ERROR:", {
+      message: error.message,
+      stack: error.stack,
+      body: req.body,
+      user: req.user?.id
+    });
+    return res.status(500).json({ 
+      success: false, 
+      message: "Internal server error during invitation dispatch",
+      error: error.message 
+    });
   }
 };
 
@@ -128,10 +145,44 @@ const getInvites = async (req, res) => {
 const deleteInvite = async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.invite.delete({ 
-      where: { id: parseInt(id), organizationId: req.user.organizationId } 
+    await prisma.invite.update({ 
+      where: { id: parseInt(id), organizationId: req.user.organizationId },
+      data: { status: 'REVOKED' }
     });
-    res.json({ success: true, message: "Invite deleted successfully" });
+    res.json({ success: true, message: "Invite revoked successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const resendInvite = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const invite = await prisma.invite.findUnique({
+      where: { id: parseInt(id), organizationId: req.user.organizationId }
+    });
+
+    if (!invite) return res.status(404).json({ message: "Invite not found" });
+
+    const token = uuidv4();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const updatedInvite = await prisma.invite.update({
+      where: { id: invite.id },
+      data: { 
+        token, 
+        expiresAt,
+        status: 'PENDING',
+        createdAt: new Date() 
+      }
+    });
+
+    const frontendUrl = getFrontendUrl();
+    const inviteLink = `${frontendUrl}/accept-invite/${token}`;
+
+    await sendInviteEmail(updatedInvite.email, inviteLink, updatedInvite.name, updatedInvite.role);
+
+    res.json({ success: true, message: "Invitation resent successfully", inviteLink });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -164,6 +215,7 @@ module.exports = {
   getInvites,
   getInviteStats,
   deleteInvite,
+  resendInvite,
   bulkDeleteInvites
 };
 

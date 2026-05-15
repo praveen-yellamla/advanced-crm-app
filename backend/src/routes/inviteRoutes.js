@@ -12,6 +12,6 @@ const upload = require('../middleware/upload');
 router.get('/:token', verifyInvite);
 
 // POST /api/invite/accept - Complete signup
-router.post('/accept', upload.single('image'), acceptInvite);
+router.post('/accept', acceptInvite);
 
 module.exports = router;

@@ -165,10 +165,13 @@ const DashboardLayout = () => {
     AGENT: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/agent/dashboard' },
       { name: 'Leads', icon: Target, path: '/agent/leads' },
-      { name: 'Dialer', icon: Phone, path: '/agent/dialer' },
-      { name: 'Inbox', icon: Mail, path: '/agent/inbox' },
-      { name: 'Tasks', icon: ClipboardCheck, path: '/agent/tasks' },
-      { name: 'Performance', icon: TrendingUp, path: '/agent/performance' },
+      { name: 'Calling Workspace', icon: Headphones, path: '/agent/calling' },
+      { name: 'Call History', icon: History, path: '/agent/history' },
+      { name: 'Task Manager', icon: ClipboardCheck, path: '/agent/tasks' },
+      { name: 'Email Inbox', icon: Mail, path: '/agent/inbox' },
+      { name: 'Analytics', icon: BarChart3, path: '/agent/analytics' },
+      { name: 'Invoices', icon: FileText, path: '/agent/invoices' },
+      { name: 'Feedback', icon: MessageSquare, path: '/agent/feedback' },
     ]
   };
 

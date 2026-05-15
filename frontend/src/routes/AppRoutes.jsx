@@ -35,13 +35,13 @@ import QualityControlCenter from '../pages/manager/QualityControlCenter';
 // Agent Pages
 import AgentDashboard from '../pages/agent/AgentDashboard';
 import AgentLeads from '../pages/agent/AgentLeads';
-import AgentDialer from '../pages/agent/AgentDialer';
+import AgentCallingWorkspace from '../pages/agent/AgentCallingWorkspace';
 import AgentHistory from '../pages/agent/AgentHistory';
 import AgentTasks from '../pages/agent/AgentTasks';
 import AgentFeedback from '../pages/agent/AgentFeedback';
 import EmailInbox from '../pages/agent/EmailInbox';
 import AgentInvoices from '../pages/agent/AgentInvoices';
-import AgentPerformance from '../pages/agent/AgentPerformance';
+import AgentAnalytics from '../pages/agent/AgentAnalytics';
 import InvoiceBuilder from '../pages/agent/InvoiceBuilder';
 
 // Platform Pages
@@ -124,11 +124,13 @@ const AppRoutes = () => {
             <Route index element={<Navigate to="/agent/dashboard" replace />} />
             <Route path="dashboard" element={<AgentDashboard />} />
             <Route path="leads" element={<AgentLeads />} />
-            <Route path="dialer" element={<AgentDialer />} />
+            <Route path="calling" element={<AgentCallingWorkspace />} />
+            <Route path="history" element={<AgentHistory />} />
             <Route path="tasks" element={<AgentTasks />} />
             <Route path="feedback" element={<AgentFeedback />} />
             <Route path="inbox" element={<EmailInbox />} />
-            <Route path="performance" element={<AgentPerformance />} />
+            <Route path="analytics" element={<AgentAnalytics />} />
+            <Route path="invoices" element={<AgentInvoices />} />
           </Route>
         </Route>
         

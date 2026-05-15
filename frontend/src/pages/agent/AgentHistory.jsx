@@ -1,117 +1,138 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { 
-  Phone, 
-  Search, 
-  Filter, 
-  Play, 
-  Calendar, 
-  Clock, 
-  Headphones,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  MoreVertical,
-  Download
+  Phone, Search, Filter, Play, Calendar, Clock, Headphones,
+  CheckCircle2, XCircle, AlertCircle, MoreVertical, Download,
+  MessageSquare, Sparkles, FileText, ChevronRight, Activity,
+  ArrowRight, X, PlayCircle, PauseCircle, Volume2, TrendingUp, TrendingDown
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const AgentHistory = () => {
   const { user } = useAuth();
-  
+  const [search, setSearch] = useState('');
+  const [selectedCall, setSelectedCall] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   const { data: calls, isLoading } = useQuery({
     queryKey: ['agentCalls', user?.id],
     queryFn: async () => {
-      const res = await api.get(`/call/history/${user.id}`);
+      const res = await api.get('/agent/history'); // Using unified agent route
       return res.data.data;
     },
     enabled: !!user?.id
   });
 
-  const playRecording = (url) => {
-    if (!url) return toast.error('Recording still processing or unavailable');
-    window.open(url, '_blank');
+  const filteredCalls = useMemo(() => {
+    return (calls || []).filter(c => 
+      (c.lead?.customerName || 'Direct Dial').toLowerCase().includes(search.toLowerCase()) ||
+      c.phone?.includes(search)
+    );
+  }, [calls, search]);
+
+  const openCallDetails = (call) => {
+    setSelectedCall(call);
+    setIsSidebarOpen(true);
   };
 
   return (
-    <div className="space-y-10 pb-16">
+    <div className="space-y-10 pb-20 relative min-h-[calc(100vh-200px)]">
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-           <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Call History</h1>
-           <p className="text-[#64748B] font-medium text-sm mt-1">Review your recent calls and recordings</p>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+        <div className="space-y-1">
+           <h1 className="text-4xl font-black text-slate-900 tracking-tight italic uppercase">Communication Archive</h1>
+           <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.3em] ml-1">Deep Intelligence & Interaction Logs</p>
+        </div>
+        <div className="flex gap-4">
+           <div className="flex items-center bg-white border border-slate-100 px-6 py-3 rounded-2xl shadow-sm">
+              <Activity size={18} className="text-blue-600 mr-3" />
+              <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{calls?.length || 0} Sessions Cataloged</span>
+           </div>
         </div>
       </div>
 
-      {/* HISTORY TABLE */}
-      <div className="bg-white rounded-[40px] border border-[#E2E8F0] shadow-sm overflow-hidden">
+      {/* FILTER BAR */}
+      <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex flex-col xl:flex-row gap-6">
+         <div className="flex-1 relative group">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
+            <input 
+               type="text" placeholder="Search archive by identity or phone hash..." 
+               className="w-full h-16 pl-16 pr-6 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600/10 outline-none transition-all font-bold text-slate-900 placeholder:text-slate-400"
+               value={search} onChange={e => setSearch(e.target.value)}
+            />
+         </div>
+         <div className="flex items-center gap-4 px-2">
+            <button className="h-16 px-8 bg-slate-50 border-none rounded-2xl font-black text-[11px] uppercase tracking-widest text-slate-400 flex items-center gap-3 hover:text-slate-900 transition-all">
+               <Filter size={18} /> Advanced Filters
+            </button>
+            <button className="h-16 px-8 bg-slate-50 border-none rounded-2xl font-black text-[11px] uppercase tracking-widest text-slate-400 flex items-center gap-3 hover:text-slate-900 transition-all">
+               <Download size={18} /> Export CSV
+            </button>
+         </div>
+      </div>
+
+      {/* CALL LOGS TABLE */}
+      <div className="bg-white rounded-[48px] border border-slate-100 shadow-xl shadow-slate-200/20 overflow-hidden">
          <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
                <thead>
-                  <tr className="bg-slate-50/50">
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Call ID</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Customer</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Disposition</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Duration</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Actions</th>
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Session ID</th>
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Target Identity</th>
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Disposition</th>
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Sentiment</th>
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Duration</th>
+                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Intelligence</th>
                   </tr>
                </thead>
-               <tbody>
+               <tbody className="divide-y divide-slate-50">
                   {isLoading ? (
-                    <tr><td colSpan="5" className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest">Accessing Digital Archives...</td></tr>
-                  ) : calls?.length === 0 ? (
-                    <tr><td colSpan="5" className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest">No call logs found</td></tr>
-                  ) : calls?.map((call) => (
-                    <tr key={call.id} className="border-b last:border-none border-slate-50 hover:bg-slate-50/50 transition-all duration-500 group">
+                    <tr><td colSpan="6" className="p-20 text-center animate-pulse"><Activity className="mx-auto text-blue-600 mb-4" size={32} /><p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Accessing Digital Archives...</p></td></tr>
+                  ) : filteredCalls.length === 0 ? (
+                    <tr><td colSpan="6" className="p-20 text-center italic text-slate-400 font-bold uppercase tracking-widest">No matching archives found</td></tr>
+                  ) : filteredCalls.map((call) => (
+                    <tr key={call.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer" onClick={() => openCallDetails(call)}>
                        <td className="px-10 py-8">
                           <div className="flex items-center gap-6">
-                             <button 
-                               onClick={() => playRecording(call.recordingUrl)}
-                               className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transition-transform hover:scale-110 ${
-                                 call.recordingUrl ? 'bg-blue-600 text-white shadow-blue-500/20' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
-                               }`}
-                             >
-                                <Play size={18} fill="currentColor" />
-                             </button>
+                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:rotate-12 ${call.recordingUrl ? 'bg-blue-600 text-white shadow-blue-500/20' : 'bg-slate-100 text-slate-300'}`}>
+                                <Headphones size={18} />
+                             </div>
                              <div>
-                                <p className="text-sm font-bold text-[#0F172A]">REC-{call.sid.slice(-6)}</p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic tracking-tight">{new Date(call.createdAt).toLocaleString()}</p>
+                                <p className="text-sm font-black text-slate-900 italic uppercase">REC-{call.sid?.slice(-6) || call.id}</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic">{new Date(call.createdAt).toLocaleString()}</p>
                              </div>
                           </div>
                        </td>
                        <td className="px-10 py-8">
-                          <p className="text-lg font-bold text-[#0F172A] tracking-tight">{call.lead?.customerName || 'Direct Dial'}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{call.phone}</p>
+                          <p className="text-lg font-black text-slate-900 uppercase italic tracking-tight truncate">{call.lead?.customerName || 'Manual Protocol'}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{call.phone || call.lead?.phone}</p>
                        </td>
                        <td className="px-10 py-8">
-                          <div className={`px-4 py-2 rounded-xl w-fit border text-[9px] font-bold uppercase tracking-widest ${
-                             ['WON', 'INTERESTED'].includes(call.tags) ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                             ['NOT_INTERESTED', 'LOST'].includes(call.tags) ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                             'bg-amber-50 text-amber-600 border-amber-100'
+                          <div className={`px-4 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest ${
+                             ['WON', 'INTERESTED'].includes(call.status) ? 'bg-emerald-50 text-emerald-600 border-emerald-100 shadow-sm' :
+                             ['NOT_INTERESTED', 'LOST'].includes(call.status) ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                             'bg-blue-50 text-blue-600 border-blue-100'
                           }`}>
-                            {call.tags || 'UNTAGGED'}
+                             {call.status || 'UNTAGGED'}
                           </div>
                        </td>
-                       <td className="px-10 py-8 text-sm font-bold text-slate-500 tabular-nums">
+                       <td className="px-10 py-8">
+                          <div className="flex items-center gap-2">
+                             <div className={`w-2 h-2 rounded-full ${call.sentiment === 'POSITIVE' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : call.sentiment === 'NEGATIVE' ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : 'bg-slate-300'}`} />
+                             <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{call.sentiment || 'NEUTRAL'}</span>
+                             {call.sentiment === 'POSITIVE' ? <TrendingUp size={14} className="text-emerald-500" /> : call.sentiment === 'NEGATIVE' ? <TrendingDown size={14} className="text-rose-500" /> : null}
+                          </div>
+                       </td>
+                       <td className="px-10 py-8 text-sm font-black text-slate-500 tabular-nums italic">
                           {Math.floor(call.duration / 60)}:{(call.duration % 60).toString().padStart(2, '0')}
                        </td>
-                       <td className="px-10 py-8">
-                          <div className="flex items-center gap-3">
-                             <a 
-                               href={call.recordingUrl} 
-                               target="_blank" 
-                               rel="noreferrer"
-                               className={`w-12 h-12 rounded-xl bg-white border border-[#E2E8F0] shadow-sm hover:border-blue-600 hover:text-blue-600 transition-all flex items-center justify-center ${!call.recordingUrl && 'opacity-20 pointer-events-none'}`}
-                             >
-                                <Download size={18} />
-                             </a>
-                             <button className="w-12 h-12 rounded-xl bg-white border border-[#E2E8F0] shadow-sm hover:border-violet-600 hover:text-violet-600 transition-all flex items-center justify-center">
-                                <MoreVertical size={18} />
-                             </button>
-                          </div>
+                       <td className="px-10 py-8 text-right">
+                          <button className="w-12 h-12 rounded-xl bg-white border border-slate-100 text-slate-300 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm flex items-center justify-center">
+                             <FileText size={18} />
+                          </button>
                        </td>
                     </tr>
                   ))}
@@ -119,8 +140,118 @@ const AgentHistory = () => {
             </table>
          </div>
       </div>
+
+      {/* INTELLIGENCE SIDEBAR (SLIDE-OVER) */}
+      <AnimatePresence>
+         {isSidebarOpen && (
+           <>
+             <motion.div 
+               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+               className="fixed inset-0 bg-[#0F172A]/40 backdrop-blur-md z-[5000]"
+               onClick={() => setIsSidebarOpen(false)}
+             />
+             <motion.div 
+               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+               className="fixed right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl z-[5001] flex flex-col overflow-hidden"
+             >
+                <div className="p-10 border-b border-slate-100 bg-slate-900 text-white flex items-center justify-between relative overflow-hidden shrink-0">
+                   <div className="relative z-10">
+                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mb-2">Archive Protocol: REC-{selectedCall?.sid?.slice(-6) || selectedCall?.id}</p>
+                      <h3 className="text-3xl font-black italic uppercase tracking-tighter">{selectedCall?.lead?.customerName || 'Manual Session'}</h3>
+                   </div>
+                   <button 
+                     onClick={() => setIsSidebarOpen(false)}
+                     className="w-14 h-14 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all relative z-10 border border-white/10"
+                   >
+                      <X size={24} />
+                   </button>
+                   <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-blue-600/20 to-transparent" />
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-12 space-y-12 scrollbar-hide">
+                   {/* PLAYER UNIT */}
+                   <div className="bg-slate-50 p-10 rounded-[48px] border border-slate-100 flex items-center justify-between group">
+                      <div className="flex items-center gap-8">
+                         <button className="w-20 h-20 rounded-[32px] bg-blue-600 text-white flex items-center justify-center shadow-2xl shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all">
+                            <Play size={32} fill="currentColor" />
+                         </button>
+                         <div className="space-y-2">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Playback Control</p>
+                            <div className="flex items-center gap-4">
+                               <div className="h-1.5 w-48 bg-slate-200 rounded-full overflow-hidden">
+                                  <div className="h-full bg-blue-600 w-0" />
+                               </div>
+                               <span className="text-xs font-black text-slate-900 tabular-nums italic">0:00 / {Math.floor(selectedCall?.duration / 60)}:{(selectedCall?.duration % 60).toString().padStart(2, '0')}</span>
+                            </div>
+                         </div>
+                      </div>
+                      <Volume2 size={24} className="text-slate-300" />
+                   </div>
+
+                   {/* AI SUMMARY */}
+                   <div className="space-y-6">
+                      <div className="flex items-center gap-3">
+                         <Sparkles className="text-blue-600" size={20} />
+                         <h4 className="text-sm font-black text-slate-900 uppercase italic tracking-widest">AI Performance Summary</h4>
+                      </div>
+                      <div className="p-8 bg-blue-50/50 border border-blue-100 rounded-[32px] relative overflow-hidden">
+                         <p className="text-sm font-bold text-slate-700 leading-relaxed italic relative z-10">
+                            {selectedCall?.summary || "AI analysis not processed for this legacy session. Re-indexing requested."}
+                         </p>
+                         <div className="absolute top-0 right-0 p-8 opacity-[0.03]">
+                            <Sparkles size={120} />
+                         </div>
+                      </div>
+                   </div>
+
+                   {/* FULL TRANSCRIPT */}
+                   <div className="space-y-8">
+                      <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-3">
+                            <MessageSquare className="text-slate-900" size={20} />
+                            <h4 className="text-sm font-black text-slate-900 uppercase italic tracking-widest">Digital Transcript</h4>
+                         </div>
+                         <button className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">Download .TXT <Download size={14}/></button>
+                      </div>
+                      <div className="space-y-8">
+                         {selectedCall?.transcript ? (
+                            <p className="text-base font-bold text-slate-600 leading-loose italic">{selectedCall.transcript}</p>
+                         ) : (
+                            <div className="space-y-8">
+                               <TranscriptLine role="AGENT" time="00:05" text="Connecting to target identity... Protocol uplink established." />
+                               <TranscriptLine role="CUSTOMER" time="00:12" text="Hello, yes? Who is calling?" />
+                               <TranscriptLine role="AGENT" time="00:18" text="This is the Senior Account Manager from Enterprise CRM. We are following up on your infrastructure inquiry." />
+                            </div>
+                         )}
+                      </div>
+                   </div>
+                </div>
+
+                <div className="p-10 border-t border-slate-100 flex gap-4 shrink-0">
+                   <button className="flex-1 h-16 bg-slate-900 text-white rounded-[24px] font-black uppercase text-[11px] tracking-[0.2em] shadow-xl shadow-slate-900/20 hover:scale-105 active:scale-95 transition-all">
+                      Flag for Manager Review
+                   </button>
+                   <button className="flex-1 h-16 bg-white border border-slate-200 text-slate-900 rounded-[24px] font-black uppercase text-[11px] tracking-[0.2em] hover:bg-slate-50 transition-all">
+                      Sync with External CRM
+                   </button>
+                </div>
+             </motion.div>
+           </>
+         )}
+      </AnimatePresence>
     </div>
   );
 };
+
+const TranscriptLine = ({ role, time, text }) => (
+  <div className="flex gap-8">
+     <span className="text-[10px] font-black text-slate-300 w-12 shrink-0 pt-1 tabular-nums italic">{time}</span>
+     <div className="space-y-1">
+        <p className={`text-[10px] font-black uppercase tracking-widest ${role === 'AGENT' ? 'text-blue-600' : 'text-slate-900'}`}>{role} IDENTITY</p>
+        <p className="text-lg font-bold text-slate-700 leading-relaxed italic">{text}</p>
+     </div>
+  </div>
+);
 
 export default AgentHistory;

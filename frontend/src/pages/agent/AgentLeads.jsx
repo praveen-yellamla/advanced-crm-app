@@ -1,24 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { 
-  Plus, 
-  Search, 
-  Phone, 
-  Mail, 
-  Target, 
-  CheckCircle2, 
-  ArrowRight,
-  MoreVertical,
-  ChevronRight,
-  Filter,
-  Layout,
-  MessageSquare
+  Plus, Search, Phone, Mail, Target, CheckCircle2, 
+  ArrowRight, MoreVertical, ChevronRight, Filter, 
+  Layout, MessageSquare, KanBan, List, Sparkles,
+  TrendingUp, TrendingDown, Clock, UserCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 const AgentLeads = () => {
+  const [viewMode, setViewMode] = useState('PIPELINE'); // PIPELINE or LIST
   const [search, setSearch] = useState('');
   const [activeStage, setActiveStage] = useState('ALL');
   const queryClient = useQueryClient();
@@ -31,138 +24,232 @@ const AgentLeads = () => {
     }
   });
 
-  const stages = ['NEW', 'CONTACTED', 'INTERESTED', 'PROPOSAL', 'NEGOTIATION', 'WON', 'LOST'];
+  const stages = ['NEW', 'CONTACTED', 'INTERESTED', 'QUALIFIED', 'WON', 'LOST'];
 
-  const filteredLeads = leads?.filter(l => 
-    (activeStage === 'ALL' || l.status === activeStage) &&
-    (l.customerName.toLowerCase().includes(search.toLowerCase()) || l.email?.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filteredLeads = useMemo(() => {
+    return (leads || []).filter(l => 
+      (activeStage === 'ALL' || l.status === activeStage) &&
+      (l.customerName.toLowerCase().includes(search.toLowerCase()) || (l.email || '').toLowerCase().includes(search.toLowerCase()))
+    );
+  }, [leads, search, activeStage]);
+
+  const updateLeadMutation = useMutation({
+    mutationFn: ({ id, data }) => api.put(`/agent/leads/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['agentLeads']);
+      toast.success('Lead intelligence synchronized');
+    }
+  });
 
   return (
-    <div className="space-y-10 pb-16">
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-           <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">Lead Pipeline</h1>
-           <p className="text-[#64748B] font-medium text-sm mt-1">Manage and convert your personal lead assignments</p>
+    <div className="space-y-10 pb-20">
+      {/* ENTERPRISE HEADER */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+        <div className="space-y-1">
+           <h1 className="text-4xl font-black text-slate-900 tracking-tight italic uppercase">Lead Pipeline</h1>
+           <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.3em] ml-1">Automated Conversion Framework</p>
         </div>
-        <button className="h-14 px-8 bg-violet-600 text-white rounded-2xl font-bold text-xs shadow-xl shadow-violet-500/20 hover:scale-105 transition-all flex items-center gap-3">
-           <Plus size={20} /> Create Reference Lead
-        </button>
+        <div className="flex gap-4">
+           <div className="flex p-1.5 bg-slate-100 rounded-2xl shadow-inner">
+              <button 
+                onClick={() => setViewMode('PIPELINE')}
+                className={`flex items-center gap-2 px-6 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'PIPELINE' ? 'bg-white text-blue-600 shadow-md scale-105' : 'text-slate-500 hover:text-slate-900'}`}
+              >
+                 <KanBan size={16} /> Pipeline
+              </button>
+              <button 
+                onClick={() => setViewMode('LIST')}
+                className={`flex items-center gap-2 px-6 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'LIST' ? 'bg-white text-blue-600 shadow-md scale-105' : 'text-slate-500 hover:text-slate-900'}`}
+              >
+                 <List size={16} /> Data View
+              </button>
+           </div>
+           <button className="h-14 px-8 bg-blue-600 text-white rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
+              <Plus size={20} /> Create Entry
+           </button>
+        </div>
       </div>
 
-      {/* SEARCH/FILTERS */}
-      <div className="flex flex-col xl:flex-row gap-6">
-         <div className="flex-1 relative group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
+      {/* FILTER BAR */}
+      <div className="flex flex-col xl:flex-row gap-6 bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
+         <div className="flex-1 relative group w-full">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
             <input 
-               type="text" placeholder="Search by name, identity, or metadata..." 
-               className="w-full h-16 pl-16 pr-6 bg-white border border-[#E2E8F0] rounded-2xl focus:ring-[12px] focus:ring-blue-500/5 focus:border-blue-600 outline-none transition-all font-semibold text-[#0F172A] shadow-sm"
+               type="text" placeholder="Search by name, identity hash, or email protocol..." 
+               className="w-full h-16 pl-16 pr-6 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600/10 outline-none transition-all font-bold text-slate-900 placeholder:text-slate-400"
                value={search} onChange={e => setSearch(e.target.value)}
             />
          </div>
-      </div>
-
-      {/* PIPELINE TABS */}
-      <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide">
-         <button 
-           onClick={() => setActiveStage('ALL')}
-           className={`px-8 h-12 rounded-xl text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all ${
-             activeStage === 'ALL' ? 'bg-[#0F172A] text-white shadow-xl' : 'bg-white text-slate-400 border border-[#E2E8F0] hover:bg-slate-50'
-           }`}
-         >
-            Global List
-         </button>
-         {stages.map(stage => (
-           <button 
-             key={stage}
-             onClick={() => setActiveStage(stage)}
-             className={`px-8 h-12 rounded-xl text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all ${
-               activeStage === stage ? 'bg-blue-600 text-white shadow-xl' : 'bg-white text-slate-400 border border-[#E2E8F0] hover:bg-slate-50'
-             }`}
-           >
-              {stage.replace('_', ' ')}
-           </button>
-         ))}
-      </div>
-
-      {/* LEADS LIST */}
-      <div className="bg-white rounded-[40px] border border-[#E2E8F0] shadow-sm overflow-hidden">
-         <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-               <thead>
-                  <tr className="bg-slate-50/50">
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Customer Identity</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Status Stage</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Contact Details</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Communications</th>
-                     <th className="px-10 py-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">Conversion Actions</th>
-                  </tr>
-               </thead>
-               <tbody>
-                  {isLoading ? (
-                    <tr><td colSpan="5" className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest">Hydrating Personal Pipeline...</td></tr>
-                  ) : filteredLeads?.map((lead) => (
-                    <tr key={lead.id} className="border-b last:border-none border-slate-50 hover:bg-slate-50/50 transition-all duration-500 group">
-                       <td className="px-10 py-8">
-                          <div className="flex items-center gap-6">
-                             <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-                                <Target size={22} />
-                             </div>
-                             <div>
-                                <p className="text-xl font-bold text-[#0F172A] tracking-tight truncate">{lead.customerName}</p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Lead ID #{lead.id}</p>
-                             </div>
-                          </div>
-                       </td>
-                       <td className="px-10 py-8">
-                          <div className={`px-4 py-2 rounded-xl w-fit border text-[10px] font-bold uppercase tracking-widest ${
-                             lead.status === 'WON' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                             lead.status === 'LOST' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                             'bg-blue-50 text-blue-600 border-blue-100'
-                          }`}>
-                            {lead.status}
-                          </div>
-                       </td>
-                       <td className="px-10 py-8">
-                          <div className="space-y-2">
-                             <p className="text-sm font-bold text-[#0F172A] flex items-center gap-2 italic">{lead.phone}</p>
-                             <p className="text-[10px] font-bold text-slate-400 truncate tracking-tight">{lead.email}</p>
-                          </div>
-                       </td>
-                       <td className="px-10 py-8">
-                          <div className="flex items-center gap-2">
-                             <div className="px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg flex items-center gap-2">
-                                <Phone size={12} className="text-slate-400" />
-                                <span className="text-[10px] font-bold text-slate-600">{lead.calls?.length || 0}</span>
-                             </div>
-                             <div className="px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg flex items-center gap-2">
-                                <Mail size={12} className="text-slate-400" />
-                                <span className="text-[10px] font-bold text-slate-600">{lead.emails?.length || 0}</span>
-                             </div>
-                          </div>
-                       </td>
-                       <td className="px-10 py-8">
-                          <div className="flex items-center gap-3">
-                             <button className="h-12 w-12 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center hover:scale-110 transition-transform">
-                                <Phone size={18} />
-                             </button>
-                             <button className="h-12 px-6 bg-white border border-[#E2E8F0] text-[#0F172A] rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-sm hover:border-blue-600 hover:text-blue-600 transition-all flex items-center gap-3">
-                                <MessageSquare size={16} /> Timeline
-                             </button>
-                             <button className="w-12 h-12 rounded-xl bg-white border border-[#E2E8F0] shadow-sm hover:border-violet-600 hover:text-violet-600 transition-all flex items-center justify-center">
-                                <MoreVertical size={18} />
-                             </button>
-                          </div>
-                       </td>
-                    </tr>
-                  ))}
-               </tbody>
-            </table>
+         <div className="flex items-center gap-3 px-2">
+            <Filter size={20} className="text-slate-300" />
+            <select 
+              value={activeStage} 
+              onChange={e => setActiveStage(e.target.value)}
+              className="h-16 px-6 bg-slate-50 border-none rounded-2xl font-black text-[11px] uppercase tracking-widest text-slate-900 outline-none focus:ring-2 focus:ring-blue-600/10"
+            >
+               <option value="ALL">All Stages</option>
+               {stages.map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+            </select>
          </div>
       </div>
+
+      <AnimatePresence mode="wait">
+         {viewMode === 'PIPELINE' ? (
+           <motion.div 
+             key="kanban"
+             initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+             className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-6 overflow-x-auto pb-10 scrollbar-hide"
+           >
+              {stages.map(stage => (
+                <div key={stage} className="space-y-6 min-w-[280px]">
+                   <div className="flex items-center justify-between px-4">
+                      <div className="flex items-center gap-3">
+                         <div className={`w-3 h-3 rounded-full ${
+                           stage === 'WON' ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 
+                           stage === 'LOST' ? 'bg-rose-500 shadow-[0_0_10px_#f43f5e]' : 'bg-blue-500'
+                         }`} />
+                         <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] italic">{stage.replace('_', ' ')}</h3>
+                      </div>
+                      <span className="text-[10px] font-black text-slate-300">{(leads || []).filter(l => l.status === stage).length}</span>
+                   </div>
+                   <div className="space-y-4">
+                      {(leads || []).filter(l => l.status === stage).map(lead => (
+                        <LeadKanbanCard key={lead.id} lead={lead} onStatusChange={(s) => updateLeadMutation.mutate({ id: lead.id, data: { status: s } })} />
+                      ))}
+                      {(leads || []).filter(l => l.status === stage).length === 0 && (
+                        <div className="h-32 rounded-[32px] border-2 border-dashed border-slate-100 flex items-center justify-center text-[10px] font-black text-slate-300 uppercase tracking-widest">Empty Stage</div>
+                      )}
+                   </div>
+                </div>
+              ))}
+           </motion.div>
+         ) : (
+           <motion.div 
+             key="list"
+             initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+             className="bg-white rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/20 overflow-hidden"
+           >
+              <div className="overflow-x-auto">
+                 <table className="w-full text-left border-collapse">
+                    <thead>
+                       <tr className="bg-slate-50/50 border-b border-slate-100">
+                          <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Security Identity</th>
+                          <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Pipeline Status</th>
+                          <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">AI Score</th>
+                          <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Communications</th>
+                          <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Actions</th>
+                       </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                       {filteredLeads.map((lead) => (
+                         <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors group">
+                            <td className="px-10 py-8">
+                               <div className="flex items-center gap-6">
+                                  <div className="w-14 h-14 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                                     <Target size={22} />
+                                  </div>
+                                  <div>
+                                     <p className="text-base font-black text-slate-900 uppercase italic tracking-tight">{lead.customerName}</p>
+                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">ID Protocol: #{lead.id}</p>
+                                  </div>
+                               </div>
+                            </td>
+                            <td className="px-10 py-8">
+                               <div className={`px-4 py-2 rounded-xl w-fit border text-[10px] font-black uppercase tracking-widest ${
+                                  lead.status === 'WON' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 shadow-sm' :
+                                  lead.status === 'LOST' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                  'bg-blue-50 text-blue-600 border-blue-100'
+                               }`}>
+                                 {lead.status}
+                               </div>
+                            </td>
+                            <td className="px-10 py-8">
+                               <div className="flex items-center gap-3">
+                                  <div className={`flex items-center gap-1.5 px-3 py-1 rounded-lg ${lead.score >= 70 ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'} font-black text-xs`}>
+                                     <Sparkles size={14} /> {lead.score || 0}
+                                  </div>
+                                  {lead.score >= 70 ? <TrendingUp size={16} className="text-emerald-500" /> : <TrendingDown size={16} className="text-amber-500" />}
+                               </div>
+                            </td>
+                            <td className="px-10 py-8">
+                               <div className="flex items-center gap-4">
+                                  <div className="flex items-center gap-2 group/call">
+                                     <Phone size={14} className="text-slate-300 group-hover/call:text-blue-600 transition-colors" />
+                                     <span className="text-xs font-black text-slate-900">{lead.calls?.length || 0}</span>
+                                  </div>
+                                  <div className="w-px h-4 bg-slate-100" />
+                                  <div className="flex items-center gap-2 group/mail">
+                                     <Mail size={14} className="text-slate-300 group-hover/mail:text-violet-600 transition-colors" />
+                                     <span className="text-xs font-black text-slate-900">{lead.emails?.length || 0}</span>
+                                  </div>
+                               </div>
+                            </td>
+                            <td className="px-10 py-8">
+                               <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+                                  <button className="h-12 px-6 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:scale-105 active:scale-95 transition-all">
+                                     Uplink Call
+                                  </button>
+                                  <button className="w-12 h-12 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-600 transition-all flex items-center justify-center">
+                                     <MessageSquare size={18} />
+                                  </button>
+                               </div>
+                            </td>
+                         </tr>
+                       ))}
+                    </tbody>
+                 </table>
+              </div>
+           </motion.div>
+         )}
+      </AnimatePresence>
     </div>
   );
 };
+
+const LeadKanbanCard = ({ lead, onStatusChange }) => (
+  <motion.div 
+    whileHover={{ y: -4, scale: 1.02 }}
+    className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-500 group relative overflow-hidden"
+  >
+     <div className="flex items-start justify-between mb-4">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${lead.score >= 70 ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'} group-hover:bg-blue-600 group-hover:text-white transition-all`}>
+           <Target size={18} />
+        </div>
+        <div className="flex flex-col items-end">
+           <div className={`flex items-center gap-1 text-[9px] font-black uppercase tracking-widest ${lead.score >= 70 ? 'text-emerald-500' : 'text-amber-500'}`}>
+              <Sparkles size={10} /> {lead.score || 0}
+           </div>
+           <span className="text-[8px] text-slate-300 font-bold uppercase mt-1 tracking-tighter">AI Prediction</span>
+        </div>
+     </div>
+
+     <div className="space-y-1">
+        <h4 className="text-sm font-black text-slate-900 uppercase italic tracking-tight truncate">{lead.customerName}</h4>
+        <p className="text-[10px] text-slate-400 font-bold tracking-tight truncate">{lead.phone}</p>
+     </div>
+
+     <div className="mt-6 pt-6 border-t border-slate-50 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+           <div className="flex items-center gap-1.5 text-slate-300">
+              <Phone size={12} />
+              <span className="text-[10px] font-black text-slate-900">{lead.calls?.length || 0}</span>
+           </div>
+           <div className="flex items-center gap-1.5 text-slate-300">
+              <Mail size={12} />
+              <span className="text-[10px] font-black text-slate-900">{lead.emails?.length || 0}</span>
+           </div>
+        </div>
+        <button className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white transition-all">
+           <ArrowRight size={14} />
+        </button>
+     </div>
+     
+     {/* STATUS QUICK NAV (HIDDEN UNTIL HOVER) */}
+     <div className="absolute inset-x-0 bottom-0 p-4 bg-white/90 backdrop-blur-sm border-t border-slate-50 flex gap-2 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+        <button onClick={() => onStatusChange('WON')} className="flex-1 h-8 bg-emerald-500 text-white rounded-lg text-[8px] font-black uppercase">Won</button>
+        <button onClick={() => onStatusChange('LOST')} className="flex-1 h-8 bg-rose-500 text-white rounded-lg text-[8px] font-black uppercase">Lost</button>
+     </div>
+  </motion.div>
+);
 
 export default AgentLeads;

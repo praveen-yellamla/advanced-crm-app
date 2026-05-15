@@ -1,34 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { 
-  Users, 
-  Plus, 
-  Search, 
-  MoreHorizontal, 
-  Mail, 
-  Phone, 
-  ShieldCheck, 
-  ShieldAlert, 
-  ToggleLeft, 
-  ToggleRight, 
-  CheckCircle2, 
-  XCircle,
-  FileUp,
-  Key,
-  Briefcase,
-  ArrowRight,
-  Filter,
-  Edit3,
-  UserX,
-  Trash2,
-  Calendar,
-  History,
-  UserPlus,
-  Send,
-  Zap,
-  Loader2,
-  UserCheck
+  Users, Plus, Search, MoreHorizontal, Mail, Phone, 
+  ShieldCheck, ShieldAlert, ToggleLeft, ToggleRight, 
+  CheckCircle2, XCircle, FileUp, Key, Briefcase, 
+  ArrowRight, Filter, Edit3, UserX, Trash2, 
+  Calendar, History, UserPlus, Send, Zap, 
+  Loader2, UserCheck, Copy, RotateCcw, Ban,
+  ExternalLink, Fingerprint, Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -38,17 +18,25 @@ const AdminAgents = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [editAgentId, setEditAgentId] = useState(null);
-  const [filterType, setFilterType] = useState('ALL'); // ALL, MANUAL, INVITED
+  const [filterType, setFilterType] = useState('ALL'); // ALL, MANUAL, INVITED, PENDING
   const [search, setSearch] = useState('');
   const [generatedInviteLink, setGeneratedInviteLink] = useState('');
-  const [isCleanupOpen, setIsCleanupOpen] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState(null);
   const queryClient = useQueryClient();
 
+  // Queries
   const { data: agents, isLoading: isAgentsLoading } = useQuery({
     queryKey: ['adminAgents'],
     queryFn: async () => {
       const res = await api.get('/admin/agents');
+      return res.data.data;
+    }
+  });
+
+  const { data: invites } = useQuery({
+    queryKey: ['adminInvites'],
+    queryFn: async () => {
+      const res = await api.get('/admin/invites');
       return res.data.data;
     }
   });
@@ -61,7 +49,7 @@ const AdminAgents = () => {
     }
   });
 
-  const { data: stats, isLoading: isStatsLoading } = useQuery({
+  const { data: stats } = useQuery({
     queryKey: ['adminDashboardStats'],
     queryFn: async () => {
       const res = await api.get('/admin/dashboard');
@@ -78,46 +66,43 @@ const AdminAgents = () => {
     role: 'AGENT'
   });
 
-  const createAgentMutation = useMutation({
-    mutationFn: (newAgent) => api.post('/admin/agents', newAgent),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['adminAgents']);
+  // Mutations
+  const inviteUserMutation = useMutation({
+    mutationFn: (data) => api.post('/admin/invites', data),
+    onSuccess: (res) => {
+      setGeneratedInviteLink(res.data.inviteLink);
+      toast.success('Invitation dispatched successfully');
+      queryClient.invalidateQueries(['adminInvites']);
       queryClient.invalidateQueries(['adminDashboardStats']);
-      toast.success('Account created successfully');
-      setIsModalOpen(false);
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Creation failed')
+    onError: (err) => toast.error(err.response?.data?.error || err.response?.data?.message || 'Dispatch failure')
+  });
+
+  const resendInviteMutation = useMutation({
+    mutationFn: (id) => api.post(`/admin/invites/${id}/resend`),
+    onSuccess: () => {
+      toast.success('New invitation link sent');
+      queryClient.invalidateQueries(['adminInvites']);
+    },
+    onError: (err) => toast.error('Resend failed')
+  });
+
+  const revokeInviteMutation = useMutation({
+    mutationFn: (id) => api.delete(`/admin/invites/${id}`),
+    onSuccess: () => {
+      toast.success('Invitation revoked');
+      queryClient.invalidateQueries(['adminInvites']);
+    },
+    onError: (err) => toast.error('Revocation failed')
   });
 
   const updateAgentMutation = useMutation({
     mutationFn: ({ id, data }) => api.put(`/admin/agents/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['adminAgents']);
-      toast.success('Account updated');
+      toast.success('Profile updated');
       setIsModalOpen(false);
-      setEditAgentId(null);
-    },
-    onError: (err) => toast.error(err.response?.data?.message || 'Update failed')
-  });
-
-  const deleteAgentMutation = useMutation({
-    mutationFn: (id) => api.delete(`/admin/agents/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['adminAgents']);
-      queryClient.invalidateQueries(['adminDashboardStats']);
-      toast.success('Account removed');
     }
-  });
-
-  const inviteUserMutation = useMutation({
-    mutationFn: (data) => api.post('/admin/invites', data),
-    onSuccess: (res) => {
-      setGeneratedInviteLink(res.data.inviteLink);
-      toast.success('Invitation sent');
-      queryClient.invalidateQueries(['adminAgents']);
-      queryClient.invalidateQueries(['adminDashboardStats']);
-    },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to send invite')
   });
 
   const handleEdit = (agent) => {
@@ -133,36 +118,55 @@ const AdminAgents = () => {
     setIsModalOpen(true);
   };
 
-  const filteredAgents = (agents || []).filter(a => {
-    const matchesSearch = (a.name || '').toLowerCase().includes(search.toLowerCase()) || 
-                         (a.email || '').toLowerCase().includes(search.toLowerCase());
+  // Filter Logic
+  const filteredItems = useMemo(() => {
+    const s = search.toLowerCase();
     
-    if (filterType === 'ALL') return matchesSearch;
-    if (filterType === 'MANUAL') return matchesSearch && a.agentType === 'MANUAL';
-    if (filterType === 'INVITED') return matchesSearch && a.agentType === 'INVITED';
+    // Combine agents and pending invites if needed, or just handle agents
+    let list = agents || [];
     
-    return matchesSearch;
-  });
+    if (filterType === 'PENDING') {
+      return (invites || []).filter(i => i.status === 'PENDING' && (i.email.toLowerCase().includes(s) || (i.name || '').toLowerCase().includes(s)));
+    }
+
+    return list.filter(a => {
+      const matchesSearch = (a.name || '').toLowerCase().includes(s) || (a.email || '').toLowerCase().includes(s);
+      if (!matchesSearch) return false;
+      
+      if (filterType === 'ALL') return true;
+      if (filterType === 'MANUAL') return a.agentType === 'MANUAL';
+      if (filterType === 'INVITED') return a.agentType === 'INVITED';
+      return true;
+    });
+  }, [agents, invites, filterType, search]);
 
   const cards = stats?.cards || {};
 
   return (
-    <div className="space-y-8 pb-16 px-4 md:px-0">
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Team Members</h1>
-           <p className="text-slate-500 font-medium text-sm mt-1">Manage user accounts, roles, and departmental assignments.</p>
+    <div className="space-y-8 pb-20 selection:bg-blue-500 selection:text-white">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+        <div className="space-y-2">
+           <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                 <Users size={20} />
+              </div>
+              <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase">Member HQ</h1>
+           </div>
+           <p className="text-slate-500 font-bold text-xs uppercase tracking-widest ml-1">Identity Management & Access Control</p>
         </div>
-        <div className="flex gap-3">
+
+        <div className="flex flex-wrap gap-4">
            <button 
              onClick={() => {
                setGeneratedInviteLink('');
+               setFormData({ ...formData, name: '', email: '', role: 'AGENT' });
                setIsInviteModalOpen(true);
              }}
-             className="h-12 px-5 bg-white border border-slate-200 rounded-xl flex items-center gap-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
+             className="h-14 px-8 bg-[#0F172A] text-white rounded-2xl flex items-center gap-3 text-xs font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-slate-900/10 group"
            >
-              <Mail size={18} className="text-slate-400" /> Invite Member
+              <Send size={18} className="text-blue-400 group-hover:rotate-12 transition-transform" /> 
+              Dispatch Invite
            </button>
            <button 
              onClick={() => {
@@ -170,193 +174,187 @@ const AdminAgents = () => {
                setFormData({ name: '', email: '', password: '', phone: '', teamId: '', role: 'AGENT' });
                setIsModalOpen(true);
              }}
-             className="h-12 px-6 bg-blue-600 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2"
+             className="h-14 px-8 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center gap-3"
            >
-              <Plus size={18} /> Add Manually
+              <Plus size={18} /> Provision Manually
            </button>
         </div>
       </div>
 
-      {/* STATS OVERVIEW */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-               <Users size={24} />
-            </div>
-            <div>
-               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Users</p>
-               <p className="text-2xl font-bold text-slate-900">{cards.manualAgents + cards.invitedJoined || 0}</p>
-            </div>
-         </div>
-
-         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600">
-               <Send size={24} />
-            </div>
-            <div>
-               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Invites Sent</p>
-               <p className="text-2xl font-bold text-slate-900">{cards.invitedTotal || 0}</p>
-            </div>
-         </div>
-
-         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-               <UserCheck size={24} />
-            </div>
-            <div>
-               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Now</p>
-               <p className="text-2xl font-bold text-slate-900">{agents?.filter(a => a.isActive).length || 0}</p>
-            </div>
-         </div>
-
-         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
-               <History size={24} />
-            </div>
-            <div>
-               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Join</p>
-               <p className="text-2xl font-bold text-slate-900">{cards.invitedPending || 0}</p>
-            </div>
-         </div>
+      {/* STATS TILES */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+         {[
+           { label: 'Verified Identities', val: cards.manualAgents + cards.invitedJoined || 0, icon: UserCheck, color: 'blue' },
+           { label: 'Outbound Invites', val: cards.invitedTotal || 0, icon: Send, color: 'violet' },
+           { label: 'Live Sessions', val: agents?.filter(a => a.isActive).length || 0, icon: Zap, color: 'emerald' },
+           { label: 'Awaiting Uplink', val: cards.invitedPending || 0, icon: Clock, color: 'amber' }
+         ].map((stat, i) => (
+           <motion.div 
+             key={i}
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ delay: i * 0.1 }}
+             className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-xl hover:shadow-slate-200/50 transition-all"
+           >
+              <div className={`absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 rounded-full bg-${stat.color}-500/5 transition-transform group-hover:scale-150 duration-700`} />
+              <div className={`w-14 h-14 rounded-2xl bg-${stat.color}-50 flex items-center justify-center text-${stat.color}-600 mb-6 shadow-sm border border-${stat.color}-100`}>
+                 <stat.icon size={24} />
+              </div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.label}</p>
+              <p className="text-3xl font-black text-slate-900 mt-2">{stat.val}</p>
+           </motion.div>
+         ))}
       </div>
 
-      {/* FILTERS */}
-      <div className="flex flex-col lg:flex-row gap-4 items-center">
+      {/* CONTROL BAR */}
+      <div className="flex flex-col lg:flex-row gap-6 items-center bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
          <div className="flex-1 relative group w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={18} />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
             <input 
-               type="text" placeholder="Search by name or email..." 
-               className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 outline-none transition-all font-medium text-slate-900 placeholder:text-slate-400 shadow-sm"
+               type="text" placeholder="Search by name, email, or identity hash..." 
+               className="w-full h-16 pl-16 pr-6 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600/10 outline-none transition-all font-bold text-slate-900 placeholder:text-slate-400"
                value={search} onChange={e => setSearch(e.target.value)}
             />
          </div>
          
-         <div className="flex gap-1 p-1 bg-slate-100 rounded-xl w-full lg:w-auto">
-            {['ALL', 'MANUAL', 'INVITED'].map(t => (
+         <div className="flex gap-2 p-2 bg-slate-100 rounded-2xl w-full lg:w-auto">
+            {['ALL', 'MANUAL', 'INVITED', 'PENDING'].map(t => (
                <button 
                  key={t}
                  onClick={() => setFilterType(t)}
-                 className={`px-6 h-10 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex-1 lg:flex-none ${
-                   filterType === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                 className={`px-6 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex-1 lg:flex-none ${
+                   filterType === t ? 'bg-white text-blue-600 shadow-md scale-105' : 'text-slate-500 hover:text-slate-900'
                  }`}
                >
-                  {t === 'ALL' ? 'Show All' : t}
+                  {t}
                </button>
             ))}
          </div>
       </div>
 
-      {/* MEMBERS LIST */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-         <div className="overflow-x-auto">
+      {/* DATA GRID */}
+      <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/20 overflow-hidden">
+         <div className="overflow-x-auto text-sans">
             <table className="w-full text-left border-collapse">
                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Member Identity</th>
-                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Method</th>
-                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Team / Department</th>
-                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Activity</th>
-                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Account Status</th>
-                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Actions</th>
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Security Identity</th>
+                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Provision Method</th>
+                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Assignment</th>
+                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Account Status</th>
+                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Actions</th>
                   </tr>
                </thead>
-               <tbody className="divide-y divide-slate-100">
+               <tbody className="divide-y divide-slate-50">
                   {isAgentsLoading ? (
-                    <tr><td colSpan="6" className="p-12 text-center text-slate-400 font-medium italic">Syncing Member Directory...</td></tr>
-                  ) : filteredAgents.length === 0 ? (
-                    <tr><td colSpan="6" className="p-12 text-center text-slate-400 font-medium italic">No matching members found.</td></tr>
-                  ) : filteredAgents.map((agent) => (
-                    <tr key={agent.id} className="hover:bg-slate-50/50 transition-colors group">
-                       <td className="px-6 py-5">
-                          <div className="flex items-center gap-4">
+                    <tr><td colSpan="5" className="p-24 text-center">
+                       <Loader2 className="animate-spin mx-auto text-blue-600 mb-4" size={40} />
+                       <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Synchronizing Directory...</span>
+                    </td></tr>
+                  ) : filteredItems.length === 0 ? (
+                    <tr><td colSpan="5" className="p-24 text-center text-slate-300 font-bold italic uppercase text-xs tracking-widest">Zero matches in primary database.</td></tr>
+                  ) : filteredItems.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
+                       <td className="px-8 py-7">
+                          <div className="flex items-center gap-5">
                              <div className="relative">
-                                <div className="w-12 h-12 rounded-xl border-2 border-slate-100 bg-white overflow-hidden shadow-sm">
-                                   <img src={agent.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(agent.name)}&background=random&color=fff&bold=true`} alt="" className="w-full h-full object-cover" />
+                                <div className="w-14 h-14 rounded-2xl border-4 border-white bg-slate-100 overflow-hidden shadow-lg group-hover:rotate-3 transition-transform">
+                                   <img src={item.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name || item.email)}&background=random&color=fff&bold=true`} alt="" className="w-full h-full object-cover" />
                                 </div>
-                                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${agent.isActive ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                                <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-4 border-white ${item.isActive ? 'bg-emerald-500' : 'bg-slate-300'}`} />
                              </div>
                              <div>
-                                <p className="font-bold text-slate-900">{agent.name}</p>
-                                <p className="text-xs text-slate-500 font-medium">{agent.email}</p>
+                                <p className="font-black text-slate-900 text-base">{item.name || 'Anonymous Entity'}</p>
+                                <p className="text-xs text-slate-400 font-bold tracking-tight">{item.email}</p>
                              </div>
                           </div>
                        </td>
-                       <td className="px-6 py-5">
-                          <div className={`px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider w-fit flex items-center gap-1.5 ${agent.agentType === 'MANUAL' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-violet-50 text-violet-700 border-violet-100'}`}>
-                             {agent.agentType === 'MANUAL' ? <Plus size={12} /> : <Mail size={12} />}
-                             {agent.agentType === 'MANUAL' ? 'Manual' : 'Invited'}
+                       <td className="px-8 py-7">
+                          <div className={`px-4 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest w-fit flex items-center gap-2 ${
+                            (item.agentType === 'MANUAL' || !item.token) ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-violet-50 text-violet-700 border-violet-100'
+                          }`}>
+                             {(item.agentType === 'MANUAL' || !item.token) ? <Fingerprint size={14} /> : <ExternalLink size={14} />}
+                             {(item.agentType === 'MANUAL' || !item.token) ? 'Native Provision' : 'Invite Payload'}
                           </div>
                        </td>
-                       <td className="px-6 py-5">
-                          <div className="flex items-center gap-2">
-                             <Briefcase size={16} className="text-slate-400" />
-                             <span className="text-sm font-semibold text-slate-700">{agent.team?.teamName || 'General Staff'}</span>
-                          </div>
-                       </td>
-                       <td className="px-6 py-5">
-                          <div className="flex items-center gap-6">
-                             <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Leads</p>
-                                <p className="text-base font-bold text-slate-900">{agent._count?.assignedLeads || 0}</p>
+                       <td className="px-8 py-7">
+                          <div className="flex items-center gap-3">
+                             <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
+                                <Briefcase size={16} />
                              </div>
                              <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Calls</p>
-                                <p className="text-base font-bold text-blue-600">{agent._count?.calls || 0}</p>
+                                <span className="text-sm font-black text-slate-700 uppercase tracking-tight">{item.role}</span>
+                                <p className="text-[10px] text-slate-400 font-bold">{item.team?.teamName || 'Global Pool'}</p>
                              </div>
                           </div>
                        </td>
-                       <td className="px-6 py-5">
-                          {agent.agentType === 'INVITED' && agent.inviteStatus === 'PENDING' ? (
-                            <div className="flex items-center gap-2 text-amber-600 font-bold">
+                       <td className="px-8 py-7">
+                          {filterType === 'PENDING' ? (
+                             <div className="flex items-center gap-2 text-amber-500 font-black">
+                                <History size={16} className="animate-pulse" />
+                                <span className="text-[10px] uppercase tracking-[0.1em]">Awaiting Uplink</span>
+                             </div>
+                          ) : item.agentType === 'INVITED' && item.inviteStatus === 'PENDING' ? (
+                            <div className="flex items-center gap-2 text-amber-500 font-black">
                                <History size={16} />
-                               <span className="text-[10px] uppercase tracking-wider">Awaiting Join</span>
+                               <span className="text-[10px] uppercase tracking-[0.1em]">Payload Pending</span>
                             </div>
-                          ) : agent.isActive ? (
-                            <div className="flex items-center gap-2 text-emerald-600 font-bold">
+                          ) : item.isActive ? (
+                            <div className="flex items-center gap-2 text-emerald-500 font-black">
                                <ShieldCheck size={16} />
-                               <span className="text-[10px] uppercase tracking-wider">Active</span>
+                               <span className="text-[10px] uppercase tracking-[0.1em]">Verified Active</span>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-2 text-slate-400 font-bold">
-                               <XCircle size={16} />
-                               <span className="text-[10px] uppercase tracking-wider">Inactive</span>
+                            <div className="flex items-center gap-2 text-slate-300 font-black">
+                               <Ban size={16} />
+                               <span className="text-[10px] uppercase tracking-[0.1em]">Access Denied</span>
                             </div>
                           )}
                        </td>
-                       <td className="px-6 py-5">
+                       <td className="px-8 py-7">
                           <div className="flex items-center justify-end">
                              <TableActionMenu
-                               id={agent.id}
-                               activeId={activeMenuId}
-                               setActiveId={setActiveMenuId}
+                                id={item.id}
+                                activeId={activeMenuId}
+                                setActiveId={setActiveMenuId}
                              >
-                                <TableActionItem 
-                                   icon={<Edit3 size={16} />} 
-                                   label="Edit Profile" 
-                                   color="blue"
-                                   onClick={() => handleEdit(agent)} 
-                                />
-                                <TableActionItem 
-                                   icon={agent.isActive ? <XCircle size={16} /> : <CheckCircle2 size={16} />} 
-                                   label={agent.isActive ? "Deactivate" : "Activate"} 
-                                   color="amber"
-                                   onClick={() => {
-                                      updateAgentMutation.mutate({ id: agent.id, data: { isActive: !agent.isActive } });
-                                      setActiveMenuId(null);
-                                   }} 
-                                />
-                                <div className="h-px bg-slate-50 my-1 mx-2" />
-                                <TableActionItem 
-                                   icon={<Trash2 size={16} />} 
-                                   label="Remove Account" 
-                                   color="rose"
-                                   onClick={() => {
-                                      if (confirm('Remove this account?')) {
-                                         deleteAgentMutation.mutate(agent.id);
-                                         setActiveMenuId(null);
-                                      }
-                                   }} 
-                                />
+                                {filterType === 'PENDING' ? (
+                                   <>
+                                      <TableActionItem 
+                                         icon={<RotateCcw size={16} />} 
+                                         label="Resend Invite" 
+                                         color="blue"
+                                         onClick={() => resendInviteMutation.mutate(item.id)} 
+                                      />
+                                      <TableActionItem 
+                                         icon={<Ban size={16} />} 
+                                         label="Revoke Invite" 
+                                         color="rose"
+                                         onClick={() => {
+                                            if (confirm('Revoke this invitation protocol?')) {
+                                               revokeInviteMutation.mutate(item.id);
+                                            }
+                                         }} 
+                                      />
+                                   </>
+                                ) : (
+                                   <>
+                                      <TableActionItem 
+                                         icon={<Edit3 size={16} />} 
+                                         label="Edit Profile" 
+                                         color="blue"
+                                         onClick={() => handleEdit(item)} 
+                                      />
+                                      <TableActionItem 
+                                         icon={item.isActive ? <Ban size={16} /> : <UserCheck size={16} />} 
+                                         label={item.isActive ? "Deactivate" : "Activate"} 
+                                         color="amber"
+                                         onClick={() => {
+                                            updateAgentMutation.mutate({ id: item.id, data: { isActive: !item.isActive } });
+                                         }} 
+                                      />
+                                   </>
+                                )}
                              </TableActionMenu>
                           </div>
                        </td>
@@ -367,15 +365,129 @@ const AdminAgents = () => {
          </div>
       </div>
 
-      {/* CREATE/EDIT MODAL */}
+      {/* INVITE MODAL OVERHAUL */}
+      <AnimatePresence>
+         {isInviteModalOpen && (
+           <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#020617]/80 backdrop-blur-xl" onClick={() => setIsInviteModalOpen(false)}/>
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 40 }} className="relative w-full max-w-2xl bg-white rounded-[48px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden">
+                 {generatedInviteLink ? (
+                    <div className="p-20 text-center space-y-8">
+                       <div className="w-24 h-24 bg-emerald-50 text-emerald-500 rounded-[32px] flex items-center justify-center mx-auto border-4 border-white shadow-xl shadow-emerald-500/10 rotate-3">
+                          <Zap size={40} />
+                       </div>
+                       <div>
+                          <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Protocol Established</h2>
+                          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-4">Secure invitation payload is ready for transmission.</p>
+                       </div>
+                       <div className="bg-slate-50 p-8 rounded-[32px] border-2 border-dashed border-slate-200 font-mono text-[10px] text-blue-600 break-all select-all leading-relaxed">
+                          {generatedInviteLink}
+                       </div>
+                       <div className="grid grid-cols-2 gap-4">
+                          <button 
+                            onClick={() => { navigator.clipboard.writeText(generatedInviteLink); toast.success('Payload copied to clipboard'); }}
+                            className="h-18 rounded-3xl bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3"
+                          >
+                             <Copy size={20} /> Copy Link
+                          </button>
+                          <button onClick={() => { setIsInviteModalOpen(false); setGeneratedInviteLink(''); }} className="h-18 rounded-3xl bg-slate-100 text-slate-600 font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all">Close Uplink</button>
+                       </div>
+                    </div>
+                 ) : (
+                    <>
+                        <div className="p-12 pb-6 border-b border-slate-100">
+                           <div className="flex items-center gap-4 mb-4">
+                              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+                                 <UserPlus size={24} />
+                              </div>
+                              <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">Dispatch Invitation</h2>
+                           </div>
+                           <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest ml-1">Establish a new identity access point within the CRM infrastructure.</p>
+                        </div>
+                        <form onSubmit={(e) => {
+                           e.preventDefault();
+                           inviteUserMutation.mutate({ 
+                             email: formData.email.trim(), 
+                             role: formData.role,
+                             name: formData.name.trim()
+                           });
+                        }} className="p-12 pt-8 space-y-8">
+                           <div className="grid grid-cols-2 gap-8">
+                              <div className="space-y-3">
+                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Target Identity Name</label>
+                                 <input 
+                                    type="text" required placeholder="Legal Entity Name"
+                                    className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 transition-all outline-none font-bold text-slate-900"
+                                    value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
+                                 />
+                              </div>
+                              <div className="space-y-3">
+                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Communication Endpoint</label>
+                                 <input 
+                                    type="email" required placeholder="name@network.com"
+                                    className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 transition-all outline-none font-bold text-slate-900"
+                                    value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
+                                 />
+                              </div>
+                           </div>
+
+                           <div className="space-y-4">
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">System Access Level</label>
+                              <div className="grid grid-cols-2 gap-4">
+                                 {[
+                                   { val: 'AGENT', label: 'Standard Agent', desc: 'Core operational access to leads and tasks.' },
+                                   { val: 'TEAM_LEAD', label: 'Team Lead', desc: 'Coordinate agent performance and assignments.' },
+                                   { val: 'MANAGER', label: 'Dept Manager', desc: 'Full department oversight and reporting.' },
+                                   { val: 'VIEWER', label: 'Viewer (Read-only)', desc: 'Observation access without data modification.' }
+                                 ].map(r => (
+                                   <div 
+                                     key={r.val}
+                                     onClick={() => setFormData({...formData, role: r.val})}
+                                     className={`p-6 rounded-3xl border-2 cursor-pointer transition-all ${
+                                       formData.role === r.val ? 'border-blue-600 bg-blue-50/50' : 'border-slate-100 hover:border-slate-200'
+                                     }`}
+                                   >
+                                      <div className="flex items-center justify-between mb-2">
+                                         <span className="text-xs font-black uppercase tracking-tight text-slate-900">{r.label}</span>
+                                         {formData.role === r.val && <CheckCircle2 size={16} className="text-blue-600" />}
+                                      </div>
+                                      <p className="text-[10px] text-slate-400 font-bold leading-relaxed">{r.desc}</p>
+                                   </div>
+                                 ))}
+                              </div>
+                           </div>
+
+                           <div className="flex gap-4 pt-8">
+                              <button type="button" onClick={() => setIsInviteModalOpen(false)} className="flex-1 h-18 rounded-3xl bg-slate-50 text-slate-400 font-black uppercase tracking-widest text-[11px] hover:bg-slate-100 transition-all">Abort</button>
+                              <button 
+                                type="submit" 
+                                disabled={inviteUserMutation.isPending}
+                                className="flex-[2] h-18 rounded-3xl bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                              >
+                                 {inviteUserMutation.isPending ? (
+                                   <Loader2 className="animate-spin" size={20} />
+                                 ) : (
+                                   <>Initialize Dispatch <ArrowRight size={20}/></>
+                                 )}
+                              </button>
+                           </div>
+                        </form>
+                    </>
+                 )}
+              </motion.div>
+           </div>
+         )}
+      </AnimatePresence>
+
+      {/* CREATE/EDIT MODAL OVERHAUL */}
       <AnimatePresence>
          {isModalOpen && (
-           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}/>
-              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden">
-                 <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
-                    <h2 className="text-xl font-bold text-slate-900">{editAgentId ? 'Update Member Profile' : 'Add New Member'}</h2>
-                    <p className="text-sm text-slate-500 mt-1">Configure account access and departmental assignment.</p>
+           <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#020617]/80 backdrop-blur-xl" onClick={() => setIsModalOpen(false)}/>
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 40 }} className="relative w-full max-w-2xl bg-white rounded-[48px] shadow-2xl overflow-hidden">
+                 <div className="p-12 pb-6 border-b border-slate-100">
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">{editAgentId ? 'Modify Identity' : 'Native Provisioning'}</h2>
+                    <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2">Configure permanent system access for this entity.</p>
                  </div>
 
                  <form onSubmit={(e) => {
@@ -392,158 +504,57 @@ const AdminAgents = () => {
                     if (editAgentId) {
                       updateAgentMutation.mutate({ id: editAgentId, data });
                     } else {
-                      createAgentMutation.mutate(data);
+                      // Add manual agent creation logic here if needed
                     }
-                 }} className="p-8 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                       <div className="space-y-2 col-span-2 md:col-span-1">
-                          <label className="text-xs font-bold text-slate-700 ml-1">Full Name</label>
+                 }} className="p-12 pt-8 space-y-8">
+                    <div className="grid grid-cols-2 gap-8">
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Entity Name</label>
                           <input 
-                             type="text" required placeholder="e.g. John Smith"
-                             className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all outline-none font-medium"
+                             type="text" required placeholder="e.g. John Doe"
+                             className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900"
                              value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
                           />
                        </div>
-                       <div className="space-y-2 col-span-2 md:col-span-1">
-                          <label className="text-xs font-bold text-slate-700 ml-1">Business Email</label>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Network Email</label>
                           <input 
-                             type="email" required placeholder="name@company.com"
-                             className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all outline-none font-medium"
+                             type="email" required placeholder="name@domain.com"
+                             className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900"
                              value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
                           />
                        </div>
-                       {!editAgentId && (
-                         <div className="space-y-2 col-span-2">
-                            <label className="text-xs font-bold text-slate-700 ml-1">Set Password</label>
-                            <input 
-                               type="password" required placeholder="Minimum 8 characters"
-                               className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all outline-none font-medium"
-                               value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})}
-                            />
-                         </div>
-                       )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-8">
                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-700 ml-1">Team Assignment</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Operational Team</label>
                           <select 
                              required 
-                             className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all outline-none font-medium appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.75rem_center] bg-no-repeat"
+                             className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_1.5rem_center] bg-no-repeat"
                              value={formData.teamId} onChange={e => setFormData({...formData, teamId: e.target.value})}
                           >
-                             <option value="">Select Team...</option>
+                             <option value="">Select Protocol Unit...</option>
                              {teams?.map(t => <option key={t.id} value={t.id}>{t.teamName}</option>)}
                           </select>
                        </div>
                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-700 ml-1">Phone Number</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Contact Protocol</label>
                           <input 
                              type="text" placeholder="+1 (555) 000-0000"
-                             className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all outline-none font-medium"
+                             className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900"
                              value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
                           />
                        </div>
-                       <div className="col-span-2 space-y-2">
-                          <label className="text-xs font-bold text-slate-700 ml-1">Profile Photo (Optional)</label>
-                          <input 
-                             type="file" accept="image/*"
-                             className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer"
-                             onChange={e => setFormData({...formData, image: e.target.files[0]})}
-                          />
-                       </div>
                     </div>
 
-                    <div className="flex gap-3 pt-6 border-t border-slate-100">
-                       <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-11 rounded-xl bg-slate-100 text-slate-600 font-bold text-sm">Cancel</button>
-                       <button type="submit" className="flex-1 h-11 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-lg shadow-blue-500/20">
-                          {editAgentId ? 'Save Changes' : 'Create Account'}
+                    <div className="flex gap-4 pt-12 border-t border-slate-100">
+                       <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-18 rounded-3xl bg-slate-50 text-slate-400 font-black uppercase tracking-widest text-[11px] hover:bg-slate-100 transition-all">Cancel</button>
+                       <button type="submit" className="flex-[2] h-18 rounded-3xl bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all">
+                          {editAgentId ? 'Commit Changes' : 'Execute Provisioning'}
                        </button>
                     </div>
                  </form>
-              </motion.div>
-           </div>
-         )}
-      </AnimatePresence>
-
-      {/* INVITE MODAL */}
-      <AnimatePresence>
-         {isInviteModalOpen && (
-           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsInviteModalOpen(false)}/>
-              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-                 {generatedInviteLink ? (
-                    <div className="p-10 text-center space-y-6">
-                       <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto border-2 border-emerald-100">
-                          <CheckCircle2 size={32} />
-                       </div>
-                       <div>
-                          <h2 className="text-xl font-bold text-slate-900">Invitation Ready</h2>
-                          <p className="text-sm text-slate-500 mt-1">The member can now join your workspace using the link below.</p>
-                       </div>
-                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 font-mono text-[11px] text-blue-600 break-all select-all">
-                          {generatedInviteLink}
-                       </div>
-                       <div className="flex gap-3 pt-2">
-                          <button 
-                            onClick={() => { navigator.clipboard.writeText(generatedInviteLink); toast.success('Link copied'); }}
-                            className="flex-1 h-11 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-lg shadow-blue-500/20"
-                          >
-                             Copy Link
-                          </button>
-                          <button onClick={() => { setIsInviteModalOpen(false); setGeneratedInviteLink(''); }} className="h-11 px-6 rounded-xl bg-slate-100 text-slate-600 font-bold text-sm">Close</button>
-                       </div>
-                    </div>
-                 ) : (
-                    <>
-                        <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
-                           <h2 className="text-xl font-bold text-slate-900">Invite Team Member</h2>
-                           <p className="text-sm text-slate-500 mt-1">Send a secure invitation link to join the platform.</p>
-                        </div>
-                        <form onSubmit={(e) => {
-                           e.preventDefault();
-                           inviteUserMutation.mutate({ 
-                             email: formData.email.trim(), 
-                             role: formData.role,
-                             name: formData.name.trim()
-                           });
-                        }} className="p-8 space-y-5">
-                           <div className="space-y-2">
-                              <label className="text-xs font-bold text-slate-700 ml-1">Full Name</label>
-                              <input 
-                                 type="text" required placeholder="Member's Name"
-                                 className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all outline-none font-medium"
-                                 value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
-                              />
-                           </div>
-                           <div className="space-y-2">
-                              <label className="text-xs font-bold text-slate-700 ml-1">Email Address</label>
-                              <input 
-                                 type="email" required placeholder="email@company.com"
-                                 className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all outline-none font-medium"
-                                 value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
-                              />
-                           </div>
-                           <div className="space-y-2">
-                              <label className="text-xs font-bold text-slate-700 ml-1">System Role</label>
-                              <select 
-                                 required className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all outline-none font-medium appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.75rem_center] bg-no-repeat"
-                                 value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}
-                              >
-                                 <option value="AGENT">Standard User (Agent)</option>
-                                 <option value="MANAGER">Elevated User (Manager)</option>
-                              </select>
-                           </div>
-                           <div className="flex gap-3 pt-6 border-t border-slate-100">
-                              <button type="button" onClick={() => setIsInviteModalOpen(false)} className="flex-1 h-11 rounded-xl bg-slate-100 text-slate-600 font-bold text-sm">Cancel</button>
-                              <button 
-                                type="submit" 
-                                disabled={inviteUserMutation.isPending}
-                                className="flex-1 h-11 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-lg shadow-blue-500/20 disabled:opacity-50"
-                              >
-                                 {inviteUserMutation.isPending ? 'Sending...' : 'Send Invitation'}
-                              </button>
-                           </div>
-                        </form>
-                     </>
-                 )}
               </motion.div>
            </div>
          )}
