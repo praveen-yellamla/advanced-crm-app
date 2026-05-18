@@ -4,14 +4,16 @@ import api from '../../utils/api';
 import { 
   Phone, Mic, MicOff, Pause, Play, PhoneOff, Search, UserPlus, 
   Clock, Activity, Target, ChevronRight, Headphones, 
-  Volume2, Settings, Sparkles, ArrowRight, Disc, PhoneForwarded, History, User
+  Volume2, Settings, Sparkles, ArrowRight, Disc, PhoneForwarded, History, User, CheckCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useTelephony } from '../../context/TelephonyContext';
 import { formatPhoneNumber } from '../../utils/phoneUtils';
+import TelephonySettingsModal from '../../components/telephony/TelephonySettingsModal';
 
 const AgentCallingWorkspace = () => {
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { 
     callState, 
     isMuted, 
@@ -46,6 +48,14 @@ const AgentCallingWorkspace = () => {
     queryFn: async () => {
       const res = await api.get('/agent/leads');
       return res.data.data;
+    }
+  });
+
+  const { data: tasks } = useQuery({
+    queryKey: ['agentTasksDashboard'],
+    queryFn: async () => {
+      const res = await api.get('/agent/tasks');
+      return res.data.data || [];
     }
   });
 
@@ -102,9 +112,15 @@ const AgentCallingWorkspace = () => {
             </div>
          </div>
          <div className="flex items-center gap-3">
-            <AudioSettingBtn icon={Mic} label="Mic: Default" />
-            <AudioSettingBtn icon={Volume2} label="Speaker: Default" />
-            <button className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 transition-colors shadow-sm">
+            <button onClick={() => setIsSettingsOpen(true)} className="px-5 h-12 bg-white border border-slate-200 rounded-xl flex items-center gap-3 hover:border-blue-300 hover:bg-slate-50 transition-all shadow-sm">
+               <Mic size={16} className="text-slate-500" />
+               <span className="text-[11px] font-bold text-slate-600 tracking-wide hidden sm:inline-block">Mic</span>
+            </button>
+            <button onClick={() => setIsSettingsOpen(true)} className="px-5 h-12 bg-white border border-slate-200 rounded-xl flex items-center gap-3 hover:border-blue-300 hover:bg-slate-50 transition-all shadow-sm">
+               <Volume2 size={16} className="text-slate-500" />
+               <span className="text-[11px] font-bold text-slate-600 tracking-wide hidden sm:inline-block">Speaker</span>
+            </button>
+            <button onClick={() => setIsSettingsOpen(true)} className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 transition-colors shadow-sm">
                <Settings size={20} />
             </button>
          </div>
@@ -299,47 +315,30 @@ const AgentCallingWorkspace = () => {
             </AnimatePresence>
          </div>
 
-         {/* RIGHT COLUMN: AI & TASKS */}
+         {/* RIGHT COLUMN: TASKS */}
          <div className="xl:col-span-3 flex flex-col gap-8">
-            <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex flex-col max-h-[400px]">
-               <div className="flex items-center gap-3 mb-6 shrink-0">
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                     <Sparkles size={16} />
-                  </div>
-                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Assistant</h3>
-               </div>
-               
-               <div className="flex-1 overflow-y-auto space-y-4 scrollbar-hide">
-                  <div className="p-5 bg-blue-50/80 rounded-2xl border border-blue-100">
-                     <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Suggested Action</p>
-                     <p className="text-sm font-semibold text-slate-700 leading-relaxed">
-                        Mention the <span className="font-black text-blue-700">Enterprise SLA</span>. This lead previously showed interest in priority support.
-                     </p>
-                  </div>
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Live Sentiment</p>
-                     <div className="h-2.5 w-full bg-slate-200 rounded-full overflow-hidden mb-2">
-                        <div className="h-full bg-emerald-500 w-[80%] rounded-full" />
-                     </div>
-                     <p className="text-[10px] font-bold text-emerald-600 text-right">80% Positive</p>
-                  </div>
-               </div>
-            </div>
-
-            <div className="bg-slate-900 p-6 rounded-[32px] shadow-xl flex flex-col flex-1 min-h-[300px]">
+            <div className="bg-slate-900 p-6 rounded-[32px] shadow-xl flex flex-col flex-1 h-full min-h-[500px]">
                <div className="flex items-center justify-between mb-6 shrink-0">
-                  <h3 className="text-xs font-black text-white uppercase tracking-widest">Tasks</h3>
+                  <h3 className="text-xs font-black text-white uppercase tracking-widest">Pending Tasks</h3>
                   <button className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
                      <UserPlus size={14} />
                   </button>
                </div>
                <div className="flex-1 overflow-y-auto space-y-3 scrollbar-hide">
-                  {[1,2].map(i => (
-                     <div key={i} className="p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group">
-                        <p className="text-sm font-bold text-white truncate group-hover:text-blue-400 transition-colors">Send Contract Details</p>
-                        <div className="flex items-center justify-between mt-2">
-                           <span className="text-[10px] font-semibold text-slate-400">Due Today</span>
-                           <ArrowRight size={14} className="text-slate-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+                  {!tasks || tasks.length === 0 ? (
+                    <div className="text-center p-8 text-slate-500 text-sm font-bold italic">No pending tasks found.</div>
+                  ) : tasks.map(task => (
+                     <div key={task.id} className="p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group">
+                        <div className="flex items-start justify-between">
+                          <p className="text-sm font-bold text-white truncate group-hover:text-blue-400 transition-colors">{task.title}</p>
+                          <CheckCircle size={16} className="text-slate-600 hover:text-emerald-400 shrink-0 ml-2" />
+                        </div>
+                        <div className="flex items-center justify-between mt-3">
+                           <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md ${
+                              task.priority === 'HIGH' ? 'bg-rose-500/20 text-rose-400' : 
+                              task.priority === 'MEDIUM' ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-500/20 text-slate-400'
+                           }`}>{task.priority}</span>
+                           <span className="text-[10px] font-semibold text-slate-400">{new Date(task.dueDate).toLocaleDateString()}</span>
                         </div>
                      </div>
                   ))}
@@ -413,6 +412,12 @@ const AgentCallingWorkspace = () => {
             </motion.div>
          )}
       </AnimatePresence>
+
+      {/* HARDWARE SETTINGS */}
+      <TelephonySettingsModal 
+         isOpen={isSettingsOpen} 
+         onClose={() => setIsSettingsOpen(false)} 
+      />
     </div>
   );
 };

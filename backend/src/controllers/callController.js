@@ -429,14 +429,16 @@ const toggleHold = async (req, res) => {
       await client.conferences(confSid).participants(p.callSid).update({ hold: hold === true });
     }
     
-    // Log Activity
-    await prisma.leadActivity.create({
-      data: {
-        organizationId: req.user.organizationId,
-        leadId: req.body.leadId ? parseInt(req.body.leadId) : null,
-        action: `Call ${hold ? 'Placed on Hold' : 'Resumed'}`
-      }
-    });
+    // Log Activity only if leadId exists
+    if (req.body.leadId) {
+      await prisma.leadActivity.create({
+        data: {
+          organizationId: req.user.organizationId,
+          leadId: parseInt(req.body.leadId),
+          action: `Call ${hold ? 'Placed on Hold' : 'Resumed'}`
+        }
+      });
+    }
 
     res.json({ success: true, hold });
   } catch (error) {
@@ -458,14 +460,16 @@ const toggleRecord = async (req, res) => {
       }
     }
     
-    // Log Activity
-    await prisma.leadActivity.create({
-      data: {
-        organizationId: req.user.organizationId,
-        leadId: req.body.leadId ? parseInt(req.body.leadId) : null,
-        action: `Call Recording ${record ? 'Started' : 'Stopped'}`
-      }
-    });
+    // Log Activity only if leadId exists
+    if (req.body.leadId) {
+      await prisma.leadActivity.create({
+        data: {
+          organizationId: req.user.organizationId,
+          leadId: parseInt(req.body.leadId),
+          action: `Call Recording ${record ? 'Started' : 'Stopped'}`
+        }
+      });
+    }
 
     res.json({ success: true, record });
   } catch (error) {
@@ -488,14 +492,16 @@ const transferCall = async (req, res) => {
       twiml: `<Response><Dial><Conference>${conferenceName}</Conference></Dial></Response>`
     });
     
-    // Log Activity
-    await prisma.leadActivity.create({
-      data: {
-        organizationId: req.user.organizationId,
-        leadId: req.body.leadId ? parseInt(req.body.leadId) : null,
-        action: `Call Transferred to ${targetE164}`
-      }
-    });
+    // Log Activity only if leadId exists
+    if (req.body.leadId) {
+      await prisma.leadActivity.create({
+        data: {
+          organizationId: req.user.organizationId,
+          leadId: parseInt(req.body.leadId),
+          action: `Call Transferred to ${targetE164}`
+        }
+      });
+    }
 
     res.json({ success: true, message: 'Transfer initiated' });
   } catch (error) {

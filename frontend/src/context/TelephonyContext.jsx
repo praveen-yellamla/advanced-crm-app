@@ -305,6 +305,21 @@ export function TelephonyProvider({ children }) {
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
+  const setInputDevice = async (deviceId) => {
+    if (deviceRef.current && deviceRef.current.audio) {
+      await deviceRef.current.audio.setInputDevice(deviceId);
+    }
+  };
+
+  const setOutputDevice = async (deviceId) => {
+    if (deviceRef.current && deviceRef.current.audio) {
+      // For ringer
+      deviceRef.current.audio.ringtoneDevices.set(deviceId);
+      // For speaker
+      deviceRef.current.audio.speakerDevices.set(deviceId);
+    }
+  };
+
   const formatDurationStr = (s) => {
     const mins = Math.floor(s / 60);
     const secs = s % 60;
@@ -319,6 +334,8 @@ export function TelephonyProvider({ children }) {
     isRecording,
     duration,
     formatDuration: formatDurationStr,
+    setInputDevice,
+    setOutputDevice,
     makeCall,
     endCall,
     toggleMute,
@@ -330,7 +347,7 @@ export function TelephonyProvider({ children }) {
     lastCallSid,
     networkQuality,
     monitorActiveCall
-  }), [deviceState, callState, isMuted, onHold, isRecording, duration, lastCallSid, networkQuality, makeCall, monitorActiveCall]);
+  }), [deviceState, callState, isMuted, onHold, isRecording, duration, lastCallSid, networkQuality, makeCall, monitorActiveCall, setInputDevice, setOutputDevice]);
 
   return (
     <TelephonyContext.Provider value={value}>
