@@ -26,7 +26,8 @@ const AgentCallingWorkspace = () => {
     activeCall,
     lastCallSid,
     makeCall,
-    endCall
+    endCall,
+    sendDigits
   } = useTelephony();
 
   const [activeLead, setActiveLead] = useState(null);
@@ -132,7 +133,13 @@ const AgentCallingWorkspace = () => {
                   {[1,2,3,4,5,6,7,8,9,'*',0,'#'].map(n => (
                     <button 
                       key={n} 
-                      onClick={() => setPhoneNumber(prev => formatPhoneNumber(prev + n))}
+                      onClick={() => {
+                        if (callState === 'connected' || callState === 'ringing' || callState === 'in-progress') {
+                          sendDigits(n.toString());
+                        } else {
+                          setPhoneNumber(prev => formatPhoneNumber(prev + n));
+                        }
+                      }}
                       className="aspect-square rounded-2xl bg-white/5 hover:bg-white/15 active:bg-white/20 text-2xl font-medium transition-all flex items-center justify-center"
                     >
                       {n}
@@ -152,7 +159,7 @@ const AgentCallingWorkspace = () => {
             </div>
 
             {/* PIPELINE SELECTOR */}
-            <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex flex-col h-[400px]">
+            <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex flex-col max-h-[500px]">
                <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Leads Pipeline</h3>
                   <Target size={16} className="text-slate-400" />
@@ -192,7 +199,7 @@ const AgentCallingWorkspace = () => {
                   <motion.div 
                     key="idle"
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="flex-1 bg-white rounded-[40px] border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center p-12 relative overflow-hidden"
+                    className="flex-1 bg-white rounded-[40px] border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center p-12 relative overflow-hidden min-h-[500px]"
                   >
                      <div className="relative z-10 space-y-6 max-w-sm">
                         <div className="w-24 h-24 rounded-full bg-slate-50 text-blue-600 flex items-center justify-center mx-auto shadow-inner border border-slate-100">
@@ -258,7 +265,7 @@ const AgentCallingWorkspace = () => {
                      </div>
 
                      {/* CALL CONTEXT TABS */}
-                     <div className="flex-1 bg-white rounded-[40px] border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[300px]">
+                     <div className="flex-1 bg-white rounded-[40px] border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
                         <div className="flex items-center gap-8 px-8 pt-6 border-b border-slate-100 shrink-0">
                            <TabBtn active={activeTab === 'TRANSCRIPT'} label="Live Transcript" onClick={() => setActiveTab('TRANSCRIPT')} />
                            <TabBtn active={activeTab === 'NOTES'} label="Call Notes" onClick={() => setActiveTab('NOTES')} />
@@ -294,7 +301,7 @@ const AgentCallingWorkspace = () => {
 
          {/* RIGHT COLUMN: AI & TASKS */}
          <div className="xl:col-span-3 flex flex-col gap-8">
-            <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex flex-col h-[350px]">
+            <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex flex-col max-h-[400px]">
                <div className="flex items-center gap-3 mb-6 shrink-0">
                   <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
                      <Sparkles size={16} />
@@ -343,7 +350,7 @@ const AgentCallingWorkspace = () => {
       
       {/* POST-CALL SAVE OVERLAY */}
       <AnimatePresence>
-         {callState === 'completed' && (
+         {callState === 'disconnected' && (
             <motion.div 
                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                className="fixed inset-0 z-[5000] flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-sm"

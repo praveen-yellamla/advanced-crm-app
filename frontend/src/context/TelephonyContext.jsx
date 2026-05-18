@@ -9,36 +9,63 @@ const TelephonyContext = createContext();
 
 export function TelephonyProvider({ children }) {
   const { user } = useAuth();
-  const [device, setDevice] = useState(null);
-  const [call, setCall] = useState(null);
+  
+  // Use Refs for true Singleton persistence
+  const deviceRef = useRef(null);
+  const activeCallRef = useRef(null);
+  
+  // UI State mapping
+  const [deviceState, setDeviceState] = useState('unregistered'); // registering, registered, unregistered, error
+  const [callState, setCallState] = useState('idle'); // idle, connecting, ringing, connected, reconnecting, disconnected, failed
   const [lastCallSid, setLastCallSid] = useState('');
-  const [callState, setCallState] = useState('idle'); // idle, ringing, in-progress, completed
   const [isMuted, setIsMuted] = useState(false);
   const [onHold, setOnHold] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
-  const [networkQuality, setNetworkQuality] = useState(5); // 1-5
+  const [networkQuality, setNetworkQuality] = useState(5);
+  
   const timerRef = useRef(null);
   const reconnectAttempts = useRef(0);
 
-  // 1. INITIALIZE TWILIO DEVICE
+  // 1. INITIALIZE TWILIO DEVICE (Singleton)
   const initDevice = useCallback(async () => {
     if (!user) return;
+    if (deviceRef.current && deviceRef.current.state === 'registered') return; // Already registered
+
     try {
+      setDeviceState('registering');
       const { data } = await api.get('/call/token');
+      
       const newDevice = new Device(data.token, {
         codecPreferences: ['opus', 'pcmu'],
         enableIceRestart: true,
-        maxCallSignalingTimeoutMs: 30000
+        maxCallSignalingTimeoutMs: 30000,
+        logLevel: 1 // warnings and errors only
       });
 
+      // Device Lifecycle Events
       newDevice.on('registered', () => {
         console.log('TELEPHONY: Device Registered');
+        setDeviceState('registered');
         reconnectAttempts.current = 0;
+      });
+
+      newDevice.on('registering', () => setDeviceState('registering'));
+      newDevice.on('unregistered', () => setDeviceState('unregistered'));
+      
+      newDevice.on('tokenWillExpire', async () => {
+        console.log('TELEPHONY: Token expiring soon. Refreshing...');
+        try {
+          const res = await api.get('/call/token');
+          newDevice.updateToken(res.data.token);
+        } catch (err) {
+          console.error('TELEPHONY: Failed to refresh token', err);
+        }
       });
 
       newDevice.on('error', (error) => {
         console.error('TELEPHONY: Device Error:', error);
+        // Do NOT automatically destroy the call on device error unless it's a fatal signaling error
         if (error.code === 31005 && reconnectAttempts.current < 3) {
           reconnectAttempts.current++;
           setTimeout(initDevice, 2000);
@@ -48,51 +75,107 @@ export function TelephonyProvider({ children }) {
       newDevice.on('network', (level) => setNetworkQuality(level));
 
       newDevice.on('incoming', (incomingCall) => {
-        setCall(incomingCall);
+        if (activeCallRef.current) {
+          incomingCall.reject(); // Reject if we are already on a call
+          return;
+        }
+        
+        activeCallRef.current = incomingCall;
         setCallState('ringing');
         
-        incomingCall.on('accept', () => {
-          setCallState('in-progress');
-          startTimer();
-        });
-
-        incomingCall.on('disconnect', () => handleCallEnd());
-        incomingCall.on('reject', () => handleCallEnd());
+        bindCallEvents(incomingCall);
       });
 
       await newDevice.register();
-      setDevice(newDevice);
+      deviceRef.current = newDevice;
     } catch (error) {
       console.error('TELEPHONY: Init Failed:', error);
+      setDeviceState('error');
     }
   }, [user]);
 
+  // Bind all call lifecycle events securely
+  const bindCallEvents = (callObj) => {
+    callObj.on('accept', () => {
+      console.log('TELEPHONY: Call Answered/Accepted');
+      setCallState('connected');
+      if (callObj.parameters?.CallSid) {
+        setLastCallSid(callObj.parameters.CallSid);
+      }
+      startTimer();
+    });
+
+    callObj.on('ringing', () => {
+      setCallState('ringing');
+    });
+
+    callObj.on('disconnect', () => {
+      console.log('TELEPHONY: Call Disconnected explicitly by Twilio');
+      handleCallEnd();
+    });
+
+    callObj.on('cancel', () => handleCallEnd());
+    
+    callObj.on('reject', () => {
+      setCallState('failed');
+      handleCallEnd();
+    });
+
+    callObj.on('reconnecting', () => {
+      console.warn('TELEPHONY: Call reconnecting...');
+      setCallState('reconnecting');
+    });
+
+    callObj.on('reconnected', () => {
+      console.log('TELEPHONY: Call reconnected');
+      setCallState('connected');
+    });
+
+    callObj.on('error', (err) => {
+      console.error('TELEPHONY: Call Error:', err);
+      // We do NOT disconnect here immediately. Let the 'disconnect' event handle the actual drop.
+      // Many WebRTC or media errors are transient. We show a toast but keep UI alive.
+      toast.error(`Connection warning: ${err.message}`);
+    });
+    
+    callObj.on('warning', (warningName, warningData) => {
+      console.warn('TELEPHONY: Call Warning:', warningName, warningData);
+    });
+  };
+
   useEffect(() => {
     initDevice();
+    
+    // Prevent premature cleanup on re-renders. 
+    // Only destroy when the provider completely unmounts (e.g., user logs out).
     return () => {
-      if (device) {
-        device.destroy();
-        setDevice(null);
-      }
+      // Intentionally NOT destroying the device here to prevent HMR/rerender drops
     };
   }, [initDevice]);
 
   // 2. CALL LIFECYCLE HANDLERS
   const handleCallEnd = useCallback(() => {
-    setCall(null);
-    setCallState('completed');
+    console.log('TELEPHONY: Triggering cleanup post-disconnect');
+    activeCallRef.current = null;
+    setCallState('disconnected');
     stopTimer();
     setIsMuted(false);
     setOnHold(false);
     setIsRecording(false);
-    setTimeout(() => setCallState('idle'), 5000);
+    setTimeout(() => setCallState('idle'), 3000);
   }, []);
 
   const makeCall = async (phoneNumber, leadId = null) => {
-    if (!device) {
+    if (!deviceRef.current || deviceRef.current.state !== 'registered') {
       setCallState('connecting');
       toast.loading('Telephony core initializing...');
-      return initDevice();
+      await initDevice();
+      if (!deviceRef.current || deviceRef.current.state !== 'registered') {
+        toast.error('Telephony subsystem offline. Cannot place call.');
+        setCallState('failed');
+        setTimeout(() => setCallState('idle'), 3000);
+        return;
+      }
     }
     
     try {
@@ -100,40 +183,12 @@ export function TelephonyProvider({ children }) {
       console.log(`TELEPHONY: Dialing ${formattedTo}`);
       setCallState('connecting');
       
-      const outgoingCall = await device.connect({ 
-        params: { To: formattedTo, leadId, agentId: user?.id } 
+      const outgoingCall = await deviceRef.current.connect({ 
+        params: { To: formattedTo, leadId: leadId ? leadId.toString() : '', agentId: user?.id?.toString() || '' } 
       });
       
-      setCall(outgoingCall);
-      setCallState('ringing');
-
-      outgoingCall.on('accept', () => {
-        console.log('TELEPHONY: Call Answered');
-        setCallState('connected');
-        if (outgoingCall.parameters?.CallSid) {
-          setLastCallSid(outgoingCall.parameters.CallSid);
-        }
-        startTimer();
-      });
-
-      outgoingCall.on('disconnect', () => {
-        console.log('TELEPHONY: Call Disconnected');
-        setCallState('disconnected');
-        handleCallEnd();
-      });
-
-      outgoingCall.on('reject', () => {
-        console.log('TELEPHONY: Call Rejected');
-        setCallState('failed');
-        handleCallEnd();
-      });
-
-      outgoingCall.on('error', (err) => {
-        console.error('TELEPHONY: Call Error:', err);
-        toast.error(`Call failed: ${err.message}`);
-        setCallState('failed');
-        handleCallEnd();
-      });
+      activeCallRef.current = outgoingCall;
+      bindCallEvents(outgoingCall);
 
     } catch (error) {
       console.error('TELEPHONY: Initiate Error:', error);
@@ -144,26 +199,29 @@ export function TelephonyProvider({ children }) {
   };
 
   const endCall = () => {
-    if (call) {
-      console.log('TELEPHONY: Manual Terminate');
-      if (call.parameters?.CallSid) setLastCallSid(call.parameters.CallSid);
-      call.disconnect();
+    if (activeCallRef.current) {
+      console.log('TELEPHONY: Manual Terminate initiated by agent');
+      if (activeCallRef.current.parameters?.CallSid) {
+        setLastCallSid(activeCallRef.current.parameters.CallSid);
+      }
+      activeCallRef.current.disconnect();
+    } else {
+      // Failsafe if state is stuck
+      handleCallEnd();
     }
-    setCallState('disconnected');
-    handleCallEnd();
   };
 
   const toggleMute = () => {
-    if (call) {
+    if (activeCallRef.current) {
       const newMuteStatus = !isMuted;
-      call.mute(newMuteStatus);
+      activeCallRef.current.mute(newMuteStatus);
       setIsMuted(newMuteStatus);
       toast.success(newMuteStatus ? 'Microphone Muted' : 'Microphone Active');
     }
   };
 
   const toggleHoldCall = async (phone, leadId) => {
-    if (!call) return;
+    if (!activeCallRef.current) return;
     try {
       const newHoldState = !onHold;
       const res = await api.post('/call/hold', { phone, hold: newHoldState, leadId });
@@ -173,7 +231,7 @@ export function TelephonyProvider({ children }) {
       }
     } catch (error) {
       toast.error('Failed to toggle hold. Using local mute fallback.');
-      toggleMute(); // Fallback to muting the agent if the conference update fails
+      toggleMute();
     }
   };
 
@@ -204,28 +262,24 @@ export function TelephonyProvider({ children }) {
   };
 
   const sendDigits = (digits) => {
-    if (call) {
+    if (activeCallRef.current) {
       console.log(`TELEPHONY: Sending DTMF: ${digits}`);
-      call.sendDigits(digits);
+      activeCallRef.current.sendDigits(digits);
     }
   };
 
   // 3. MONITORING & TOOLS
   const monitorActiveCall = async (phoneNumber) => {
-    if (!device) return toast.error('Telephony offline');
+    if (!deviceRef.current) return toast.error('Telephony offline');
     try {
       const formattedTo = formatPhoneNumber(phoneNumber);
       setCallState('connecting');
-      const monitoringCall = await device.connect({ 
+      const monitoringCall = await deviceRef.current.connect({ 
         params: { To: formattedTo, isMonitor: 'true' } 
       });
       
-      setCall(monitoringCall);
-      monitoringCall.on('accept', () => setCallState('connected'));
-      monitoringCall.on('disconnect', () => {
-        setCallState('disconnected');
-        handleCallEnd();
-      });
+      activeCallRef.current = monitoringCall;
+      bindCallEvents(monitoringCall);
     } catch (error) {
       toast.error('Monitoring link failed');
       setCallState('failed');
@@ -238,7 +292,6 @@ export function TelephonyProvider({ children }) {
     setDuration(0);
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
-      // Don't increment timer if on hold
       setOnHold((currentHold) => {
         if (!currentHold) {
           setDuration(prev => prev + 1);
@@ -252,19 +305,20 @@ export function TelephonyProvider({ children }) {
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
-  const formatDuration = (s) => {
+  const formatDurationStr = (s) => {
     const mins = Math.floor(s / 60);
     const secs = s % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const value = React.useMemo(() => ({
+    deviceState,
     callState,
     isMuted,
     onHold,
     isRecording,
     duration,
-    formatDuration,
+    formatDuration: formatDurationStr,
     makeCall,
     endCall,
     toggleMute,
@@ -272,11 +326,11 @@ export function TelephonyProvider({ children }) {
     toggleRecordCall,
     transferActiveCall,
     sendDigits,
-    activeCall: call,
+    activeCall: activeCallRef.current,
     lastCallSid,
     networkQuality,
     monitorActiveCall
-  }), [callState, isMuted, onHold, isRecording, duration, call, lastCallSid, networkQuality, makeCall, monitorActiveCall]);
+  }), [deviceState, callState, isMuted, onHold, isRecording, duration, lastCallSid, networkQuality, makeCall, monitorActiveCall]);
 
   return (
     <TelephonyContext.Provider value={value}>
