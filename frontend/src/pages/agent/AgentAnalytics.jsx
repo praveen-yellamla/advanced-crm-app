@@ -4,7 +4,7 @@ import api from '../../utils/api';
 import { 
   BarChart3, TrendingUp, TrendingDown, Target, Clock, Phone, 
   Mail, Award, Zap, Activity, PieChart, Calendar, ChevronRight,
-  Sparkles, Globe, ShieldCheck, ArrowUpRight
+  Sparkles, Globe, ShieldCheck, ArrowUpRight, MessageSquare
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { 
@@ -30,26 +30,26 @@ const AgentAnalytics = () => {
       {/* ANALYTICS HEADER */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
         <div className="space-y-1">
-           <h1 className="text-4xl font-black text-slate-900 tracking-tight italic uppercase">Personal Intelligence</h1>
-           <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.3em] ml-1">Advanced Performance Metrics & Funnel Analysis</p>
+           <h1 className="text-4xl font-black text-slate-900 tracking-tight italic uppercase">Performance Analytics</h1>
+           <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.3em] ml-1">Real-time Performance Metrics & Funnel Analysis</p>
         </div>
         <div className="flex gap-4">
            <div className="flex items-center gap-3 px-6 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm">
               <ShieldCheck className="text-emerald-500" size={20} />
-              <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Efficiency: 94.2%</span>
+              <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Accuracy Rate: 94.2%</span>
            </div>
            <button className="h-16 px-8 bg-slate-900 text-white rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-slate-900/20 hover:scale-105 transition-all flex items-center gap-3">
-              <Globe size={18} className="text-blue-400" /> Global Standings
+              <Globe size={18} className="text-blue-400" /> Leaderboard
            </button>
         </div>
       </div>
 
       {/* ACHIEVEMENT GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <MetricCard title="Communication Velocity" value={cards?.callsToday || 0} unit="Calls/Day" icon={Phone} color="blue" trend="+12.4%" />
-        <MetricCard title="Engagement Depth" value={`${Math.floor((cards?.talkTimeToday || 0) / 60)}m`} unit="Talk Time" icon={Clock} color="cyan" trend="+5.1%" />
-        <MetricCard title="Protocol Success" value={cards?.conversionsThisMonth || 0} unit="Won Leads" icon={Target} color="violet" trend="+8.9%" />
-        <MetricCard title="Revenue Contribution" value={`₹${(cards?.revenueGenerated || 0).toLocaleString()}`} unit="Impact" icon={Award} color="emerald" trend="+14.2%" />
+        <MetricCard title="Call Volume" value={cards?.callsToday || 0} unit="Calls/Day" icon={Phone} color="blue" trend="+12.4%" />
+        <MetricCard title="Engagement Time" value={`${Math.floor((cards?.talkTimeToday || 0) / 60)}m`} unit="Talk Time" icon={Clock} color="cyan" trend="+5.1%" />
+        <MetricCard title="Total Conversions" value={cards?.conversionsThisMonth || 0} unit="Won Leads" icon={Target} color="violet" trend="+8.9%" />
+        <MetricCard title="Revenue Generated" value={`₹${(cards?.revenueGenerated || 0).toLocaleString()}`} unit="Total Value" icon={Award} color="emerald" trend="+14.2%" />
       </div>
 
       {/* PERFORMANCE DEEP DIVE */}
@@ -59,7 +59,7 @@ const AgentAnalytics = () => {
          <div className="xl:col-span-8 bg-white p-12 rounded-[64px] border border-slate-100 shadow-xl shadow-slate-200/20 relative overflow-hidden">
             <div className="flex items-center justify-between mb-12 relative z-10">
                <div>
-                  <h3 className="text-xl font-black text-slate-900 uppercase italic tracking-tighter">Achievement Trajectory</h3>
+                  <h3 className="text-xl font-black text-slate-900 uppercase italic tracking-tighter">Conversion Trends</h3>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Cross-Dimensional Performance Index</p>
                </div>
                <div className="flex p-1.5 bg-slate-100 rounded-2xl">

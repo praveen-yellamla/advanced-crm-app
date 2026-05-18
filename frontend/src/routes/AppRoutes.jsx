@@ -36,7 +36,7 @@ import QualityControlCenter from '../pages/manager/QualityControlCenter';
 import AgentDashboard from '../pages/agent/AgentDashboard';
 import AgentLeads from '../pages/agent/AgentLeads';
 import AgentCallingWorkspace from '../pages/agent/AgentCallingWorkspace';
-import AgentHistory from '../pages/agent/AgentHistory';
+import AgentActivity from '../pages/agent/AgentActivity';
 import AgentTasks from '../pages/agent/AgentTasks';
 import AgentFeedback from '../pages/agent/AgentFeedback';
 import EmailInbox from '../pages/agent/EmailInbox';
@@ -125,7 +125,8 @@ const AppRoutes = () => {
             <Route path="dashboard" element={<AgentDashboard />} />
             <Route path="leads" element={<AgentLeads />} />
             <Route path="calling" element={<AgentCallingWorkspace />} />
-            <Route path="history" element={<AgentHistory />} />
+            <Route path="history" element={<AgentActivity />} />
+            <Route path="activity" element={<AgentActivity />} />
             <Route path="tasks" element={<AgentTasks />} />
             <Route path="feedback" element={<AgentFeedback />} />
             <Route path="inbox" element={<EmailInbox />} />

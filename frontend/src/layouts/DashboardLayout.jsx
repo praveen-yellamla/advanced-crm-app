@@ -166,7 +166,7 @@ const DashboardLayout = () => {
       { name: 'Dashboard', icon: LayoutDashboard, path: '/agent/dashboard' },
       { name: 'Leads', icon: Target, path: '/agent/leads' },
       { name: 'Calling Workspace', icon: Headphones, path: '/agent/calling' },
-      { name: 'Call History', icon: History, path: '/agent/history' },
+      { name: 'Activity Log', icon: History, path: '/agent/activity' },
       { name: 'Task Manager', icon: ClipboardCheck, path: '/agent/tasks' },
       { name: 'Email Inbox', icon: Mail, path: '/agent/inbox' },
       { name: 'Analytics', icon: BarChart3, path: '/agent/analytics' },
@@ -269,7 +269,7 @@ const DashboardLayout = () => {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         
         {/* HEADER */}
-        <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-10 shrink-0 relative z-[2000] shadow-sm">
+        <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-10 shrink-0 sticky top-0 z-[1000] shadow-sm">
           
           <div className="flex items-center bg-slate-50 border border-slate-200 px-6 py-2.5 rounded-2xl w-[440px] focus-within:ring-4 focus-within:ring-blue-500/5 focus-within:border-blue-500/50 transition-all">
             <Search size={18} className="text-slate-400" />

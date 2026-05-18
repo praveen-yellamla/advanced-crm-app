@@ -78,24 +78,24 @@ const AgentCallingWorkspace = () => {
   }, [activeLead]);
 
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col gap-8">
-      {/* COCKPIT HEADER */}
+    <div className="h-full flex flex-col gap-8">
+      {/* HEADER */}
       <div className="flex items-center justify-between shrink-0">
          <div className="flex items-center gap-6">
-            <div className="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center text-blue-400 shadow-2xl">
-               <Globe className="animate-spin-slow" size={24} />
+            <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-2xl">
+               <Phone size={24} />
             </div>
             <div>
-               <h1 className="text-2xl font-black text-slate-900 uppercase italic tracking-tight">Telephony Cockpit</h1>
+               <h1 className="text-2xl font-black text-slate-900 uppercase italic tracking-tight">Calling Workspace</h1>
                <div className="flex items-center gap-3 mt-1">
                   <div className={`w-2 h-2 rounded-full ${callState === 'in-progress' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{callState === 'idle' ? 'System Ready' : `Active Session: ${callState}`}</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{callState === 'idle' ? 'System Ready' : `Active Call: ${callState}`}</span>
                </div>
             </div>
          </div>
          <div className="flex items-center gap-4">
-            <AudioSettingBtn icon={Mic} label="Audio Input: Studio Mic" />
-            <AudioSettingBtn icon={Volume2} label="Output: HD Speakers" />
+            <AudioSettingBtn icon={Mic} label="Mic: Default" />
+            <AudioSettingBtn icon={Volume2} label="Speaker: Default" />
             <div className="w-px h-8 bg-slate-200 mx-2" />
             <button className="w-12 h-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-all shadow-sm">
                <Settings size={20} />
@@ -105,13 +105,13 @@ const AgentCallingWorkspace = () => {
 
       <div className="flex-1 flex gap-8 overflow-hidden min-h-0">
          
-         {/* LEFT PANEL: LEAD HUB & DIALER */}
-         <div className="w-[400px] flex flex-col gap-6 shrink-0">
-            {/* DIALER UNIT */}
+         {/* LEFT PANEL: DIALER & LEADS */}
+         <div className="w-[380px] flex flex-col gap-6 shrink-0">
+            {/* DIALER */}
             <div className="bg-[#0F172A] p-8 rounded-[48px] shadow-2xl relative overflow-hidden flex flex-col">
                <div className="relative z-10 space-y-6">
                   <div className="flex items-center justify-between">
-                     <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">Communication Core</span>
+                     <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">Dialer Control</span>
                      <Maximize2 size={16} className="text-white/20" />
                   </div>
                   
@@ -120,13 +120,13 @@ const AgentCallingWorkspace = () => {
                         type="text" 
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
-                        placeholder="+91 000 000 0000"
-                        className="w-full bg-transparent border-none text-3xl font-black text-white tracking-tighter focus:ring-0 placeholder:text-white/5 tabular-nums"
+                        placeholder="+91 00000 00000"
+                        className="w-full bg-transparent border-none text-3xl font-black text-white tracking-tighter focus:ring-0 placeholder:text-white/10 tabular-nums"
                      />
                      {activeLead && <p className="text-blue-400 font-black uppercase text-[10px] tracking-[0.2em] italic">{activeLead.customerName}</p>}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-2">
                      {[1,2,3,4,5,6,7,8,9,'*',0,'#'].map(n => (
                        <button 
                          key={n} 
@@ -145,7 +145,7 @@ const AgentCallingWorkspace = () => {
                       callState !== 'idle' ? 'bg-slate-800 text-slate-600 grayscale' : 'bg-emerald-600 text-white shadow-2xl shadow-emerald-500/20 hover:scale-105 brightness-110'
                     }`}
                   >
-                     <Phone size={20} fill="currentColor" /> Initialize Link
+                     <Phone size={20} fill="currentColor" /> Start Call
                   </button>
                </div>
                <div className="absolute bottom-0 right-0 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl -mr-20 -mb-20" />
@@ -154,12 +154,12 @@ const AgentCallingWorkspace = () => {
             {/* LEAD SELECTOR */}
             <div className="flex-1 bg-white p-8 rounded-[48px] border border-slate-100 shadow-xl shadow-slate-200/20 flex flex-col overflow-hidden">
                <div className="flex items-center justify-between mb-6 shrink-0">
-                  <h3 className="text-sm font-black text-slate-900 uppercase italic tracking-widest">Personal Pipeline</h3>
+                  <h3 className="text-sm font-black text-slate-900 uppercase italic tracking-widest">My Pipeline</h3>
                   <Target size={18} className="text-slate-200" />
                </div>
                <div className="relative mb-6 shrink-0">
                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                  <input type="text" placeholder="Filter identities..." className="w-full h-12 pl-12 pr-4 bg-slate-50 border-none rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-blue-600/10" />
+                  <input type="text" placeholder="Filter leads..." className="w-full h-12 pl-12 pr-4 bg-slate-50 border-none rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-blue-600/10" />
                </div>
                <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-hide">
                   {leads?.map(lead => (
@@ -200,13 +200,13 @@ const AgentCallingWorkspace = () => {
                            <Headphones size={48} />
                         </div>
                         <div className="space-y-3">
-                           <h2 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter">Ready for Uplink</h2>
-                           <p className="text-slate-400 font-bold text-sm leading-relaxed uppercase tracking-widest">Select a lead from your pipeline or dial a manual identity to begin communication.</p>
+                           <h2 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter">Ready to Call</h2>
+                           <p className="text-slate-400 font-bold text-sm leading-relaxed uppercase tracking-widest">Select a lead from your pipeline or dial manually to start a conversation.</p>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                            <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Queue Health</p>
-                              <p className="text-2xl font-black text-slate-900 italic uppercase">Optimal</p>
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
+                              <p className="text-2xl font-black text-slate-900 italic uppercase">Online</p>
                            </div>
                            <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Latency</p>
@@ -225,7 +225,7 @@ const AgentCallingWorkspace = () => {
                     initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -40 }}
                     className="flex-1 flex flex-col gap-6"
                   >
-                     {/* ACTIVE CALL HEAD-UP DISPLAY */}
+                     {/* ACTIVE CALL HUD */}
                      <div className="bg-[#0F172A] p-10 rounded-[64px] shadow-2xl flex items-center justify-between relative overflow-hidden shrink-0">
                         <div className="flex items-center gap-8 relative z-10">
                            <div className="w-24 h-24 rounded-[40px] bg-blue-600 flex items-center justify-center text-white shadow-2xl shadow-blue-500/40 relative">
@@ -241,7 +241,7 @@ const AgentCallingWorkspace = () => {
                                     <Clock size={12} className="text-blue-400" />
                                     <span className="text-xs font-black text-white tabular-nums tracking-widest">{formatDuration(duration)}</span>
                                  </div>
-                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Encrypted Session Secure</span>
+                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Secure Encrypted Line</span>
                               </div>
                            </div>
                         </div>
@@ -259,20 +259,20 @@ const AgentCallingWorkspace = () => {
                         <div className="absolute right-0 top-0 w-[500px] h-full bg-gradient-to-l from-blue-600/10 to-transparent" />
                      </div>
 
-                     {/* CALL INTELLIGENCE & CONTEXT TABS */}
+                     {/* CALL CONTEXT TABS */}
                      <div className="flex-1 bg-white rounded-[64px] border border-slate-100 shadow-xl overflow-hidden flex flex-col">
                         <div className="flex items-center px-12 pt-10 pb-6 border-b border-slate-50 shrink-0">
                            <div className="flex gap-10">
-                              <TabBtn active={activeTab === 'TRANSCRIPT'} label="Live Transcript" onClick={() => setActiveTab('TRANSCRIPT')} />
-                              <TabBtn active={activeTab === 'NOTES'} label="Active Notes" onClick={() => setActiveTab('NOTES')} />
-                              <TabBtn active={activeTab === 'HISTORY'} label="Interaction Timeline" onClick={() => setActiveTab('HISTORY')} />
+                              <TabBtn active={activeTab === 'TRANSCRIPT'} label="Transcription" onClick={() => setActiveTab('TRANSCRIPT')} />
+                              <TabBtn active={activeTab === 'NOTES'} label="Call Notes" onClick={() => setActiveTab('NOTES')} />
+                              <TabBtn active={activeTab === 'HISTORY'} label="Call History" onClick={() => setActiveTab('HISTORY')} />
                            </div>
                         </div>
                         <div className="flex-1 overflow-y-auto p-12 scrollbar-hide">
                            {activeTab === 'TRANSCRIPT' && (
                               <div className="space-y-8">
-                                 <TranscriptRow role="assistant" text="Connecting to established protocol... Uplink secure." time="00:01" />
-                                 <TranscriptRow role="agent" text={`Hello, this is CRM Intelligence calling for ${activeLead?.customerName || 'customer'}. How are you today?`} time="00:05" />
+                                 <TranscriptRow role="system" text="Connection established. Secure line active." time="00:01" />
+                                 <TranscriptRow role="agent" text={`Hello, this is ${activeLead?.customerName || 'customer'}. How are you today?`} time="00:05" />
                                  <div className="flex justify-center py-10 opacity-20">
                                     <div className="flex gap-1">
                                        {[1,2,3,4].map(i => <div key={i} className="w-1 h-8 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: `${i*0.1}s`}} />)}
@@ -283,7 +283,7 @@ const AgentCallingWorkspace = () => {
                            {activeTab === 'NOTES' && (
                               <div className="h-full flex flex-col gap-6">
                                  <textarea 
-                                    placeholder="Begin documenting session outcomes..."
+                                    placeholder="Enter call notes here..."
                                     className="flex-1 w-full bg-slate-50 border-none rounded-[32px] p-10 outline-none focus:ring-2 focus:ring-blue-600/10 font-bold text-slate-900 placeholder:text-slate-400 resize-none text-xl leading-relaxed italic"
                                     value={taggingData.notes}
                                     onChange={e => setTaggingData({...taggingData, notes: e.target.value})}
@@ -309,7 +309,7 @@ const AgentCallingWorkspace = () => {
                                           <History size={18} />
                                        </div>
                                        <div>
-                                          <p className="text-sm font-black text-slate-900 uppercase italic">Previous Outbound Session</p>
+                                          <p className="text-sm font-black text-slate-900 uppercase italic">Previous Outbound Call</p>
                                           <p className="text-xs text-slate-400 font-bold mt-1">Duration: 04:12 • Status: Contacted</p>
                                           <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-2 block">May 12, 2026</span>
                                        </div>
@@ -324,22 +324,22 @@ const AgentCallingWorkspace = () => {
             </AnimatePresence>
          </div>
 
-         {/* RIGHT PANEL: CONTEXTUAL AI & TASKS */}
-         <div className="w-[360px] flex flex-col gap-6 shrink-0 overflow-hidden">
+         {/* RIGHT PANEL: AI INSIGHTS & TASKS */}
+         <div className="w-[340px] flex flex-col gap-6 shrink-0 overflow-hidden">
             <div className="bg-white p-8 rounded-[48px] border border-slate-100 shadow-xl shadow-slate-200/20 space-y-8 flex flex-col overflow-hidden">
                <div className="flex items-center gap-3 shrink-0">
                   <Sparkles className="text-blue-600" size={20} />
-                  <h3 className="text-sm font-black text-slate-900 uppercase italic tracking-widest">Co-Pilot Insights</h3>
+                  <h3 className="text-sm font-black text-slate-900 uppercase italic tracking-widest">AI Co-Pilot</h3>
                </div>
                <div className="flex-1 overflow-y-auto space-y-6 scrollbar-hide">
                   <div className="p-6 bg-blue-50 rounded-3xl border border-blue-100 space-y-3">
-                     <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Optimal Close Path</p>
+                     <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Suggested Approach</p>
                      <p className="text-xs font-bold text-slate-700 leading-relaxed italic">
-                        "Mention the <span className="font-black text-blue-600">Fiscal Q3 Discount</span>. Lead previously expressed budget concerns in call #402."
+                        "Mention the <span className="font-black text-blue-600">Q3 Discount</span>. Lead previously expressed budget concerns."
                      </p>
                   </div>
                   <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-3">
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sentiment Analysis</p>
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Call Sentiment</p>
                      <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
                         <div className="h-full bg-emerald-500 w-[75%]" />
                      </div>
@@ -350,7 +350,7 @@ const AgentCallingWorkspace = () => {
 
             <div className="flex-1 bg-[#0F172A] p-8 rounded-[48px] shadow-2xl space-y-8 flex flex-col overflow-hidden">
                <div className="flex items-center justify-between shrink-0">
-                  <h3 className="text-sm font-black text-white uppercase italic tracking-widest">Related Tasks</h3>
+                  <h3 className="text-sm font-black text-white uppercase italic tracking-widest">Follow-up Tasks</h3>
                   <button className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-all">
                      <UserPlus size={16} />
                   </button>
@@ -358,7 +358,7 @@ const AgentCallingWorkspace = () => {
                <div className="flex-1 overflow-y-auto space-y-4 scrollbar-hide">
                   {[1,2,3].map(i => (
                      <div key={i} className="p-5 bg-white/5 rounded-2xl border border-white/10 group hover:bg-white/10 transition-all cursor-pointer">
-                        <p className="text-[11px] font-black text-white uppercase italic truncate">Send Implementation Proposal</p>
+                        <p className="text-[11px] font-black text-white uppercase italic truncate">Send Proposal</p>
                         <div className="flex items-center justify-between mt-3">
                            <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Due Today</span>
                            <ArrowRight size={12} className="text-white/20 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
@@ -383,17 +383,17 @@ const AgentCallingWorkspace = () => {
                >
                   <div className="p-16 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                      <div>
-                        <h3 className="text-4xl font-black text-slate-900 uppercase italic tracking-tighter">Session Archive</h3>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em] mt-2">Documenting outcome for {activeLead?.customerName || phoneNumber}</p>
+                        <h3 className="text-4xl font-black text-slate-900 uppercase italic tracking-tighter">Call Summary</h3>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em] mt-2">Saving results for {activeLead?.customerName || phoneNumber}</p>
                      </div>
                      <div className="text-right">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Session Duration</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Duration</p>
                         <p className="text-5xl font-black text-blue-600 tabular-nums italic tracking-tighter">{formatDuration(duration)}</p>
                      </div>
                   </div>
                   <div className="p-16 space-y-12">
                      <div className="space-y-6">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Select Disposition Protocol</label>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Disposition</label>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                            {['INTERESTED', 'CALLBACK', 'NEGOTIATION', 'WON', 'LOST'].map(s => (
                               <button 
@@ -409,9 +409,9 @@ const AgentCallingWorkspace = () => {
                         </div>
                      </div>
                      <div className="space-y-6">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Executive Summary</label>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Notes</label>
                         <textarea 
-                           placeholder="Summarize the core conversation highlights..."
+                           placeholder="Summarize the conversation..."
                            className="w-full h-40 p-10 bg-slate-50 border-none rounded-[40px] outline-none focus:ring-2 focus:ring-blue-600/10 font-bold text-slate-900 text-xl leading-relaxed italic"
                            value={taggingData.notes}
                            onChange={e => setTaggingData({...taggingData, notes: e.target.value})}
@@ -419,13 +419,13 @@ const AgentCallingWorkspace = () => {
                      </div>
                      <div className="flex items-center justify-between pt-10 border-t border-slate-50">
                         <button className="flex items-center gap-3 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors">
-                           <History size={16} /> View Full Interaction History
+                           <History size={16} /> View Call History
                         </button>
                         <button 
                            onClick={submitTagging}
                            className="h-20 px-16 bg-slate-900 text-white rounded-[32px] font-black uppercase text-xs tracking-[0.3em] shadow-2xl hover:brightness-125 hover:scale-105 transition-all"
                         >
-                           Synchronize Record
+                           Save Result
                         </button>
                      </div>
                   </div>
