@@ -6,10 +6,15 @@ const prisma = require('../config/prisma');
 const getDashboardStats = async (req, res) => {
   try {
     const agentId = req.user.id;
+    const organizationId = req.user.organizationId;
+    const days = parseInt(req.query.days) || 7;
+    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - days + 1);
 
-    const organizationId = req.user.organizationId;
     const [
       callsToday,
       totalTalkTime,
@@ -17,11 +22,13 @@ const getDashboardStats = async (req, res) => {
       conversionsThisMonth,
       totalRevenue,
       tasksDueToday,
-      emailMetrics
+      emailMetrics,
+      callsData,
+      wonLeadsData
     ] = await Promise.all([
       prisma.call.count({ where: { organizationId, agentId, createdAt: { gte: today } } }),
       prisma.call.aggregate({
-        _sum: { duration: true }, // durationSeconds in older version, checking schema duration is Int
+        _sum: { duration: true },
         where: { organizationId, agentId, createdAt: { gte: today } }
       }),
       prisma.lead.count({ where: { organizationId, assignedToId: agentId, status: 'INTERESTED' } }),
@@ -41,21 +48,43 @@ const getDashboardStats = async (req, res) => {
       prisma.email.aggregate({
         _count: true,
         where: { organizationId, agentId }
+      }),
+      prisma.call.findMany({
+        where: { organizationId, agentId, createdAt: { gte: startDate } },
+        select: { createdAt: true }
+      }),
+      prisma.lead.findMany({
+        where: { organizationId, assignedToId: agentId, status: 'WON', createdAt: { gte: startDate } },
+        select: { createdAt: true }
       })
     ]);
+
+    // Generate Chart Data
+    const chartData = [];
+    for (let i = 0; i < days; i++) {
+      const d = new Date(startDate);
+      d.setDate(startDate.getDate() + i);
+      const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      
+      const callsCount = callsData.filter(c => new Date(c.createdAt).toDateString() === d.toDateString()).length;
+      const convCount = wonLeadsData.filter(l => new Date(l.createdAt).toDateString() === d.toDateString()).length;
+      
+      chartData.push({ name: dateStr, calls: callsCount, conv: convCount });
+    }
 
     res.json({
       success: true,
       data: {
         cards: {
           callsToday,
-          talkTimeToday: totalTalkTime._sum.durationSeconds || 0,
+          talkTimeToday: totalTalkTime._sum.duration || 0,
           pendingCallbacks,
           conversionsThisMonth,
           revenueGenerated: totalRevenue._sum.amount || 0,
           tasksDueToday,
           emailsSent: emailMetrics._count || 0
-        }
+        },
+        chartData
       }
     });
   } catch (error) {

@@ -193,20 +193,33 @@ const MetricCard = ({ title, value, unit, icon: Icon, color, trend }) => {
   );
 };
 
-const MixLabel = ({ label, color, value }) => (
+const MixLabel = ({ label, color, value }) => {
+  const bgColors = {
+    emerald: 'bg-emerald-500',
+    blue: 'bg-blue-500',
+    amber: 'bg-amber-500',
+    rose: 'bg-rose-500'
+  };
+  return (
   <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
      <div className="flex items-center gap-2">
-        <div className={`w-2 h-2 rounded-full bg-${color}-500 shadow-[0_0_8px_currentColor]`} />
+        <div className={`w-2 h-2 rounded-full ${bgColors[color]} shadow-sm`} />
         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
      </div>
      <span className="text-[10px] font-black text-slate-900">{value}</span>
   </div>
-);
+)};
 
-const EfficiencyCard = ({ title, value, icon: Icon, color, desc }) => (
-  <div className="bg-white p-10 rounded-[48px] border border-slate-100 shadow-sm space-y-6 group hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500">
+const EfficiencyCard = ({ title, value, icon: Icon, color, desc }) => {
+  const colors = {
+    rose: 'bg-rose-50 text-rose-600 border-rose-100',
+    violet: 'bg-violet-50 text-violet-600 border-violet-100',
+    amber: 'bg-amber-50 text-amber-600 border-amber-100'
+  };
+  return (
+  <div className="bg-white p-10 rounded-[48px] border border-slate-100 shadow-sm space-y-6 group hover:shadow-xl transition-all duration-500">
      <div className="flex items-center gap-4">
-        <div className={`w-12 h-12 rounded-2xl bg-${color}-50 text-${color}-600 flex items-center justify-center border border-${color}-100 transition-transform group-hover:scale-110`}>
+        <div className={`w-12 h-12 rounded-2xl ${colors[color]} flex items-center justify-center border transition-transform group-hover:scale-110`}>
            <Icon size={22} />
         </div>
         <h4 className="text-sm font-black text-slate-900 uppercase italic tracking-widest">{title}</h4>
@@ -216,7 +229,7 @@ const EfficiencyCard = ({ title, value, icon: Icon, color, desc }) => (
         <p className="text-[11px] text-slate-400 font-bold leading-relaxed uppercase tracking-widest italic">{desc}</p>
      </div>
   </div>
-);
+)};
 
 const AnalyticsSkeleton = () => (
    <div className="space-y-12 animate-pulse pb-20">

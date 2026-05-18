@@ -48,6 +48,7 @@ const AgentTasks = () => {
     mutationFn: (data) => api.post('/agent/tasks', data),
     onSuccess: () => {
       queryClient.invalidateQueries(['agentTasks']);
+      queryClient.invalidateQueries(['agentDashboard']);
       toast.success('Task created successfully');
       setIsModalOpen(false);
       setNewTask({ title: '', description: '', dueDate: '', priority: 'Normal', type: 'FOLLOWUP' });
@@ -58,6 +59,7 @@ const AgentTasks = () => {
     mutationFn: ({ id, data }) => api.patch(`/agent/tasks/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['agentTasks']);
+      queryClient.invalidateQueries(['agentDashboard']);
       toast.success('Task updated');
     }
   });
@@ -66,6 +68,7 @@ const AgentTasks = () => {
     mutationFn: (id) => api.delete(`/agent/tasks/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries(['agentTasks']);
+      queryClient.invalidateQueries(['agentDashboard']);
       toast.success('Task deleted');
     }
   });

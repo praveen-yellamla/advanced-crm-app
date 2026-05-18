@@ -2,14 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { 
-  Phone, Search, Filter, Play, Calendar, Clock, Headphones,
-  CheckCircle2, XCircle, AlertCircle, MoreVertical, Download,
-  MessageSquare, Sparkles, FileText, ChevronRight, Activity,
-  ArrowRight, X, PlayCircle, PauseCircle, Volume2, TrendingUp, TrendingDown
+  Phone, Search, Filter, Play, Download,
+  MessageSquare, Sparkles, FileText, Activity,
+  X, Volume2, TrendingUp, TrendingDown, Clock, User
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import toast from 'react-hot-toast';
 
 const AgentHistory = () => {
   const { user } = useAuth();
@@ -20,7 +18,7 @@ const AgentHistory = () => {
   const { data: calls, isLoading } = useQuery({
     queryKey: ['agentCalls', user?.id],
     queryFn: async () => {
-      const res = await api.get('/agent/history'); // Using unified agent route
+      const res = await api.get('/agent/calls'); 
       return res.data.data;
     },
     enabled: !!user?.id
@@ -28,7 +26,7 @@ const AgentHistory = () => {
 
   const filteredCalls = useMemo(() => {
     return (calls || []).filter(c => 
-      (c.lead?.customerName || 'Direct Dial').toLowerCase().includes(search.toLowerCase()) ||
+      (c.lead?.customerName || 'Manual Dial').toLowerCase().includes(search.toLowerCase()) ||
       c.phone?.includes(search)
     );
   }, [calls, search]);
@@ -38,100 +36,107 @@ const AgentHistory = () => {
     setIsSidebarOpen(true);
   };
 
+  const formatDuration = (seconds) => {
+    if (!seconds) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
   return (
-    <div className="space-y-10 pb-20 relative min-h-[calc(100vh-200px)]">
+    <div className="space-y-8 pb-20 relative min-h-[calc(100vh-100px)]">
       {/* HEADER */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-        <div className="space-y-1">
-           <h1 className="text-4xl font-black text-slate-900 tracking-tight italic uppercase">Communication Archive</h1>
-           <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.3em] ml-1">Deep Intelligence & Interaction Logs</p>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div>
+           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Call History</h1>
+           <p className="text-slate-500 font-medium mt-1">Review your past conversations, notes, and recordings.</p>
         </div>
         <div className="flex gap-4">
-           <div className="flex items-center bg-white border border-slate-100 px-6 py-3 rounded-2xl shadow-sm">
-              <Activity size={18} className="text-blue-600 mr-3" />
-              <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{calls?.length || 0} Sessions Cataloged</span>
+           <div className="flex items-center bg-white border border-slate-200 px-5 py-2.5 rounded-xl shadow-sm">
+              <Phone size={16} className="text-blue-600 mr-2" />
+              <span className="text-xs font-bold text-slate-700">{calls?.length || 0} Total Calls</span>
            </div>
         </div>
       </div>
 
       {/* FILTER BAR */}
-      <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex flex-col xl:flex-row gap-6">
+      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
          <div className="flex-1 relative group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={18} />
             <input 
-               type="text" placeholder="Search archive by identity or phone hash..." 
-               className="w-full h-16 pl-16 pr-6 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600/10 outline-none transition-all font-bold text-slate-900 placeholder:text-slate-400"
+               type="text" placeholder="Search by lead name or phone number..." 
+               className="w-full h-12 pl-12 pr-4 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium text-sm text-slate-900 placeholder:text-slate-400"
                value={search} onChange={e => setSearch(e.target.value)}
             />
          </div>
-         <div className="flex items-center gap-4 px-2">
-            <button className="h-16 px-8 bg-slate-50 border-none rounded-2xl font-black text-[11px] uppercase tracking-widest text-slate-400 flex items-center gap-3 hover:text-slate-900 transition-all">
-               <Filter size={18} /> Advanced Filters
+         <div className="flex items-center gap-3">
+            <button className="h-12 px-6 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl font-bold text-xs text-slate-600 flex items-center gap-2 transition-colors">
+               <Filter size={16} /> Filters
             </button>
-            <button className="h-16 px-8 bg-slate-50 border-none rounded-2xl font-black text-[11px] uppercase tracking-widest text-slate-400 flex items-center gap-3 hover:text-slate-900 transition-all">
-               <Download size={18} /> Export CSV
+            <button className="h-12 px-6 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl font-bold text-xs text-slate-600 flex items-center gap-2 transition-colors">
+               <Download size={16} /> Export
             </button>
          </div>
       </div>
 
       {/* CALL LOGS TABLE */}
-      <div className="bg-white rounded-[48px] border border-slate-100 shadow-xl shadow-slate-200/20 overflow-hidden">
+      <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden">
          <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
                <thead>
-                  <tr className="bg-slate-50/50 border-b border-slate-100">
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Session ID</th>
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Target Identity</th>
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Disposition</th>
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Sentiment</th>
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Duration</th>
-                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Intelligence</th>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                     <th className="px-8 py-5 text-[11px] font-bold uppercase tracking-wider text-slate-500">Date & Time</th>
+                     <th className="px-8 py-5 text-[11px] font-bold uppercase tracking-wider text-slate-500">Lead Name</th>
+                     <th className="px-8 py-5 text-[11px] font-bold uppercase tracking-wider text-slate-500">Call Outcome</th>
+                     <th className="px-8 py-5 text-[11px] font-bold uppercase tracking-wider text-slate-500">Sentiment</th>
+                     <th className="px-8 py-5 text-[11px] font-bold uppercase tracking-wider text-slate-500">Duration</th>
+                     <th className="px-8 py-5 text-[11px] font-bold uppercase tracking-wider text-slate-500 text-right">Details</th>
                   </tr>
                </thead>
-               <tbody className="divide-y divide-slate-50">
+               <tbody className="divide-y divide-slate-100">
                   {isLoading ? (
-                    <tr><td colSpan="6" className="p-20 text-center animate-pulse"><Activity className="mx-auto text-blue-600 mb-4" size={32} /><p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Accessing Digital Archives...</p></td></tr>
+                    <tr><td colSpan="6" className="p-16 text-center animate-pulse"><Activity className="mx-auto text-blue-600 mb-3" size={24} /><p className="text-xs font-semibold text-slate-500">Loading call history...</p></td></tr>
                   ) : filteredCalls.length === 0 ? (
-                    <tr><td colSpan="6" className="p-20 text-center italic text-slate-400 font-bold uppercase tracking-widest">No matching archives found</td></tr>
+                    <tr><td colSpan="6" className="p-16 text-center text-slate-500 font-medium">No calls found matching your criteria.</td></tr>
                   ) : filteredCalls.map((call) => (
-                    <tr key={call.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer" onClick={() => openCallDetails(call)}>
-                       <td className="px-10 py-8">
-                          <div className="flex items-center gap-6">
-                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:rotate-12 ${call.recordingUrl ? 'bg-blue-600 text-white shadow-blue-500/20' : 'bg-slate-100 text-slate-300'}`}>
-                                <Headphones size={18} />
+                    <tr key={call.id} className="hover:bg-slate-50/80 transition-colors cursor-pointer group" onClick={() => openCallDetails(call)}>
+                       <td className="px-8 py-6">
+                          <div className="flex items-center gap-4">
+                             <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${call.recordingUrl ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
+                                <Phone size={16} />
                              </div>
                              <div>
-                                <p className="text-sm font-black text-slate-900 italic uppercase">REC-{call.sid?.slice(-6) || call.id}</p>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic">{new Date(call.createdAt).toLocaleString()}</p>
+                                <p className="text-sm font-bold text-slate-900">{new Date(call.createdAt).toLocaleDateString()}</p>
+                                <p className="text-[11px] font-semibold text-slate-500 mt-0.5">{new Date(call.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                              </div>
                           </div>
                        </td>
-                       <td className="px-10 py-8">
-                          <p className="text-lg font-black text-slate-900 uppercase italic tracking-tight truncate">{call.lead?.customerName || 'Manual Protocol'}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{call.phone || call.lead?.phone}</p>
+                       <td className="px-8 py-6">
+                          <p className="text-sm font-bold text-slate-900 truncate">{call.lead?.customerName || 'Manual Dial'}</p>
+                          <p className="text-[11px] font-semibold text-slate-500 mt-0.5">{call.phone || call.lead?.phone}</p>
                        </td>
-                       <td className="px-10 py-8">
-                          <div className={`px-4 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest ${
-                             ['WON', 'INTERESTED'].includes(call.status) ? 'bg-emerald-50 text-emerald-600 border-emerald-100 shadow-sm' :
-                             ['NOT_INTERESTED', 'LOST'].includes(call.status) ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                             'bg-blue-50 text-blue-600 border-blue-100'
+                       <td className="px-8 py-6">
+                          <div className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                             ['WON', 'INTERESTED', 'QUALIFIED'].includes(call.status) ? 'bg-emerald-100 text-emerald-700' :
+                             ['NOT_INTERESTED', 'LOST', 'FAILED'].includes(call.status) ? 'bg-rose-100 text-rose-700' :
+                             'bg-blue-100 text-blue-700'
                           }`}>
-                             {call.status || 'UNTAGGED'}
+                             {call.status || 'LOGGED'}
                           </div>
                        </td>
-                       <td className="px-10 py-8">
+                       <td className="px-8 py-6">
                           <div className="flex items-center gap-2">
-                             <div className={`w-2 h-2 rounded-full ${call.sentiment === 'POSITIVE' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : call.sentiment === 'NEGATIVE' ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : 'bg-slate-300'}`} />
-                             <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{call.sentiment || 'NEUTRAL'}</span>
+                             <div className={`w-2 h-2 rounded-full ${call.sentiment === 'POSITIVE' ? 'bg-emerald-500' : call.sentiment === 'NEGATIVE' ? 'bg-rose-500' : 'bg-slate-300'}`} />
+                             <span className="text-xs font-semibold text-slate-700">{call.sentiment || 'Neutral'}</span>
                              {call.sentiment === 'POSITIVE' ? <TrendingUp size={14} className="text-emerald-500" /> : call.sentiment === 'NEGATIVE' ? <TrendingDown size={14} className="text-rose-500" /> : null}
                           </div>
                        </td>
-                       <td className="px-10 py-8 text-sm font-black text-slate-500 tabular-nums italic">
-                          {Math.floor(call.duration / 60)}:{(call.duration % 60).toString().padStart(2, '0')}
+                       <td className="px-8 py-6 text-sm font-bold text-slate-700 tabular-nums">
+                          {formatDuration(call.duration)}
                        </td>
-                       <td className="px-10 py-8 text-right">
-                          <button className="w-12 h-12 rounded-xl bg-white border border-slate-100 text-slate-300 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm flex items-center justify-center">
-                             <FileText size={18} />
+                       <td className="px-8 py-6 text-right">
+                          <button className="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-300 transition-colors shadow-sm flex items-center justify-center ml-auto">
+                             <FileText size={16} />
                           </button>
                        </td>
                     </tr>
@@ -141,13 +146,13 @@ const AgentHistory = () => {
          </div>
       </div>
 
-      {/* INTELLIGENCE SIDEBAR (SLIDE-OVER) */}
+      {/* CALL DETAILS SIDEBAR (SLIDE-OVER) */}
       <AnimatePresence>
          {isSidebarOpen && (
            <>
              <motion.div 
                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-               className="fixed inset-0 bg-[#0F172A]/40 backdrop-blur-md z-[5000]"
+               className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[5000]"
                onClick={() => setIsSidebarOpen(false)}
              />
              <motion.div 
@@ -155,85 +160,88 @@ const AgentHistory = () => {
                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                className="fixed right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl z-[5001] flex flex-col overflow-hidden"
              >
-                <div className="p-10 border-b border-slate-100 bg-slate-900 text-white flex items-center justify-between relative overflow-hidden shrink-0">
-                   <div className="relative z-10">
-                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mb-2">Archive Protocol: REC-{selectedCall?.sid?.slice(-6) || selectedCall?.id}</p>
-                      <h3 className="text-3xl font-black italic uppercase tracking-tighter">{selectedCall?.lead?.customerName || 'Manual Session'}</h3>
+                <div className="p-8 border-b border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
+                   <div>
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Call Record: {selectedCall?.sid?.slice(-8) || selectedCall?.id}</p>
+                      <h3 className="text-2xl font-black text-slate-900">{selectedCall?.lead?.customerName || 'Manual Dial'}</h3>
                    </div>
                    <button 
                      onClick={() => setIsSidebarOpen(false)}
-                     className="w-14 h-14 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all relative z-10 border border-white/10"
+                     className="w-10 h-10 rounded-full bg-white hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors border border-slate-200 shadow-sm"
                    >
-                      <X size={24} />
+                      <X size={20} />
                    </button>
-                   <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-blue-600/20 to-transparent" />
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-12 space-y-12 scrollbar-hide">
-                   {/* PLAYER UNIT */}
-                   <div className="bg-slate-50 p-10 rounded-[48px] border border-slate-100 flex items-center justify-between group">
-                      <div className="flex items-center gap-8">
-                         <button className="w-20 h-20 rounded-[32px] bg-blue-600 text-white flex items-center justify-center shadow-2xl shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all">
-                            <Play size={32} fill="currentColor" />
-                         </button>
-                         <div className="space-y-2">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Playback Control</p>
-                            <div className="flex items-center gap-4">
-                               <div className="h-1.5 w-48 bg-slate-200 rounded-full overflow-hidden">
-                                  <div className="h-full bg-blue-600 w-0" />
-                               </div>
-                               <span className="text-xs font-black text-slate-900 tabular-nums italic">0:00 / {Math.floor(selectedCall?.duration / 60)}:{(selectedCall?.duration % 60).toString().padStart(2, '0')}</span>
+                <div className="flex-1 overflow-y-auto p-8 space-y-10">
+                   {/* PLAYER UI */}
+                   <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+                      {selectedCall?.recordingUrl ? (
+                         <div className="w-full">
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Recording Playback</p>
+                            <audio controls src={selectedCall.recordingUrl} className="w-full h-12 outline-none" />
+                         </div>
+                      ) : (
+                         <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                               <Volume2 size={20} />
+                            </div>
+                            <div>
+                               <p className="text-sm font-bold text-slate-700">No Recording Available</p>
+                               <p className="text-[11px] font-semibold text-slate-500">This call was not recorded or the file expired.</p>
                             </div>
                          </div>
-                      </div>
-                      <Volume2 size={24} className="text-slate-300" />
+                      )}
                    </div>
 
-                   {/* AI SUMMARY */}
-                   <div className="space-y-6">
-                      <div className="flex items-center gap-3">
-                         <Sparkles className="text-blue-600" size={20} />
-                         <h4 className="text-sm font-black text-slate-900 uppercase italic tracking-widest">AI Performance Summary</h4>
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Agent Notes</p>
+                         <p className="text-sm font-medium text-slate-800 leading-relaxed">{selectedCall?.notes || 'No manual notes were added for this call.'}</p>
                       </div>
-                      <div className="p-8 bg-blue-50/50 border border-blue-100 rounded-[32px] relative overflow-hidden">
-                         <p className="text-sm font-bold text-slate-700 leading-relaxed italic relative z-10">
-                            {selectedCall?.summary || "AI analysis not processed for this legacy session. Re-indexing requested."}
-                         </p>
-                         <div className="absolute top-0 right-0 p-8 opacity-[0.03]">
-                            <Sparkles size={120} />
+                      <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100">
+                         <div className="flex items-center gap-2 mb-2">
+                            <Sparkles size={14} className="text-blue-600" />
+                            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">AI Summary</p>
                          </div>
+                         <p className="text-sm font-medium text-slate-700 leading-relaxed">
+                            {selectedCall?.summary || "AI analysis is pending or not available for this call."}
+                         </p>
                       </div>
                    </div>
 
                    {/* FULL TRANSCRIPT */}
-                   <div className="space-y-8">
-                      <div className="flex items-center justify-between">
-                         <div className="flex items-center gap-3">
-                            <MessageSquare className="text-slate-900" size={20} />
-                            <h4 className="text-sm font-black text-slate-900 uppercase italic tracking-widest">Digital Transcript</h4>
+                   <div className="space-y-6">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                         <div className="flex items-center gap-2">
+                            <MessageSquare className="text-slate-600" size={18} />
+                            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Call Transcript</h4>
                          </div>
-                         <button className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">Download .TXT <Download size={14}/></button>
+                         <button className="text-[11px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1.5 hover:underline">
+                            Download <Download size={14}/>
+                         </button>
                       </div>
-                      <div className="space-y-8">
+                      
+                      <div className="space-y-6 bg-slate-50 p-6 rounded-3xl border border-slate-100">
                          {selectedCall?.transcript ? (
-                            <p className="text-base font-bold text-slate-600 leading-loose italic">{selectedCall.transcript}</p>
+                            <p className="text-sm font-medium text-slate-700 leading-loose">{selectedCall.transcript}</p>
                          ) : (
-                            <div className="space-y-8">
-                               <TranscriptLine role="AGENT" time="00:05" text="Connecting to target identity... Protocol uplink established." />
-                               <TranscriptLine role="CUSTOMER" time="00:12" text="Hello, yes? Who is calling?" />
-                               <TranscriptLine role="AGENT" time="00:18" text="This is the Senior Account Manager from Enterprise CRM. We are following up on your infrastructure inquiry." />
+                            <div className="space-y-6">
+                               <TranscriptLine role="AGENT" time="00:05" text="Hello, am I speaking with the decision maker?" />
+                               <TranscriptLine role="CUSTOMER" time="00:12" text="Yes, this is them. How can I help you?" />
+                               <TranscriptLine role="AGENT" time="00:18" text="I'm following up on your recent inquiry regarding our Enterprise SaaS plan." />
                             </div>
                          )}
                       </div>
                    </div>
                 </div>
 
-                <div className="p-10 border-t border-slate-100 flex gap-4 shrink-0">
-                   <button className="flex-1 h-16 bg-slate-900 text-white rounded-[24px] font-black uppercase text-[11px] tracking-[0.2em] shadow-xl shadow-slate-900/20 hover:scale-105 active:scale-95 transition-all">
-                      Flag for Manager Review
+                <div className="p-8 border-t border-slate-200 bg-white flex gap-4 shrink-0">
+                   <button className="flex-1 h-14 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold uppercase text-xs tracking-wider hover:bg-slate-50 transition-colors shadow-sm">
+                      View Lead Profile
                    </button>
-                   <button className="flex-1 h-16 bg-white border border-slate-200 text-slate-900 rounded-[24px] font-black uppercase text-[11px] tracking-[0.2em] hover:bg-slate-50 transition-all">
-                      Sync with External CRM
+                   <button className="flex-1 h-14 bg-blue-600 text-white rounded-xl font-bold uppercase text-xs tracking-wider shadow-md hover:bg-blue-700 transition-colors">
+                      Create Follow-up Task
                    </button>
                 </div>
              </motion.div>
@@ -245,11 +253,11 @@ const AgentHistory = () => {
 };
 
 const TranscriptLine = ({ role, time, text }) => (
-  <div className="flex gap-8">
-     <span className="text-[10px] font-black text-slate-300 w-12 shrink-0 pt-1 tabular-nums italic">{time}</span>
+  <div className="flex gap-4">
+     <span className="text-[11px] font-bold text-slate-400 w-12 shrink-0 pt-0.5 tabular-nums">{time}</span>
      <div className="space-y-1">
-        <p className={`text-[10px] font-black uppercase tracking-widest ${role === 'AGENT' ? 'text-blue-600' : 'text-slate-900'}`}>{role} IDENTITY</p>
-        <p className="text-lg font-bold text-slate-700 leading-relaxed italic">{text}</p>
+        <p className={`text-[10px] font-bold uppercase tracking-wider ${role === 'AGENT' ? 'text-blue-600' : 'text-slate-700'}`}>{role}</p>
+        <p className="text-sm font-medium text-slate-800 leading-relaxed">{text}</p>
      </div>
   </div>
 );

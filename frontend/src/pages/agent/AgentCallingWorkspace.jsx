@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { 
   Phone, Mic, MicOff, Pause, Play, PhoneOff, Search, UserPlus, 
-  Clock, ShieldCheck, Zap, Target, MoreHorizontal, ChevronRight, 
-  Headphones, CheckCircle2, Calendar, Delete, RotateCcw,
-  Volume2, VolumeX, User, History, MessageSquare, Sparkles,
-  ArrowRight, Settings, Maximize2, Activity, Globe
+  Clock, Activity, Target, ChevronRight, Headphones, 
+  Volume2, Settings, Sparkles, ArrowRight, Disc, PhoneForwarded, History, User
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -17,9 +15,14 @@ const AgentCallingWorkspace = () => {
   const { 
     callState, 
     isMuted, 
+    onHold,
+    isRecording,
     duration, 
     formatDuration, 
-    toggleMute, 
+    toggleMute,
+    toggleHoldCall,
+    toggleRecordCall,
+    transferActiveCall,
     activeCall,
     lastCallSid,
     makeCall,
@@ -28,8 +31,7 @@ const AgentCallingWorkspace = () => {
 
   const [activeLead, setActiveLead] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [onHold, setOnHold] = useState(false);
-  const [activeTab, setActiveTab] = useState('TRANSCRIPT'); // TRANSCRIPT, NOTES, HISTORY
+  const [activeTab, setActiveTab] = useState('TRANSCRIPT');
   const queryClient = useQueryClient();
 
   const [taggingData, setTaggingData] = useState({
@@ -50,7 +52,7 @@ const AgentCallingWorkspace = () => {
     mutationFn: (data) => api.post('/call/tag', data),
     onSuccess: () => {
       queryClient.invalidateQueries(['agentDashboard', 'agentLeads', 'agentHistory']);
-      toast.success('Communication protocol synchronized');
+      toast.success('Call logged successfully');
       setPhoneNumber('');
       setActiveLead(null);
       setTaggingData({ status: 'INTERESTED', notes: '', callbackDate: '' });
@@ -59,7 +61,7 @@ const AgentCallingWorkspace = () => {
 
   const startCall = () => {
     const target = phoneNumber || activeLead?.phone;
-    if (!target) return toast.error('Selection Protocol Failure: No target identity');
+    if (!target) return toast.error('Please enter a phone number or select a lead');
     makeCall(target, activeLead?.id);
   };
 
@@ -67,7 +69,10 @@ const AgentCallingWorkspace = () => {
     logCallMutation.mutate({
       callSid: lastCallSid,
       tags: taggingData.status,
-      notes: taggingData.notes
+      notes: taggingData.notes,
+      duration: duration,
+      phone: activeLead?.phone || phoneNumber,
+      leadId: activeLead?.id
     });
   };
 
@@ -78,243 +83,206 @@ const AgentCallingWorkspace = () => {
   }, [activeLead]);
 
   return (
-    <div className="h-full flex flex-col gap-8">
+    <div className="space-y-8 pb-20">
       {/* HEADER */}
-      <div className="flex items-center justify-between shrink-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
          <div className="flex items-center gap-6">
-            <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-2xl">
+            <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
                <Phone size={24} />
             </div>
             <div>
-               <h1 className="text-2xl font-black text-slate-900 uppercase italic tracking-tight">Calling Workspace</h1>
-               <div className="flex items-center gap-3 mt-1">
+               <h1 className="text-3xl font-black text-slate-900 tracking-tight">Calling Workspace</h1>
+               <div className="flex items-center gap-2 mt-1">
                   <div className={`w-2 h-2 rounded-full ${callState === 'in-progress' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{callState === 'idle' ? 'System Ready' : `Active Call: ${callState}`}</span>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                    {callState === 'idle' ? 'System Ready' : `Call Status: ${callState}`}
+                  </span>
                </div>
             </div>
          </div>
-         <div className="flex items-center gap-4">
+         <div className="flex items-center gap-3">
             <AudioSettingBtn icon={Mic} label="Mic: Default" />
             <AudioSettingBtn icon={Volume2} label="Speaker: Default" />
-            <div className="w-px h-8 bg-slate-200 mx-2" />
-            <button className="w-12 h-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-all shadow-sm">
+            <button className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 transition-colors shadow-sm">
                <Settings size={20} />
             </button>
          </div>
       </div>
 
-      <div className="flex-1 flex gap-8 overflow-hidden min-h-0">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
          
-         {/* LEFT PANEL: DIALER & LEADS */}
-         <div className="w-[380px] flex flex-col gap-6 shrink-0">
-            {/* DIALER */}
-            <div className="bg-[#0F172A] p-8 rounded-[48px] shadow-2xl relative overflow-hidden flex flex-col">
-               <div className="relative z-10 space-y-6">
-                  <div className="flex items-center justify-between">
-                     <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">Dialer Control</span>
-                     <Maximize2 size={16} className="text-white/20" />
-                  </div>
-                  
-                  <div className="space-y-2">
-                     <input 
-                        type="text" 
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
-                        placeholder="+91 00000 00000"
-                        className="w-full bg-transparent border-none text-3xl font-black text-white tracking-tighter focus:ring-0 placeholder:text-white/10 tabular-nums"
-                     />
-                     {activeLead && <p className="text-blue-400 font-black uppercase text-[10px] tracking-[0.2em] italic">{activeLead.customerName}</p>}
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2">
-                     {[1,2,3,4,5,6,7,8,9,'*',0,'#'].map(n => (
-                       <button 
-                         key={n} 
-                         onClick={() => setPhoneNumber(prev => formatPhoneNumber(prev + n))}
-                         className="h-14 rounded-2xl bg-white/5 border border-white/5 text-lg font-black text-white hover:bg-white/10 active:scale-95 transition-all"
-                       >
-                         {n}
-                       </button>
-                     ))}
-                  </div>
-
-                  <button 
-                    disabled={callState !== 'idle'}
-                    onClick={startCall}
-                    className={`w-full h-20 rounded-[32px] flex items-center justify-center gap-4 font-black uppercase text-[11px] tracking-[0.2em] transition-all ${
-                      callState !== 'idle' ? 'bg-slate-800 text-slate-600 grayscale' : 'bg-emerald-600 text-white shadow-2xl shadow-emerald-500/20 hover:scale-105 brightness-110'
-                    }`}
-                  >
-                     <Phone size={20} fill="currentColor" /> Start Call
-                  </button>
+         {/* LEFT COLUMN: DIALPAD & PIPELINE */}
+         <div className="xl:col-span-3 flex flex-col gap-8">
+            
+            {/* DIALPAD */}
+            <div className="bg-slate-900 p-8 rounded-[32px] shadow-xl text-white flex flex-col">
+               <div className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-6 text-center">Dialpad</div>
+               <div className="space-y-1 mb-8 text-center">
+                 <input 
+                    type="text" 
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                    placeholder="+91 0000 000 000"
+                    className="w-full bg-transparent border-none text-3xl font-black text-center tracking-wider focus:ring-0 placeholder:text-white/20 outline-none p-0"
+                 />
+                 {activeLead && <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-2 truncate">{activeLead.customerName}</p>}
                </div>
-               <div className="absolute bottom-0 right-0 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl -mr-20 -mb-20" />
+               
+               <div className="grid grid-cols-3 gap-3 mb-8 px-4">
+                  {[1,2,3,4,5,6,7,8,9,'*',0,'#'].map(n => (
+                    <button 
+                      key={n} 
+                      onClick={() => setPhoneNumber(prev => formatPhoneNumber(prev + n))}
+                      className="aspect-square rounded-2xl bg-white/5 hover:bg-white/15 active:bg-white/20 text-2xl font-medium transition-all flex items-center justify-center"
+                    >
+                      {n}
+                    </button>
+                  ))}
+               </div>
+
+               <button 
+                  disabled={callState !== 'idle'}
+                  onClick={startCall}
+                  className={`w-full h-16 rounded-2xl flex items-center justify-center gap-3 font-black uppercase text-xs tracking-widest transition-all ${
+                    callState !== 'idle' ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20'
+                  }`}
+               >
+                  <Phone size={20} fill="currentColor" /> Start Call
+               </button>
             </div>
 
-            {/* LEAD SELECTOR */}
-            <div className="flex-1 bg-white p-8 rounded-[48px] border border-slate-100 shadow-xl shadow-slate-200/20 flex flex-col overflow-hidden">
-               <div className="flex items-center justify-between mb-6 shrink-0">
-                  <h3 className="text-sm font-black text-slate-900 uppercase italic tracking-widest">My Pipeline</h3>
-                  <Target size={18} className="text-slate-200" />
+            {/* PIPELINE SELECTOR */}
+            <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex flex-col h-[400px]">
+               <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Leads Pipeline</h3>
+                  <Target size={16} className="text-slate-400" />
                </div>
-               <div className="relative mb-6 shrink-0">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                  <input type="text" placeholder="Filter leads..." className="w-full h-12 pl-12 pr-4 bg-slate-50 border-none rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-blue-600/10" />
+               <div className="relative mb-4">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                  <input type="text" placeholder="Search leads..." className="w-full h-12 pl-12 pr-4 bg-slate-50 border-none rounded-xl font-semibold text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all" />
                </div>
-               <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-hide">
+               <div className="flex-1 overflow-y-auto space-y-2 pr-2 scrollbar-hide">
                   {leads?.map(lead => (
                     <div 
                       key={lead.id}
                       onClick={() => callState === 'idle' && setActiveLead(lead)}
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer group flex items-center justify-between ${
-                        activeLead?.id === lead.id ? 'bg-blue-50 border-blue-200 shadow-md' : 'bg-white border-slate-50 hover:border-slate-200'
+                      className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between group ${
+                        activeLead?.id === lead.id ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-white border-slate-100 hover:border-blue-100 hover:bg-slate-50'
                       }`}
                     >
-                       <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${activeLead?.id === lead.id ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-300'}`}>
-                             <User size={18} />
+                       <div className="flex items-center gap-3 overflow-hidden">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${activeLead?.id === lead.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600'}`}>
+                             <User size={14} />
                           </div>
-                          <div>
-                             <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{lead.customerName}</p>
-                             <p className="text-[9px] font-bold text-slate-400 mt-0.5">{lead.phone}</p>
+                          <div className="min-w-0">
+                             <p className="text-sm font-bold text-slate-900 truncate">{lead.customerName}</p>
+                             <p className="text-[10px] font-semibold text-slate-500 truncate mt-0.5">{lead.phone}</p>
                           </div>
                        </div>
-                       <ChevronRight size={14} className={activeLead?.id === lead.id ? 'text-blue-600' : 'text-slate-200'} />
                     </div>
                   ))}
                </div>
             </div>
          </div>
 
-         {/* CENTER: ACTIVE WORKSPACE / CALL CONTEXT */}
-         <div className="flex-1 flex flex-col gap-6 min-w-0">
+         {/* CENTER COLUMN: ACTIVE CALL CONTEXT */}
+         <div className="xl:col-span-6 flex flex-col gap-8 h-full min-h-[600px]">
             <AnimatePresence mode="wait">
                {callState === 'idle' ? (
                   <motion.div 
                     key="idle"
-                    initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }}
-                    className="flex-1 bg-white rounded-[64px] border border-slate-100 shadow-2xl shadow-slate-200/40 flex flex-col items-center justify-center text-center p-20 relative overflow-hidden"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="flex-1 bg-white rounded-[40px] border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center p-12 relative overflow-hidden"
                   >
-                     <div className="relative z-10 space-y-8 max-w-md">
-                        <div className="w-32 h-32 rounded-[48px] bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-xl shadow-blue-500/5 border border-blue-100">
-                           <Headphones size={48} />
+                     <div className="relative z-10 space-y-6 max-w-sm">
+                        <div className="w-24 h-24 rounded-full bg-slate-50 text-blue-600 flex items-center justify-center mx-auto shadow-inner border border-slate-100">
+                           <Headphones size={40} />
                         </div>
-                        <div className="space-y-3">
-                           <h2 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter">Ready to Call</h2>
-                           <p className="text-slate-400 font-bold text-sm leading-relaxed uppercase tracking-widest">Select a lead from your pipeline or dial manually to start a conversation.</p>
+                        <div className="space-y-2">
+                           <h2 className="text-2xl font-black text-slate-900 tracking-tight">Ready to Connect</h2>
+                           <p className="text-slate-500 font-medium text-sm leading-relaxed">Select a lead from your pipeline or use the dialpad to start a new conversation.</p>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                           <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
-                              <p className="text-2xl font-black text-slate-900 italic uppercase">Online</p>
-                           </div>
-                           <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Latency</p>
-                              <p className="text-2xl font-black text-slate-900 italic uppercase">12ms</p>
-                           </div>
-                        </div>
-                     </div>
-                     <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
-                        <div className="absolute top-10 left-10 w-96 h-96 bg-blue-600 rounded-full blur-[160px]" />
-                        <div className="absolute bottom-10 right-10 w-96 h-96 bg-cyan-600 rounded-full blur-[160px]" />
                      </div>
                   </motion.div>
                ) : (
                   <motion.div 
                     key="active"
-                    initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -40 }}
-                    className="flex-1 flex flex-col gap-6"
+                    initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                    className="flex-1 flex flex-col gap-8"
                   >
                      {/* ACTIVE CALL HUD */}
-                     <div className="bg-[#0F172A] p-10 rounded-[64px] shadow-2xl flex items-center justify-between relative overflow-hidden shrink-0">
-                        <div className="flex items-center gap-8 relative z-10">
-                           <div className="w-24 h-24 rounded-[40px] bg-blue-600 flex items-center justify-center text-white shadow-2xl shadow-blue-500/40 relative">
-                              <User size={40} />
-                              <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-emerald-500 border-4 border-[#0F172A] flex items-center justify-center shadow-lg">
-                                 <Activity size={16} className="text-white animate-pulse" />
-                              </div>
+                     <div className="bg-slate-900 p-10 rounded-[40px] shadow-xl relative overflow-hidden flex flex-col items-center text-center">
+                        <div className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center text-white mb-4 relative shadow-lg shadow-blue-600/30">
+                           <User size={32} />
+                           <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-slate-900 flex items-center justify-center">
+                              <Activity size={12} className="animate-pulse text-white" />
                            </div>
-                           <div className="space-y-2">
-                              <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter">{activeLead?.customerName || phoneNumber}</h2>
-                              <div className="flex items-center gap-4">
-                                 <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-lg border border-white/10">
-                                    <Clock size={12} className="text-blue-400" />
-                                    <span className="text-xs font-black text-white tabular-nums tracking-widest">{formatDuration(duration)}</span>
-                                 </div>
-                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Secure Encrypted Line</span>
-                              </div>
+                        </div>
+                        
+                        <h2 className="text-3xl font-black text-white mb-2">{activeLead?.customerName || phoneNumber || 'Unknown Caller'}</h2>
+                        
+                        <div className="flex items-center gap-2 px-4 py-1.5 bg-white/10 rounded-full mb-10 border border-white/5">
+                           <Clock size={14} className="text-blue-400" />
+                           <span className="text-sm font-bold text-white tracking-widest tabular-nums">{formatDuration(duration)}</span>
+                        </div>
+
+                        {/* CALL CONTROLS */}
+                        <div className="flex items-center justify-center gap-6 md:gap-10 w-full mb-10">
+                           <div className="flex flex-col items-center gap-3">
+                              <ControlButton icon={isMuted ? MicOff : Mic} active={isMuted} onClick={toggleMute} color="amber" />
+                              <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Mute</span>
+                           </div>
+                           <div className="flex flex-col items-center gap-3">
+                              <ControlButton icon={onHold ? Play : Pause} active={onHold} onClick={() => toggleHoldCall(activeLead?.phone || phoneNumber, activeLead?.id)} color="blue" />
+                              <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Hold</span>
+                           </div>
+                           <div className="flex flex-col items-center gap-3">
+                              <ControlButton icon={Disc} active={isRecording} onClick={() => toggleRecordCall(activeLead?.id)} color="rose" />
+                              <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Record</span>
+                           </div>
+                           <div className="flex flex-col items-center gap-3">
+                              <ControlButton icon={PhoneForwarded} active={false} onClick={() => {
+                                const target = prompt('Enter agent phone number to transfer to:');
+                                if (target) transferActiveCall(activeLead?.phone || phoneNumber, target, activeLead?.id);
+                              }} color="slate" />
+                              <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Transfer</span>
                            </div>
                         </div>
 
-                        <div className="flex items-center gap-4 relative z-10">
-                           <ControlButton icon={isMuted ? MicOff : Mic} active={isMuted} onClick={toggleMute} color="amber" />
-                           <ControlButton icon={onHold ? Play : Pause} active={onHold} onClick={() => setOnHold(!onHold)} color="blue" />
-                           <button 
-                             onClick={endCall}
-                             className="w-28 h-28 rounded-[48px] bg-rose-600 text-white flex items-center justify-center shadow-2xl shadow-rose-500/30 hover:scale-110 active:scale-95 transition-all"
-                           >
-                              <PhoneOff size={32} />
-                           </button>
-                        </div>
-                        <div className="absolute right-0 top-0 w-[500px] h-full bg-gradient-to-l from-blue-600/10 to-transparent" />
+                        <button 
+                           onClick={endCall}
+                           className="h-16 px-16 rounded-full bg-rose-600 text-white font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-lg shadow-rose-600/30 hover:bg-rose-700 hover:scale-105 active:scale-95 transition-all w-full max-w-sm"
+                        >
+                           <PhoneOff size={24} /> End Call
+                        </button>
                      </div>
 
                      {/* CALL CONTEXT TABS */}
-                     <div className="flex-1 bg-white rounded-[64px] border border-slate-100 shadow-xl overflow-hidden flex flex-col">
-                        <div className="flex items-center px-12 pt-10 pb-6 border-b border-slate-50 shrink-0">
-                           <div className="flex gap-10">
-                              <TabBtn active={activeTab === 'TRANSCRIPT'} label="Transcription" onClick={() => setActiveTab('TRANSCRIPT')} />
-                              <TabBtn active={activeTab === 'NOTES'} label="Call Notes" onClick={() => setActiveTab('NOTES')} />
-                              <TabBtn active={activeTab === 'HISTORY'} label="Call History" onClick={() => setActiveTab('HISTORY')} />
-                           </div>
+                     <div className="flex-1 bg-white rounded-[40px] border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[300px]">
+                        <div className="flex items-center gap-8 px-8 pt-6 border-b border-slate-100 shrink-0">
+                           <TabBtn active={activeTab === 'TRANSCRIPT'} label="Live Transcript" onClick={() => setActiveTab('TRANSCRIPT')} />
+                           <TabBtn active={activeTab === 'NOTES'} label="Call Notes" onClick={() => setActiveTab('NOTES')} />
                         </div>
-                        <div className="flex-1 overflow-y-auto p-12 scrollbar-hide">
+                        <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
                            {activeTab === 'TRANSCRIPT' && (
-                              <div className="space-y-8">
-                                 <TranscriptRow role="system" text="Connection established. Secure line active." time="00:01" />
-                                 <TranscriptRow role="agent" text={`Hello, this is ${activeLead?.customerName || 'customer'}. How are you today?`} time="00:05" />
-                                 <div className="flex justify-center py-10 opacity-20">
-                                    <div className="flex gap-1">
-                                       {[1,2,3,4].map(i => <div key={i} className="w-1 h-8 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: `${i*0.1}s`}} />)}
+                              <div className="space-y-6">
+                                 <TranscriptRow role="system" text="Connection established. Call is being recorded." time="00:01" />
+                                 <TranscriptRow role="agent" text={`Hello, am I speaking with ${activeLead?.customerName || 'the customer'}?`} time="00:05" />
+                                 <div className="flex justify-start py-4 opacity-40">
+                                    <div className="flex gap-1.5">
+                                       {[1,2,3].map(i => <div key={i} className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: `${i*0.1}s`}} />)}
                                     </div>
                                  </div>
                               </div>
                            )}
                            {activeTab === 'NOTES' && (
-                              <div className="h-full flex flex-col gap-6">
+                              <div className="h-full flex flex-col gap-4">
                                  <textarea 
-                                    placeholder="Enter call notes here..."
-                                    className="flex-1 w-full bg-slate-50 border-none rounded-[32px] p-10 outline-none focus:ring-2 focus:ring-blue-600/10 font-bold text-slate-900 placeholder:text-slate-400 resize-none text-xl leading-relaxed italic"
+                                    placeholder="Type your notes here during the conversation..."
+                                    className="flex-1 w-full bg-white border border-slate-200 rounded-3xl p-6 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none font-medium text-slate-700 leading-relaxed shadow-sm"
                                     value={taggingData.notes}
                                     onChange={e => setTaggingData({...taggingData, notes: e.target.value})}
                                  />
-                                 <div className="flex flex-wrap gap-3">
-                                    {['INTERESTED', 'CALLBACK', 'NEGOTIATION', 'WON', 'LOST'].map(s => (
-                                       <button 
-                                          key={s} 
-                                          onClick={() => setTaggingData({...taggingData, status: s})}
-                                          className={`px-8 h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${taggingData.status === s ? 'bg-blue-600 text-white shadow-xl' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
-                                       >
-                                          {s.replace('_', ' ')}
-                                       </button>
-                                    ))}
-                                 </div>
-                              </div>
-                           )}
-                           {activeTab === 'HISTORY' && (
-                              <div className="space-y-6">
-                                 {[1,2,3].map(i => (
-                                    <div key={i} className="flex gap-6 items-start">
-                                       <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
-                                          <History size={18} />
-                                       </div>
-                                       <div>
-                                          <p className="text-sm font-black text-slate-900 uppercase italic">Previous Outbound Call</p>
-                                          <p className="text-xs text-slate-400 font-bold mt-1">Duration: 04:12 • Status: Contacted</p>
-                                          <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-2 block">May 12, 2026</span>
-                                       </div>
-                                    </div>
-                                 ))}
                               </div>
                            )}
                         </div>
@@ -324,44 +292,47 @@ const AgentCallingWorkspace = () => {
             </AnimatePresence>
          </div>
 
-         {/* RIGHT PANEL: AI INSIGHTS & TASKS */}
-         <div className="w-[340px] flex flex-col gap-6 shrink-0 overflow-hidden">
-            <div className="bg-white p-8 rounded-[48px] border border-slate-100 shadow-xl shadow-slate-200/20 space-y-8 flex flex-col overflow-hidden">
-               <div className="flex items-center gap-3 shrink-0">
-                  <Sparkles className="text-blue-600" size={20} />
-                  <h3 className="text-sm font-black text-slate-900 uppercase italic tracking-widest">AI Co-Pilot</h3>
+         {/* RIGHT COLUMN: AI & TASKS */}
+         <div className="xl:col-span-3 flex flex-col gap-8">
+            <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex flex-col h-[350px]">
+               <div className="flex items-center gap-3 mb-6 shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                     <Sparkles size={16} />
+                  </div>
+                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Assistant</h3>
                </div>
-               <div className="flex-1 overflow-y-auto space-y-6 scrollbar-hide">
-                  <div className="p-6 bg-blue-50 rounded-3xl border border-blue-100 space-y-3">
-                     <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Suggested Approach</p>
-                     <p className="text-xs font-bold text-slate-700 leading-relaxed italic">
-                        "Mention the <span className="font-black text-blue-600">Q3 Discount</span>. Lead previously expressed budget concerns."
+               
+               <div className="flex-1 overflow-y-auto space-y-4 scrollbar-hide">
+                  <div className="p-5 bg-blue-50/80 rounded-2xl border border-blue-100">
+                     <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Suggested Action</p>
+                     <p className="text-sm font-semibold text-slate-700 leading-relaxed">
+                        Mention the <span className="font-black text-blue-700">Enterprise SLA</span>. This lead previously showed interest in priority support.
                      </p>
                   </div>
-                  <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-3">
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Call Sentiment</p>
-                     <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 w-[75%]" />
+                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Live Sentiment</p>
+                     <div className="h-2.5 w-full bg-slate-200 rounded-full overflow-hidden mb-2">
+                        <div className="h-full bg-emerald-500 w-[80%] rounded-full" />
                      </div>
-                     <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest text-right">75% Positive</p>
+                     <p className="text-[10px] font-bold text-emerald-600 text-right">80% Positive</p>
                   </div>
                </div>
             </div>
 
-            <div className="flex-1 bg-[#0F172A] p-8 rounded-[48px] shadow-2xl space-y-8 flex flex-col overflow-hidden">
-               <div className="flex items-center justify-between shrink-0">
-                  <h3 className="text-sm font-black text-white uppercase italic tracking-widest">Follow-up Tasks</h3>
-                  <button className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-all">
-                     <UserPlus size={16} />
+            <div className="bg-slate-900 p-6 rounded-[32px] shadow-xl flex flex-col flex-1 min-h-[300px]">
+               <div className="flex items-center justify-between mb-6 shrink-0">
+                  <h3 className="text-xs font-black text-white uppercase tracking-widest">Tasks</h3>
+                  <button className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
+                     <UserPlus size={14} />
                   </button>
                </div>
-               <div className="flex-1 overflow-y-auto space-y-4 scrollbar-hide">
-                  {[1,2,3].map(i => (
-                     <div key={i} className="p-5 bg-white/5 rounded-2xl border border-white/10 group hover:bg-white/10 transition-all cursor-pointer">
-                        <p className="text-[11px] font-black text-white uppercase italic truncate">Send Proposal</p>
-                        <div className="flex items-center justify-between mt-3">
-                           <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Due Today</span>
-                           <ArrowRight size={12} className="text-white/20 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+               <div className="flex-1 overflow-y-auto space-y-3 scrollbar-hide">
+                  {[1,2].map(i => (
+                     <div key={i} className="p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group">
+                        <p className="text-sm font-bold text-white truncate group-hover:text-blue-400 transition-colors">Send Contract Details</p>
+                        <div className="flex items-center justify-between mt-2">
+                           <span className="text-[10px] font-semibold text-slate-400">Due Today</span>
+                           <ArrowRight size={14} className="text-slate-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
                         </div>
                      </div>
                   ))}
@@ -375,32 +346,33 @@ const AgentCallingWorkspace = () => {
          {callState === 'completed' && (
             <motion.div 
                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-               className="fixed inset-0 z-[5000] flex items-center justify-center p-10 bg-[#0F172A]/90 backdrop-blur-2xl"
+               className="fixed inset-0 z-[5000] flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-sm"
             >
                <motion.div 
-                  initial={{ opacity: 0, scale: 0.9, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }}
-                  className="w-full max-w-4xl bg-white rounded-[64px] shadow-2xl overflow-hidden"
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+                  className="w-full max-w-2xl bg-white rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
                >
-                  <div className="p-16 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                  <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                      <div>
-                        <h3 className="text-4xl font-black text-slate-900 uppercase italic tracking-tighter">Call Summary</h3>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em] mt-2">Saving results for {activeLead?.customerName || phoneNumber}</p>
+                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Log Call Details</h3>
+                        <p className="text-xs font-semibold text-slate-500 mt-1">Review and save for {activeLead?.customerName || phoneNumber}</p>
                      </div>
                      <div className="text-right">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Duration</p>
-                        <p className="text-5xl font-black text-blue-600 tabular-nums italic tracking-tighter">{formatDuration(duration)}</p>
+                        <p className="text-2xl font-black text-blue-600 tabular-nums">{formatDuration(duration)}</p>
                      </div>
                   </div>
-                  <div className="p-16 space-y-12">
-                     <div className="space-y-6">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Disposition</label>
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                           {['INTERESTED', 'CALLBACK', 'NEGOTIATION', 'WON', 'LOST'].map(s => (
+                  
+                  <div className="p-8 overflow-y-auto flex-1 space-y-8">
+                     <div className="space-y-4">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Call Outcome</label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                           {['INTERESTED', 'FOLLOW_UP', 'CALLBACK', 'NEGOTIATION', 'WON', 'LOST'].map(s => (
                               <button 
                                  key={s}
                                  onClick={() => setTaggingData({...taggingData, status: s})}
-                                 className={`h-16 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all ${
-                                    taggingData.status === s ? 'bg-blue-600 text-white border-blue-600 shadow-xl scale-105' : 'bg-white border-slate-100 text-slate-400 hover:border-blue-200'
+                                 className={`h-12 rounded-xl border text-[11px] font-bold uppercase tracking-wider transition-all ${
+                                    taggingData.status === s ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-slate-50'
                                  }`}
                               >
                                  {s.replace('_', ' ')}
@@ -408,26 +380,27 @@ const AgentCallingWorkspace = () => {
                            ))}
                         </div>
                      </div>
-                     <div className="space-y-6">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Notes</label>
+                     <div className="space-y-4">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Summary Notes</label>
                         <textarea 
-                           placeholder="Summarize the conversation..."
-                           className="w-full h-40 p-10 bg-slate-50 border-none rounded-[40px] outline-none focus:ring-2 focus:ring-blue-600/10 font-bold text-slate-900 text-xl leading-relaxed italic"
+                           placeholder="What was discussed?"
+                           className="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium text-slate-700 resize-none"
                            value={taggingData.notes}
                            onChange={e => setTaggingData({...taggingData, notes: e.target.value})}
                         />
                      </div>
-                     <div className="flex items-center justify-between pt-10 border-t border-slate-50">
-                        <button className="flex items-center gap-3 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors">
-                           <History size={16} /> View Call History
-                        </button>
-                        <button 
-                           onClick={submitTagging}
-                           className="h-20 px-16 bg-slate-900 text-white rounded-[32px] font-black uppercase text-xs tracking-[0.3em] shadow-2xl hover:brightness-125 hover:scale-105 transition-all"
-                        >
-                           Save Result
-                        </button>
-                     </div>
+                  </div>
+
+                  <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between shrink-0">
+                     <button className="text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors">
+                        Cancel
+                     </button>
+                     <button 
+                        onClick={submitTagging}
+                        className="h-12 px-8 bg-blue-600 text-white rounded-xl font-bold tracking-wide shadow-md hover:bg-blue-700 transition-all flex items-center gap-2"
+                     >
+                        Save Call Log <ArrowRight size={16} />
+                     </button>
                   </div>
                </motion.div>
             </motion.div>
@@ -438,23 +411,25 @@ const AgentCallingWorkspace = () => {
 };
 
 const AudioSettingBtn = ({ icon: Icon, label }) => (
-  <button className="px-6 h-12 bg-white border border-slate-100 rounded-xl flex items-center gap-4 group hover:border-blue-200 transition-all shadow-sm">
-     <Icon size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
-     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">{label}</span>
+  <button className="px-5 h-12 bg-white border border-slate-200 rounded-xl flex items-center gap-3 hover:border-blue-300 hover:bg-slate-50 transition-all shadow-sm">
+     <Icon size={16} className="text-slate-500" />
+     <span className="text-[11px] font-bold text-slate-600 tracking-wide hidden sm:inline-block">{label}</span>
   </button>
 );
 
 const ControlButton = ({ icon: Icon, active, onClick, color }) => {
   const colors = {
-    amber: active ? 'bg-amber-500 text-white' : 'bg-white/10 text-white hover:bg-white/20',
-    blue: active ? 'bg-blue-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'
+    amber: active ? 'bg-amber-500 text-white border-amber-400 shadow-amber-500/30' : 'bg-white/10 text-white hover:bg-white/20 border-white/5',
+    blue: active ? 'bg-blue-500 text-white border-blue-400 shadow-blue-500/30' : 'bg-white/10 text-white hover:bg-white/20 border-white/5',
+    rose: active ? 'bg-rose-500 text-white border-rose-400 shadow-rose-500/30' : 'bg-white/10 text-white hover:bg-white/20 border-white/5',
+    slate: 'bg-white/10 text-white hover:bg-white/20 border-white/5'
   };
   return (
     <button 
       onClick={onClick}
-      className={`w-20 h-20 rounded-[32px] flex items-center justify-center transition-all ${colors[color]} shadow-xl border border-white/5`}
+      className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center transition-all border ${colors[color]} shadow-lg`}
     >
-       <Icon size={24} />
+       <Icon size={22} className={active ? 'animate-pulse' : ''} />
     </button>
   );
 };
@@ -462,19 +437,19 @@ const ControlButton = ({ icon: Icon, active, onClick, color }) => {
 const TabBtn = ({ active, label, onClick }) => (
   <button 
     onClick={onClick}
-    className={`pb-4 text-[11px] font-black uppercase tracking-[0.2em] relative transition-all ${active ? 'text-blue-600' : 'text-slate-400 hover:text-slate-900'}`}
+    className={`pb-4 text-xs font-black uppercase tracking-wider relative transition-colors ${active ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900'}`}
   >
      {label}
-     {active && <motion.div layoutId="call-tab-line" className="absolute bottom-0 left-0 w-full h-1 bg-blue-600 rounded-full" />}
+     {active && <motion.div layoutId="call-tab-line" className="absolute bottom-0 left-0 w-full h-1 bg-blue-600 rounded-t-full" />}
   </button>
 );
 
 const TranscriptRow = ({ role, text, time }) => (
-  <div className="flex gap-6 group">
-     <span className="text-[10px] font-black text-slate-300 w-10 shrink-0 mt-1">{time}</span>
+  <div className="flex gap-4 group">
+     <span className="text-[10px] font-black text-slate-400 w-10 shrink-0 mt-1 tabular-nums">{time}</span>
      <div className="space-y-1 flex-1">
-        <p className={`text-[10px] font-black uppercase tracking-widest ${role === 'assistant' ? 'text-blue-600' : 'text-slate-900'}`}>{role}</p>
-        <p className="text-lg font-bold text-slate-700 leading-relaxed italic">{text}</p>
+        <p className={`text-[10px] font-black uppercase tracking-widest ${role === 'system' ? 'text-slate-400' : role === 'agent' ? 'text-blue-600' : 'text-slate-900'}`}>{role}</p>
+        <p className="text-sm font-semibold text-slate-800 leading-relaxed">{text}</p>
      </div>
   </div>
 );

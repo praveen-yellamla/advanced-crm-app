@@ -86,17 +86,9 @@ const AgentDashboard = () => {
                  </button>
               </div>
            </div>
-           <div className="h-[360px] -ml-6">
+            <div className="h-[360px] -ml-6">
               <ResponsiveContainer width="100%" height="100%">
-                 <AreaChart data={[
-                   { name: 'Mon', calls: 12, conv: 2 },
-                   { name: 'Tue', calls: 35, conv: 5 },
-                   { name: 'Wed', calls: 28, conv: 4 },
-                   { name: 'Thu', calls: 42, conv: 8 },
-                   { name: 'Fri', calls: 58, conv: 12 },
-                   { name: 'Sat', calls: 20, conv: 3 },
-                   { name: 'Sun', calls: 15, conv: 2 },
-                 ]}>
+                 <AreaChart data={statsData?.chartData || []}>
                     <defs>
                       <linearGradient id="colorCalls" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#2563EB" stopOpacity={0.2}/>

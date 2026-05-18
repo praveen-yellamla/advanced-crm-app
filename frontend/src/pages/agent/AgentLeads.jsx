@@ -27,7 +27,7 @@ const AgentLeads = () => {
     }
   });
 
-  const stages = ['NEW', 'CONTACTED', 'INTERESTED', 'QUALIFIED', 'WON', 'LOST'];
+  const stages = ['NEW', 'CONTACTED', 'INTERESTED', 'FOLLOW_UP', 'QUALIFIED', 'WON', 'LOST'];
 
   const filteredLeads = useMemo(() => {
     let result = (leads || []).filter(l => 
@@ -43,7 +43,7 @@ const AgentLeads = () => {
   }, [leads, search, activeStage, sortBy]);
 
   const updateLeadMutation = useMutation({
-    mutationFn: ({ id, data }) => api.put(`/agent/leads/${id}`, data),
+    mutationFn: ({ id, data }) => api.patch(`/agent/leads/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['agentLeads']);
       toast.success('Lead updated');
@@ -198,6 +198,7 @@ const AgentLeads = () => {
                                         >
                                            <LeadKanbanCard 
                                              lead={lead} 
+                                             stages={stages}
                                              onStatusChange={(s) => updateLeadMutation.mutate({ id: lead.id, data: { status: s } })} 
                                            />
                                         </div>
@@ -299,8 +300,17 @@ const AgentLeads = () => {
   );
 };
 
-const LeadKanbanCard = ({ lead, onStatusChange }) => {
+const LeadKanbanCard = ({ lead, onStatusChange, stages }) => {
   const [isHovered, setIsHovered] = useState(false);
+
+  const handleNextStage = (e) => {
+    e.stopPropagation();
+    if (!stages) return;
+    const currentIndex = stages.indexOf(lead.status);
+    if (currentIndex !== -1 && currentIndex < stages.length - 1) {
+      onStatusChange(stages[currentIndex + 1]);
+    }
+  };
 
   return (
     <motion.div 
@@ -336,7 +346,11 @@ const LeadKanbanCard = ({ lead, onStatusChange }) => {
                 <span className="text-[10px] font-black text-slate-900">{lead.emails?.length || 0}</span>
              </div>
           </div>
-          <button className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white transition-all">
+          <button 
+             onClick={handleNextStage}
+             className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white transition-all"
+             title="Move to Next Stage"
+          >
              <ArrowRight size={14} />
           </button>
        </div>
@@ -362,8 +376,13 @@ const LeadKanbanCard = ({ lead, onStatusChange }) => {
                >
                   <XCircle size={12} /> Lost
                </button>
-               <button className="w-9 h-9 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center hover:bg-slate-200 transition-all">
-                  <MoreHorizontal size={14} />
+               <button 
+                 onClick={handleNextStage}
+                 disabled={stages && stages.indexOf(lead.status) >= stages.length - 1}
+                 className="w-9 h-9 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all disabled:opacity-50"
+                 title="Next Stage"
+               >
+                  <ArrowRight size={14} />
                </button>
             </motion.div>
           )}

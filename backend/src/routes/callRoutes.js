@@ -10,7 +10,10 @@ const {
   getCallHistory,
   monitorCall,
   getActiveCalls,
-  validateTelephonyConfig
+  validateTelephonyConfig,
+  toggleHold,
+  toggleRecord,
+  transferCall
 } = require('../controllers/callController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -28,6 +31,9 @@ router.use(protect);
 router.get('/token', getCallToken);
 router.post('/outgoing', initiateOutgoingCall);
 router.post('/tag', tagCall);
+router.post('/hold', toggleHold);
+router.post('/record/toggle', toggleRecord);
+router.post('/transfer', transferCall);
 router.get('/history/:agentId', getCallHistory);
 router.get('/monitor', monitorCall);
 router.get('/active', getActiveCalls);

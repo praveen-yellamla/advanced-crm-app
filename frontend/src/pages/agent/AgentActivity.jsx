@@ -20,7 +20,7 @@ const AgentActivity = () => {
   const { data: activities, isLoading } = useQuery({
     queryKey: ['agentActivity', user?.id],
     queryFn: async () => {
-      const res = await api.get('/agent/history'); 
+      const res = await api.get('/agent/calls'); 
       return res.data.data;
     },
     enabled: !!user?.id
@@ -171,21 +171,22 @@ const AgentActivity = () => {
                 <div className="flex-1 overflow-y-auto p-12 space-y-12 scrollbar-hide">
                    {/* PLAYER */}
                    <div className="bg-slate-50 p-10 rounded-[48px] border border-slate-100 flex items-center justify-between group">
-                      <div className="flex items-center gap-8">
-                         <button className="w-20 h-20 rounded-[32px] bg-blue-600 text-white flex items-center justify-center shadow-2xl shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all">
-                            <Play size={32} fill="currentColor" />
-                         </button>
-                         <div className="space-y-2">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Call Recording</p>
-                            <div className="flex items-center gap-4">
-                               <div className="h-1.5 w-48 bg-slate-200 rounded-full overflow-hidden">
-                                  <div className="h-full bg-blue-600 w-0" />
-                                </div>
-                               <span className="text-xs font-black text-slate-900 tabular-nums italic">0:00 / {Math.floor(selectedCall?.duration / 60)}:{(selectedCall?.duration % 60).toString().padStart(2, '0')}</span>
+                      {selectedCall?.recordingUrl ? (
+                         <div className="w-full">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Call Recording</p>
+                            <audio controls src={selectedCall.recordingUrl} className="w-full outline-none" />
+                         </div>
+                      ) : (
+                         <div className="flex items-center gap-8">
+                            <div className="w-16 h-16 rounded-[32px] bg-slate-200 text-slate-400 flex items-center justify-center">
+                               <Volume2 size={24} />
+                            </div>
+                            <div>
+                               <p className="text-sm font-black text-slate-900 italic">No Recording</p>
+                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">This interaction was not recorded.</p>
                             </div>
                          </div>
-                      </div>
-                      <Volume2 size={24} className="text-slate-300" />
+                      )}
                    </div>
 
                    {/* AI INSIGHTS */}

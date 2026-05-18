@@ -257,9 +257,9 @@ const handleRecordingWebhook = async (req, res) => {
 };
 
 const tagCall = async (req, res) => {
-  const { callSid, tags, notes } = req.body;
+  const { callSid, tags, notes, leadId, phone, duration } = req.body;
   try {
-    const call = await prisma.call.findFirst({
+    let call = await prisma.call.findFirst({
       where: { 
         organizationId: req.user.organizationId,
         OR: [
@@ -271,22 +271,42 @@ const tagCall = async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    if (!call) return res.status(404).json({ success: false, message: "Call record not found" });
+    // If call isn't found (e.g. mocked call, or webhook delayed), create it
+    if (!call) {
+      call = await prisma.call.create({
+        data: {
+          organizationId: req.user.organizationId,
+          agentId: req.user.id,
+          sid: callSid || `manual_${Date.now()}`,
+          phone: phone || 'Unknown',
+          leadId: leadId ? parseInt(leadId) : null,
+          status: 'completed',
+          duration: duration ? parseInt(duration) : 0,
+        }
+      });
+    }
 
     const updatedCall = await prisma.call.update({
       where: { id: call.id },
-      data: { tags, notes }
+      data: { 
+        tags, 
+        notes,
+        status: 'completed',
+        duration: duration ? parseInt(duration) : call.duration
+      }
     });
 
     if (updatedCall.leadId) {
-      await prisma.lead.update({ where: { id: updatedCall.leadId }, data: { status: tags } });
-      await prisma.activityLog.create({
+      const validStatuses = ['NEW', 'CONTACTED', 'INTERESTED', 'FOLLOW_UP', 'QUALIFIED', 'WON', 'LOST'];
+      if (validStatuses.includes(tags)) {
+        await prisma.lead.update({ where: { id: updatedCall.leadId }, data: { status: tags } });
+      }
+      
+      await prisma.leadActivity.create({
         data: {
+          organizationId: req.user.organizationId,
           leadId: updatedCall.leadId,
-          userId: req.user.id,
-          type: 'CALL',
-          action: `Disposition: ${tags}`,
-          details: notes
+          action: `Call Logged: ${tags} - ${notes ? notes.substring(0, 50) + '...' : ''}`
         }
       });
     }
@@ -390,6 +410,100 @@ const validateTelephonyConfig = async (req, res) => {
   }
 };
 
+const toggleHold = async (req, res) => {
+  const { phone, hold } = req.body;
+  try {
+    const formattedTo = formatToE164(phone);
+    const conferenceName = `conf_${formattedTo.replace(/[^a-zA-Z0-9]/g, '')}`;
+    
+    // Find conference
+    const conferences = await client.conferences.list({ friendlyName: conferenceName, status: 'in-progress', limit: 1 });
+    if (conferences.length === 0) return res.status(404).json({ success: false, message: 'Conference not found' });
+    
+    const confSid = conferences[0].sid;
+    const participants = await client.conferences(confSid).participants.list();
+    
+    // Hold/unhold everyone except the agent
+    for (const p of participants) {
+      // Typically agent is first participant or we hold all
+      await client.conferences(confSid).participants(p.callSid).update({ hold: hold === true });
+    }
+    
+    // Log Activity
+    await prisma.leadActivity.create({
+      data: {
+        organizationId: req.user.organizationId,
+        leadId: req.body.leadId ? parseInt(req.body.leadId) : null,
+        action: `Call ${hold ? 'Placed on Hold' : 'Resumed'}`
+      }
+    });
+
+    res.json({ success: true, hold });
+  } catch (error) {
+    console.error("TELEPHONY HOLD ERROR:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const toggleRecord = async (req, res) => {
+  const { callSid, record } = req.body;
+  try {
+    // Twilio REST API to start/stop recording dynamically
+    if (record) {
+      await client.calls(callSid).recordings.create({ recordingStatusCallback: `${process.env.BACKEND_URL}/api/call/recording` });
+    } else {
+      const recordings = await client.calls(callSid).recordings.list({ status: 'in-progress' });
+      for (const rec of recordings) {
+        await client.calls(callSid).recordings(rec.sid).update({ status: 'stopped' });
+      }
+    }
+    
+    // Log Activity
+    await prisma.leadActivity.create({
+      data: {
+        organizationId: req.user.organizationId,
+        leadId: req.body.leadId ? parseInt(req.body.leadId) : null,
+        action: `Call Recording ${record ? 'Started' : 'Stopped'}`
+      }
+    });
+
+    res.json({ success: true, record });
+  } catch (error) {
+    console.error("TELEPHONY RECORD ERROR:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const transferCall = async (req, res) => {
+  const { phone, targetAgentPhone } = req.body;
+  try {
+    const formattedTo = formatToE164(phone);
+    const conferenceName = `conf_${formattedTo.replace(/[^a-zA-Z0-9]/g, '')}`;
+    
+    // Add target agent to the conference
+    const targetE164 = formatToE164(targetAgentPhone);
+    await client.calls.create({
+      to: targetE164,
+      from: callerId,
+      twiml: `<Response><Dial><Conference>${conferenceName}</Conference></Dial></Response>`
+    });
+    
+    // Log Activity
+    await prisma.leadActivity.create({
+      data: {
+        organizationId: req.user.organizationId,
+        leadId: req.body.leadId ? parseInt(req.body.leadId) : null,
+        action: `Call Transferred to ${targetE164}`
+      }
+    });
+
+    res.json({ success: true, message: 'Transfer initiated' });
+  } catch (error) {
+    console.error("TELEPHONY TRANSFER ERROR:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getCallToken,
   initiateOutgoingCall,
@@ -400,5 +514,8 @@ module.exports = {
   getCallHistory,
   getActiveCalls,
   monitorCall,
-  validateTelephonyConfig
+  validateTelephonyConfig,
+  toggleHold,
+  toggleRecord,
+  transferCall
 };

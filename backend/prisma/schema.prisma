@@ -488,6 +488,9 @@ model Call {
   recordingUrl    String?    @map("recording_url")
   transcript      String?    @db.Text
   summary         String?    @db.Text
+  notes           String?    @db.Text
+  tags            String?
+  disposition     String?
   sentiment       String?    @default("NEUTRAL")
   
   createdAt       DateTime   @default(now()) @map("created_at")
@@ -688,6 +691,7 @@ enum LeadStatus {
   NEW
   CONTACTED
   INTERESTED
+  FOLLOW_UP
   QUALIFIED
   WON
   LOST

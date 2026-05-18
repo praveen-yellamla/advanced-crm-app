@@ -14,6 +14,8 @@ export function TelephonyProvider({ children }) {
   const [lastCallSid, setLastCallSid] = useState('');
   const [callState, setCallState] = useState('idle'); // idle, ringing, in-progress, completed
   const [isMuted, setIsMuted] = useState(false);
+  const [onHold, setOnHold] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
   const [networkQuality, setNetworkQuality] = useState(5); // 1-5
   const timerRef = useRef(null);
@@ -81,6 +83,8 @@ export function TelephonyProvider({ children }) {
     setCallState('completed');
     stopTimer();
     setIsMuted(false);
+    setOnHold(false);
+    setIsRecording(false);
     setTimeout(() => setCallState('idle'), 5000);
   }, []);
 
@@ -158,6 +162,47 @@ export function TelephonyProvider({ children }) {
     }
   };
 
+  const toggleHoldCall = async (phone, leadId) => {
+    if (!call) return;
+    try {
+      const newHoldState = !onHold;
+      const res = await api.post('/call/hold', { phone, hold: newHoldState, leadId });
+      if (res.data.success) {
+        setOnHold(newHoldState);
+        toast.success(newHoldState ? 'Call placed on hold' : 'Call resumed');
+      }
+    } catch (error) {
+      toast.error('Failed to toggle hold. Using local mute fallback.');
+      toggleMute(); // Fallback to muting the agent if the conference update fails
+    }
+  };
+
+  const toggleRecordCall = async (leadId) => {
+    if (!lastCallSid) return;
+    try {
+      const newRecordState = !isRecording;
+      const res = await api.post('/call/record/toggle', { callSid: lastCallSid, record: newRecordState, leadId });
+      if (res.data.success) {
+        setIsRecording(newRecordState);
+        toast.success(newRecordState ? 'Recording started' : 'Recording stopped');
+      }
+    } catch (error) {
+      toast.error('Failed to toggle recording');
+    }
+  };
+
+  const transferActiveCall = async (phone, targetAgentPhone, leadId) => {
+    try {
+      const res = await api.post('/call/transfer', { phone, targetAgentPhone, leadId });
+      if (res.data.success) {
+        toast.success('Call transferred successfully');
+        endCall(); // End our leg since it's transferred
+      }
+    } catch (error) {
+      toast.error('Transfer failed');
+    }
+  };
+
   const sendDigits = (digits) => {
     if (call) {
       console.log(`TELEPHONY: Sending DTMF: ${digits}`);
@@ -192,7 +237,15 @@ export function TelephonyProvider({ children }) {
   const startTimer = () => {
     setDuration(0);
     if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => setDuration(prev => prev + 1), 1000);
+    timerRef.current = setInterval(() => {
+      // Don't increment timer if on hold
+      setOnHold((currentHold) => {
+        if (!currentHold) {
+          setDuration(prev => prev + 1);
+        }
+        return currentHold;
+      });
+    }, 1000);
   };
 
   const stopTimer = () => {
@@ -208,17 +261,22 @@ export function TelephonyProvider({ children }) {
   const value = React.useMemo(() => ({
     callState,
     isMuted,
+    onHold,
+    isRecording,
     duration,
     formatDuration,
     makeCall,
     endCall,
     toggleMute,
+    toggleHoldCall,
+    toggleRecordCall,
+    transferActiveCall,
     sendDigits,
     activeCall: call,
     lastCallSid,
     networkQuality,
     monitorActiveCall
-  }), [callState, isMuted, duration, call, lastCallSid, networkQuality, makeCall, monitorActiveCall]);
+  }), [callState, isMuted, onHold, isRecording, duration, call, lastCallSid, networkQuality, makeCall, monitorActiveCall]);
 
   return (
     <TelephonyContext.Provider value={value}>

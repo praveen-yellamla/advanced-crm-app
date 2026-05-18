@@ -6,7 +6,7 @@ import {
   RefreshCw, Plus, MoreVertical, Star, Clock, 
   User, ExternalLink, Archive, AlertCircle,
   Paperclip, Reply, Forward, X, Sparkles, ArrowRight,
-  ShieldCheck, Eye, MousePointer2
+  ShieldCheck, Eye, MousePointer2, Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
