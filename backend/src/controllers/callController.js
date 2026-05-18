@@ -33,6 +33,9 @@ const getCallToken = async (req, res) => {
   }
 };
 
+// Active Outbound Call Map: AgentCallSid <-> CustomerCallSid
+const activeOutboundCalls = new Map();
+
 /**
  * 2. MASTER VOICE WEBHOOK (TwiML GENERATOR)
  * CRITICAL: This must return valid XML every time.
@@ -43,11 +46,20 @@ const handleVoiceWebhook = async (req, res) => {
   
   // Twilio sends data in POST body or Query
   const params = { ...req.query, ...req.body };
-  const { To, From, CallSid, isMonitor, agentId, leadId } = params;
+  const { From, CallSid, isMonitor, agentId, leadId, organizationId } = params;
+
+  // Smart resolution of To: Prevent standard Twilio POST 'To' (like 'client:agentId')
+  // from overwriting the custom customer phone number passed in query string 'To'
+  let To = req.body.To;
+  if (req.body.To && req.body.To.startsWith('client:')) {
+    To = req.query.To || req.body.To;
+  } else if (!req.body.To && req.query.To) {
+    To = req.query.To;
+  }
 
   console.log(`--- VOICE WEBHOOK START ---`);
   console.log(`SID: ${CallSid}`);
-  console.log(`To: ${To}`);
+  console.log(`To (Resolved): ${To}`);
   console.log(`From: ${From}`);
   console.log(`Params:`, params);
 
@@ -82,7 +94,7 @@ const handleVoiceWebhook = async (req, res) => {
 
     // C. OUTGOING CALL FROM BROWSER
     // This is the leg from the AGENT browser to Twilio
-    if (To && To !== callerId) {
+    if (To && To !== callerId && !To.startsWith('client:')) {
       const cleanTo = formatToE164(To);
       console.log(`TELEPHONY: Handling OUTGOING call from Browser to ${cleanTo}`);
 
@@ -90,16 +102,21 @@ const handleVoiceWebhook = async (req, res) => {
       const conferenceName = `conf_${cleanTo.replace(/[^a-zA-Z0-9]/g, '')}`;
       const baseUrl = (process.env.BACKEND_URL || '').replace(/\/$/, '');
 
-      // 1. Log the call start in DB
+      // 1. Log the call start in DB with robust integer parsing
+      const fallbackOrgId = 1;
+      const parsedOrgId = (organizationId && !isNaN(parseInt(organizationId))) ? parseInt(organizationId) : (req.user?.organizationId || fallbackOrgId);
+      const parsedAgentId = (agentId && !isNaN(parseInt(agentId))) ? parseInt(agentId) : (req.user?.id || 1);
+      const parsedLeadId = (leadId && !isNaN(parseInt(leadId))) ? parseInt(leadId) : null;
+
       await prisma.call.create({
         data: {
           sid: CallSid,
           from: callerId,
           phone: cleanTo,
-          status: 'initiated',
-          organizationId: req.user ? req.user.organizationId : 1, // Fallback for webhook without session
-          agentId: agentId ? parseInt(agentId) : (req.user ? req.user.id : 1),
-          leadId: leadId ? parseInt(leadId) : null,
+          status: 'Connecting',
+          organizationId: parsedOrgId,
+          agentId: parsedAgentId,
+          leadId: parsedLeadId,
           type: 'OUTBOUND'
         }
       }).catch(err => console.error("DB Log Error (Non-Fatal):", err));
@@ -129,16 +146,17 @@ const handleVoiceWebhook = async (req, res) => {
         twiml: customerTwiML,
         statusCallback: `${baseUrl}/api/call/status`,
         statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed']
-      }).then(call => {
-        console.log(`TELEPHONY: Customer leg initiated successfully. SID: ${call.sid}`);
+      }).then(customerCall => {
+        console.log(`TELEPHONY: Customer leg initiated successfully. SID: ${customerCall.sid}`);
+        if (CallSid) {
+          activeOutboundCalls.set(CallSid, customerCall.sid); // Agent -> Customer
+          activeOutboundCalls.set(customerCall.sid, CallSid); // Bidirectional
+        }
       }).catch(err => {
         console.error("TELEPHONY: Customer leg CRITICAL FAILURE:", {
           message: err.message,
-          code: err.code,
-          moreInfo: err.moreInfo
+          code: err.code
         });
-        // If the customer leg fails (e.g. trial restrictions), we should probably end the agent leg too?
-        // For now, logging is key.
       });
 
       res.type('text/xml');
@@ -165,6 +183,7 @@ const handleVoiceWebhook = async (req, res) => {
 const initiateOutgoingCall = async (req, res) => {
   const { phoneNumber, leadId } = req.body;
   const agentId = req.user.id;
+  const orgId = req.user.organizationId;
 
   if (!isValidPhone(phoneNumber)) {
     return res.status(400).json({ success: false, message: "Invalid phone format." });
@@ -175,7 +194,7 @@ const initiateOutgoingCall = async (req, res) => {
   try {
     console.log(`TELEPHONY: API Triggered call from Agent ${agentId} to ${formattedTo}`);
     const call = await client.calls.create({
-      url: `${process.env.BACKEND_URL}/api/call/voice?To=${encodeURIComponent(formattedTo)}&leadId=${leadId}&agentId=${agentId}`,
+      url: `${process.env.BACKEND_URL}/api/call/voice?To=${encodeURIComponent(formattedTo)}&leadId=${leadId}&agentId=${agentId}&organizationId=${orgId}`,
       to: `client:${agentId}`,
       from: callerId,
     });
@@ -192,27 +211,55 @@ const initiateOutgoingCall = async (req, res) => {
  */
 const handleStatusWebhook = async (req, res) => {
   const { CallSid, CallStatus, CallDuration, To, From } = req.body;
-  console.log(`TELEPHONY STATUS: ${CallStatus} | SID: ${CallSid} | Target: ${To}`);
+  console.log(`TELEPHONY STATUS WEBHOOK: SID=${CallSid}, Status=${CallStatus}, Duration=${CallDuration}`);
 
   try {
-    // Update call status in DB
+    // 1. If agent leg is completed or terminated, terminate the paired customer leg immediately
+    if (['completed', 'failed', 'busy', 'no-answer', 'canceled'].includes(CallStatus.toLowerCase())) {
+      const pairedSid = activeOutboundCalls.get(CallSid);
+      if (pairedSid) {
+        console.log(`TELEPHONY: Active call termination detected for leg ${CallSid}. Disconnecting paired leg ${pairedSid} immediately.`);
+        try {
+          await client.calls(pairedSid).update({ status: 'completed' });
+        } catch (err) {
+          // Silent catch
+        }
+        activeOutboundCalls.delete(CallSid);
+        activeOutboundCalls.delete(pairedSid);
+      }
+    }
+
+    // 2. Map Twilio call statuses to professional CRM Call Statuses
+    const statusMap = {
+      'queued': 'Connecting',
+      'ringing': 'Ringing',
+      'in-progress': 'Connected',
+      'completed': 'Completed',
+      'busy': 'Busy',
+      'failed': 'Failed',
+      'no-answer': 'No Answer',
+      'canceled': 'Canceled'
+    };
+
+    const dbStatus = statusMap[CallStatus.toLowerCase()] || CallStatus;
+
+    // 3. Update call status in DB (DO NOT restrict by req.user organizationId since webhooks are public)
     const updated = await prisma.call.updateMany({
       where: { 
-        organizationId: req.user?.organizationId, // If triggered via authenticated session
         OR: [
           { sid: CallSid },
-          { phone: To, status: { in: ['initiated', 'ringing', 'queued'] } }
+          { phone: To, status: { in: ['Connecting', 'Ringing', 'initiated', 'ringing', 'queued'] } }
         ]
       },
       data: { 
-        status: CallStatus.toLowerCase(),
+        status: dbStatus,
         duration: CallDuration ? parseInt(CallDuration) : undefined
       }
     });
 
-    // Handle Missed Calls
+    // 4. Handle Missed Calls
     if (['no-answer', 'failed', 'busy'].includes(CallStatus.toLowerCase())) {
-      console.log(`TELEPHONY: Call failed/missed. Creating task.`);
+      console.log(`TELEPHONY: Call failed/missed. Creating follow-up task.`);
       const callData = await prisma.call.findFirst({
         where: { OR: [{ sid: CallSid }, { phone: To }] },
         orderBy: { createdAt: 'desc' }
@@ -222,10 +269,11 @@ const handleStatusWebhook = async (req, res) => {
         await prisma.task.create({
           data: {
             title: `Missed Call Follow-up: ${callData.phone}`,
-            description: `Automated follow-up. Reason: ${CallStatus}`,
+            description: `Automated follow-up task triggered by missed or busy telephony attempt. Call status: ${dbStatus}`,
             type: 'FOLLOW_UP',
             priority: 'HIGH',
-            userId: callData.agentId,
+            assignedToId: callData.agentId,
+            organizationId: callData.organizationId,
             leadId: callData.leadId
           }
         }).catch(e => console.error("Task Creation Error:", e));
@@ -429,15 +477,15 @@ const toggleHold = async (req, res) => {
       await client.conferences(confSid).participants(p.callSid).update({ hold: hold === true });
     }
     
-    // Log Activity only if leadId exists
-    if (req.body.leadId) {
+    // Log Activity only if leadId exists and is valid
+    if (req.body.leadId && !isNaN(parseInt(req.body.leadId))) {
       await prisma.leadActivity.create({
         data: {
           organizationId: req.user.organizationId,
           leadId: parseInt(req.body.leadId),
           action: `Call ${hold ? 'Placed on Hold' : 'Resumed'}`
         }
-      });
+      }).catch(err => console.error("LeadActivity Log Error:", err));
     }
 
     res.json({ success: true, hold });
@@ -460,15 +508,15 @@ const toggleRecord = async (req, res) => {
       }
     }
     
-    // Log Activity only if leadId exists
-    if (req.body.leadId) {
+    // Log Activity only if leadId exists and is valid
+    if (req.body.leadId && !isNaN(parseInt(req.body.leadId))) {
       await prisma.leadActivity.create({
         data: {
           organizationId: req.user.organizationId,
           leadId: parseInt(req.body.leadId),
           action: `Call Recording ${record ? 'Started' : 'Stopped'}`
         }
-      });
+      }).catch(err => console.error("LeadActivity Log Error:", err));
     }
 
     res.json({ success: true, record });
@@ -492,15 +540,15 @@ const transferCall = async (req, res) => {
       twiml: `<Response><Dial><Conference>${conferenceName}</Conference></Dial></Response>`
     });
     
-    // Log Activity only if leadId exists
-    if (req.body.leadId) {
+    // Log Activity only if leadId exists and is valid
+    if (req.body.leadId && !isNaN(parseInt(req.body.leadId))) {
       await prisma.leadActivity.create({
         data: {
           organizationId: req.user.organizationId,
           leadId: parseInt(req.body.leadId),
           action: `Call Transferred to ${targetE164}`
         }
-      });
+      }).catch(err => console.error("LeadActivity Log Error:", err));
     }
 
     res.json({ success: true, message: 'Transfer initiated' });

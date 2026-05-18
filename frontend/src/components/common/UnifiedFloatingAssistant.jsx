@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import { 
   Sparkles, 
   Phone, 
@@ -25,6 +26,15 @@ const UnifiedFloatingAssistant = () => {
   const dragControls = useDragControls();
 
   const [isDockCollapsed, setIsDockCollapsed] = useState(false);
+  const location = useLocation();
+  const isCallingWorkspace = location.pathname.includes('/agent/calling');
+
+  // Prevent duplicate floating dialpad on the calling workspace
+  useEffect(() => {
+    if (isCallingWorkspace && activeWidget === 'call') {
+      setActiveWidget(null);
+    }
+  }, [isCallingWorkspace, activeWidget]);
 
   const toggleWidget = (type) => {
     if (activeWidget === type) {
@@ -81,8 +91,8 @@ const UnifiedFloatingAssistant = () => {
               </div>
 
               <div className="shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] rounded-[32px] overflow-hidden border border-white/10 bg-[#0F172A]/95 backdrop-blur-3xl flex-1 flex flex-col">
-                 {activeWidget === 'ai' && <AIAssistant embedded={true} />}
-                 {activeWidget === 'call' && <CallCenter embedded={true} />}
+                  {activeWidget === 'ai' && <AIAssistant embedded={true} />}
+                  {activeWidget === 'call' && <CallCenter embedded={true} />}
               </div>
             </motion.div>
           )}
@@ -131,17 +141,19 @@ const UnifiedFloatingAssistant = () => {
                  <Sparkles size={24} />
               </motion.button>
 
-              {/* CALL BUTTON */}
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => toggleWidget('call')}
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
-                  activeWidget === 'call' ? 'bg-emerald-600 text-white shadow-[0_0_25px_rgba(16,185,129,0.5)]' : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                }`}
-              >
-                 <Phone size={24} />
-              </motion.button>
+              {/* CALL BUTTON (Conditional on not being in calling workspace to prevent duplicate dialpad overlay) */}
+              {!isCallingWorkspace && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => toggleWidget('call')}
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
+                    activeWidget === 'call' ? 'bg-emerald-600 text-white shadow-[0_0_25px_rgba(16,185,129,0.5)]' : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                  }`}
+                >
+                   <Phone size={24} />
+                </motion.button>
+              )}
 
               {/* MINIMIZED INDICATOR */}
               {activeWidget && isMinimized && (
@@ -176,7 +188,6 @@ const UnifiedFloatingAssistant = () => {
         </motion.div>
       </motion.div>
     </div>
-
   );
 };
 

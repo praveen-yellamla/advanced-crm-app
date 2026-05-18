@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { 
   Phone, Mic, MicOff, Pause, Play, PhoneOff, Search, UserPlus, 
   Clock, Activity, Target, ChevronRight, Headphones, 
-  Volume2, Settings, Sparkles, ArrowRight, Disc, PhoneForwarded, History, User, CheckCircle
+  Volume2, Settings, Sparkles, ArrowRight, Disc, PhoneForwarded, 
+  History, User, CheckCircle, X, Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -34,8 +35,19 @@ const AgentCallingWorkspace = () => {
 
   const [activeLead, setActiveLead] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [leadSearch, setLeadSearch] = useState('');
   const [activeTab, setActiveTab] = useState('TRANSCRIPT');
   const queryClient = useQueryClient();
+
+  // Task creation modal states
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    dueDate: '',
+    priority: 'Normal', // Normal, High, Low
+    type: 'FOLLOWUP'
+  });
 
   const [taggingData, setTaggingData] = useState({
     status: 'INTERESTED',
@@ -43,14 +55,16 @@ const AgentCallingWorkspace = () => {
     callbackDate: ''
   });
 
+  // Fetch leads
   const { data: leads } = useQuery({
     queryKey: ['agentLeads'],
     queryFn: async () => {
       const res = await api.get('/agent/leads');
-      return res.data.data;
+      return res.data.data || [];
     }
   });
 
+  // Fetch tasks
   const { data: tasks } = useQuery({
     queryKey: ['agentTasksDashboard'],
     queryFn: async () => {
@@ -58,6 +72,14 @@ const AgentCallingWorkspace = () => {
       return res.data.data || [];
     }
   });
+
+  // Filter leads based on live search box
+  const filteredLeads = useMemo(() => {
+    return (leads || []).filter(lead => 
+      (lead.customerName || '').toLowerCase().includes(leadSearch.toLowerCase()) ||
+      (lead.phone || '').includes(leadSearch)
+    );
+  }, [leads, leadSearch]);
 
   const logCallMutation = useMutation({
     mutationFn: (data) => api.post('/call/tag', data),
@@ -67,6 +89,32 @@ const AgentCallingWorkspace = () => {
       setPhoneNumber('');
       setActiveLead(null);
       setTaggingData({ status: 'INTERESTED', notes: '', callbackDate: '' });
+    }
+  });
+
+  // Mark task completed mutation
+  const completeTaskMutation = useMutation({
+    mutationFn: (taskId) => api.patch(`/agent/tasks/${taskId}`, { status: 'COMPLETED' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['agentTasksDashboard']);
+      toast.success('Task marked as completed');
+    },
+    onError: (err) => {
+      toast.error('Failed to complete task');
+    }
+  });
+
+  // Create task mutation
+  const createTaskMutation = useMutation({
+    mutationFn: (data) => api.post('/agent/tasks', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['agentTasksDashboard']);
+      setIsTaskModalOpen(false);
+      setNewTask({ title: '', description: '', dueDate: '', priority: 'Normal', type: 'FOLLOWUP' });
+      toast.success('Task created successfully');
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Failed to create task');
     }
   });
 
@@ -87,11 +135,17 @@ const AgentCallingWorkspace = () => {
     });
   };
 
+  const handleCreateTask = (e) => {
+    e.preventDefault();
+    if (!newTask.title) return toast.error('Please specify a task title');
+    createTaskMutation.mutate(newTask);
+  };
+
   useEffect(() => {
-    if (activeLead && callState === 'idle') {
+    if (activeLead && callState === 'IDLE') {
       setPhoneNumber(activeLead.phone);
     }
-  }, [activeLead]);
+  }, [activeLead, callState]);
 
   return (
     <div className="space-y-8 pb-20">
@@ -104,9 +158,9 @@ const AgentCallingWorkspace = () => {
             <div>
                <h1 className="text-3xl font-black text-slate-900 tracking-tight">Calling Workspace</h1>
                <div className="flex items-center gap-2 mt-1">
-                  <div className={`w-2 h-2 rounded-full ${callState === 'in-progress' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                  <div className={`w-2 h-2 rounded-full ${callState === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-                    {callState === 'idle' ? 'System Ready' : `Call Status: ${callState}`}
+                    {callState === 'IDLE' ? 'System Ready' : `Call Status: ${callState}`}
                   </span>
                </div>
             </div>
@@ -135,14 +189,14 @@ const AgentCallingWorkspace = () => {
             <div className="bg-slate-900 p-8 rounded-[32px] shadow-xl text-white flex flex-col">
                <div className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-6 text-center">Dialpad</div>
                <div className="space-y-1 mb-8 text-center">
-                 <input 
-                    type="text" 
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
-                    placeholder="+91 0000 000 000"
-                    className="w-full bg-transparent border-none text-3xl font-black text-center tracking-wider focus:ring-0 placeholder:text-white/20 outline-none p-0"
-                 />
-                 {activeLead && <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-2 truncate">{activeLead.customerName}</p>}
+                  <input 
+                     type="text" 
+                     value={phoneNumber}
+                     onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                     placeholder="+91 0000 000 000"
+                     className="w-full bg-transparent border-none text-3xl font-black text-center tracking-wider focus:ring-0 placeholder:text-white/20 outline-none p-0"
+                  />
+                  {activeLead && <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-2 truncate">{activeLead.customerName}</p>}
                </div>
                
                <div className="grid grid-cols-3 gap-3 mb-8 px-4">
@@ -150,7 +204,7 @@ const AgentCallingWorkspace = () => {
                     <button 
                       key={n} 
                       onClick={() => {
-                        if (callState === 'connected' || callState === 'ringing' || callState === 'in-progress') {
+                        if (['CONNECTED', 'RINGING', 'CONNECTING'].includes(callState)) {
                           sendDigits(n.toString());
                         } else {
                           setPhoneNumber(prev => formatPhoneNumber(prev + n));
@@ -164,10 +218,10 @@ const AgentCallingWorkspace = () => {
                </div>
 
                <button 
-                  disabled={callState !== 'idle'}
+                  disabled={callState !== 'IDLE'}
                   onClick={startCall}
                   className={`w-full h-16 rounded-2xl flex items-center justify-center gap-3 font-black uppercase text-xs tracking-widest transition-all ${
-                    callState !== 'idle' ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20'
+                    callState !== 'IDLE' ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20'
                   }`}
                >
                   <Phone size={20} fill="currentColor" /> Start Call
@@ -182,13 +236,19 @@ const AgentCallingWorkspace = () => {
                </div>
                <div className="relative mb-4">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                  <input type="text" placeholder="Search leads..." className="w-full h-12 pl-12 pr-4 bg-slate-50 border-none rounded-xl font-semibold text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all" />
+                  <input 
+                     type="text" 
+                     placeholder="Search leads..." 
+                     value={leadSearch}
+                     onChange={e => setLeadSearch(e.target.value)}
+                     className="w-full h-12 pl-12 pr-4 bg-slate-50 border-none rounded-xl font-semibold text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all" 
+                  />
                </div>
                <div className="flex-1 overflow-y-auto space-y-2 pr-2 scrollbar-hide">
-                  {leads?.map(lead => (
+                  {filteredLeads.map(lead => (
                     <div 
                       key={lead.id}
-                      onClick={() => callState === 'idle' && setActiveLead(lead)}
+                      onClick={() => callState === 'IDLE' && setActiveLead(lead)}
                       className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between group ${
                         activeLead?.id === lead.id ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-white border-slate-100 hover:border-blue-100 hover:bg-slate-50'
                       }`}
@@ -211,11 +271,11 @@ const AgentCallingWorkspace = () => {
          {/* CENTER COLUMN: ACTIVE CALL CONTEXT */}
          <div className="xl:col-span-6 flex flex-col gap-8 h-full min-h-[600px]">
             <AnimatePresence mode="wait">
-               {callState === 'idle' ? (
+               {callState === 'IDLE' ? (
                   <motion.div 
-                    key="idle"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="flex-1 bg-white rounded-[40px] border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center p-12 relative overflow-hidden min-h-[500px]"
+                     key="idle"
+                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                     className="flex-1 bg-white rounded-[40px] border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center p-12 relative overflow-hidden min-h-[500px]"
                   >
                      <div className="relative z-10 space-y-6 max-w-sm">
                         <div className="w-24 h-24 rounded-full bg-slate-50 text-blue-600 flex items-center justify-center mx-auto shadow-inner border border-slate-100">
@@ -229,9 +289,9 @@ const AgentCallingWorkspace = () => {
                   </motion.div>
                ) : (
                   <motion.div 
-                    key="active"
-                    initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                    className="flex-1 flex flex-col gap-8"
+                     key="active"
+                     initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                     className="flex-1 flex flex-col gap-8"
                   >
                      {/* ACTIVE CALL HUD */}
                      <div className="bg-slate-900 p-10 rounded-[40px] shadow-xl relative overflow-hidden flex flex-col items-center text-center">
@@ -320,18 +380,26 @@ const AgentCallingWorkspace = () => {
             <div className="bg-slate-900 p-6 rounded-[32px] shadow-xl flex flex-col flex-1 h-full min-h-[500px]">
                <div className="flex items-center justify-between mb-6 shrink-0">
                   <h3 className="text-xs font-black text-white uppercase tracking-widest">Pending Tasks</h3>
-                  <button className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
+                  <button 
+                     onClick={() => setIsTaskModalOpen(true)}
+                     className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                  >
                      <UserPlus size={14} />
                   </button>
                </div>
                <div className="flex-1 overflow-y-auto space-y-3 scrollbar-hide">
                   {!tasks || tasks.length === 0 ? (
-                    <div className="text-center p-8 text-slate-500 text-sm font-bold italic">No pending tasks found.</div>
+                     <div className="text-center p-8 text-slate-500 text-sm font-bold italic">No pending tasks found.</div>
                   ) : tasks.map(task => (
                      <div key={task.id} className="p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group">
                         <div className="flex items-start justify-between">
                           <p className="text-sm font-bold text-white truncate group-hover:text-blue-400 transition-colors">{task.title}</p>
-                          <CheckCircle size={16} className="text-slate-600 hover:text-emerald-400 shrink-0 ml-2" />
+                          <button 
+                            onClick={() => completeTaskMutation.mutate(task.id)}
+                            className="text-slate-600 hover:text-emerald-400 transition-colors shrink-0 ml-2"
+                          >
+                            <CheckCircle size={16} />
+                          </button>
                         </div>
                         <div className="flex items-center justify-between mt-3">
                            <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md ${
@@ -349,7 +417,7 @@ const AgentCallingWorkspace = () => {
       
       {/* POST-CALL SAVE OVERLAY */}
       <AnimatePresence>
-         {callState === 'disconnected' && (
+         {callState === 'DISCONNECTED' && (
             <motion.div 
                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                className="fixed inset-0 z-[5000] flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-sm"
@@ -413,6 +481,88 @@ const AgentCallingWorkspace = () => {
          )}
       </AnimatePresence>
 
+      {/* QUICK TASK CREATION MODAL */}
+      <AnimatePresence>
+        {isTaskModalOpen && (
+          <div className="fixed inset-0 bg-[#0F172A]/40 backdrop-blur-md z-[5000] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-[32px] shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden"
+            >
+              <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div>
+                  <h3 className="text-xl font-black text-slate-950 tracking-tight uppercase italic">Establish New Task</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Define outstanding action item</p>
+                </div>
+                <button onClick={() => setIsTaskModalOpen(false)} className="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-slate-950 transition-colors flex items-center justify-center">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateTask} className="p-8 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Task Title</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Schedule Product Demonstration"
+                    required
+                    value={newTask.title}
+                    onChange={e => setNewTask({...newTask, title: e.target.value})}
+                    className="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-sm text-slate-950 focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description</label>
+                  <textarea 
+                    placeholder="Provide specific notes regarding the action item..."
+                    value={newTask.description}
+                    onChange={e => setNewTask({...newTask, description: e.target.value})}
+                    className="w-full h-24 p-4 bg-slate-50 border border-slate-100 rounded-xl font-medium text-sm text-slate-600 resize-none focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1"><Calendar size={12} /> Due Date</label>
+                    <input 
+                      type="date"
+                      required
+                      value={newTask.dueDate}
+                      onChange={e => setNewTask({...newTask, dueDate: e.target.value})}
+                      className="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-sm text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Priority</label>
+                    <select
+                      value={newTask.priority}
+                      onChange={e => setNewTask({...newTask, priority: e.target.value})}
+                      className="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-sm text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    >
+                      <option value="Normal">Normal</option>
+                      <option value="MEDIUM">Medium</option>
+                      <option value="HIGH">High</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={createTaskMutation.isLoading}
+                  className="w-full h-14 bg-slate-950 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                >
+                  Create Task
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* HARDWARE SETTINGS */}
       <TelephonySettingsModal 
          isOpen={isSettingsOpen} 
@@ -421,13 +571,6 @@ const AgentCallingWorkspace = () => {
     </div>
   );
 };
-
-const AudioSettingBtn = ({ icon: Icon, label }) => (
-  <button className="px-5 h-12 bg-white border border-slate-200 rounded-xl flex items-center gap-3 hover:border-blue-300 hover:bg-slate-50 transition-all shadow-sm">
-     <Icon size={16} className="text-slate-500" />
-     <span className="text-[11px] font-bold text-slate-600 tracking-wide hidden sm:inline-block">{label}</span>
-  </button>
-);
 
 const ControlButton = ({ icon: Icon, active, onClick, color }) => {
   const colors = {
