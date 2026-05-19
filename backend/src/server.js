@@ -38,3 +38,24 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(`External Pulse Detection: ACTIVE`);
   console.log(`Runtime Environment: ${process.env.NODE_ENV || 'development'}`);
 });
+
+// Periodic Agent Invitation Expiration Cleaner (runs every 5 minutes)
+const prisma = require('./config/prisma');
+setInterval(async () => {
+  try {
+    const expiredCount = await prisma.agentInvitation.updateMany({
+      where: {
+        status: 'pending',
+        expiresAt: { lt: new Date() }
+      },
+      data: {
+        status: 'expired'
+      }
+    });
+    if (expiredCount.count > 0) {
+      console.log(`[BACKGROUND JOB] Marked ${expiredCount.count} expired agent invitations.`);
+    }
+  } catch (err) {
+    console.error('[BACKGROUND JOB FAILURE] Failed to run expired agent invitations cleaner:', err.message);
+  }
+}, 5 * 60 * 1000);

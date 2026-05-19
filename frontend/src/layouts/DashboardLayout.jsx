@@ -157,10 +157,14 @@ const DashboardLayout = () => {
     ],
     MANAGER: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/manager/dashboard' },
-      { name: 'Leads', icon: Target, path: '/manager/team-leads' },
-      { name: 'Agents', icon: Users, path: '/manager/agents' },
-      { name: 'Quality Control', icon: ShieldCheck, path: '/manager/qcqa' },
-      { name: 'Reports', icon: BarChart3, path: '/manager/reports' },
+      { name: 'Team Analytics', icon: BarChart3, path: '/manager/analytics' },
+      { name: 'Call Recordings & QC', icon: Headphones, path: '/manager/recordings' },
+      { name: 'QA Scoring', icon: Shield, path: '/manager/qa-scoring' },
+      { name: 'Agent Feedback', icon: MessageSquare, path: '/manager/feedback' },
+      { name: 'Lead Management', icon: Target, path: '/manager/leads' },
+      { name: 'Task & Activity', icon: ClipboardCheck, path: '/manager/tasks' },
+      { name: 'Email Monitoring', icon: Mail, path: '/manager/emails' },
+      { name: 'Invoicing', icon: FileText, path: '/manager/invoices' },
     ],
     AGENT: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/agent/dashboard' },

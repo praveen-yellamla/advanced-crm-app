@@ -14,8 +14,19 @@ const initSocket = (server) => {
     console.log(`Node linked to realtime cluster: ${socket.id}`);
 
     socket.on("join_room", (room) => {
-      socket.join(room);
-      console.log(`Socket ${socket.id} joined broadcast room: ${room}`);
+      if (typeof room === "string") {
+        socket.join(room);
+        console.log(`Socket ${socket.id} joined broadcast room: ${room}`);
+      } else if (room && typeof room === "object") {
+        if (room.userId) {
+          socket.join(`user_${room.userId}`);
+          console.log(`Socket ${socket.id} joined broadcast room: user_${room.userId}`);
+        }
+        if (room.teamId) {
+          socket.join(`team_${room.teamId}`);
+          console.log(`Socket ${socket.id} joined broadcast room: team_${room.teamId}`);
+        }
+      }
     });
 
     socket.on("disconnect", () => {
@@ -38,4 +49,6 @@ const broadcastToTeam = (teamId, event, data) => {
   }
 };
 
-module.exports = { initSocket, notifyUser, broadcastToTeam };
+const getIO = () => io;
+
+module.exports = { initSocket, notifyUser, broadcastToTeam, getIO };

@@ -337,6 +337,33 @@ const sendEmail = async (req, res) => {
         status: 'SENT'
       }
     });
+
+    // Create lead timeline entry
+    await prisma.leadActivity.create({
+      data: {
+        organizationId: req.user.organizationId,
+        leadId: parseInt(leadId),
+        action: `Outbound Email Sent: "${subject}"`
+      }
+    }).catch(err => console.error("LeadActivity Creation Error:", err));
+
+    const { logActivity, triggerRealtimeEvent } = require('../utils/realtimeHelper');
+
+    await logActivity({
+      actorId: req.user.id,
+      actorRole: 'AGENT',
+      action: 'email.sent',
+      entityType: 'EMAIL',
+      entityId: email.id,
+      newValue: { subject, leadId },
+      teamId: req.user.teamId
+    });
+
+    triggerRealtimeEvent(`org_${req.user.organizationId}`, 'email:sent', email);
+    if (req.user.teamId) {
+      triggerRealtimeEvent(`team_${req.user.teamId}`, 'email:sent', email);
+    }
+
     res.json({ success: true, data: email });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -359,6 +386,99 @@ const getMyEmails = async (req, res) => {
   }
 };
 
+const acknowledgeFeedback = async (req, res) => {
+  try {
+    const { feedbackId } = req.params;
+    const organizationId = req.user.organizationId;
+    const agentId = req.user.id;
+
+    const oldFeedback = await prisma.feedback.findFirst({
+      where: { id: parseInt(feedbackId), organizationId, agentId }
+    });
+
+    if (!oldFeedback) return res.status(404).json({ success: false, message: 'Feedback not found' });
+
+    const feedback = await prisma.feedback.update({
+      where: { id: oldFeedback.id },
+      data: { acknowledgedAt: new Date() }
+    });
+
+    const { logActivity, sendNotification, triggerRealtimeEvent } = require('../utils/realtimeHelper');
+
+    await sendNotification({
+      organizationId,
+      userId: feedback.managerId,
+      title: 'Feedback Acknowledged',
+      message: `Agent ${req.user.name} acknowledged feedback ID ${feedback.id}.`,
+      type: 'SUCCESS',
+      priority: 'MEDIUM'
+    });
+
+    triggerRealtimeEvent(`user_${feedback.managerId}`, 'feedback:acknowledged', feedback);
+
+    await logActivity({
+      actorId: agentId,
+      actorRole: 'AGENT',
+      action: 'feedback.acknowledged',
+      entityType: 'FEEDBACK',
+      entityId: feedback.id,
+      newValue: { acknowledgedAt: feedback.acknowledgedAt },
+      teamId: req.user.teamId
+    });
+
+    res.json({ success: true, data: feedback });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const replyFeedback = async (req, res) => {
+  try {
+    const { feedbackId } = req.params;
+    const { response } = req.body;
+    const organizationId = req.user.organizationId;
+    const agentId = req.user.id;
+
+    const oldFeedback = await prisma.feedback.findFirst({
+      where: { id: parseInt(feedbackId), organizationId, agentId }
+    });
+
+    if (!oldFeedback) return res.status(404).json({ success: false, message: 'Feedback not found' });
+
+    const feedback = await prisma.feedback.update({
+      where: { id: oldFeedback.id },
+      data: { response }
+    });
+
+    const { logActivity, sendNotification, triggerRealtimeEvent } = require('../utils/realtimeHelper');
+
+    await sendNotification({
+      organizationId,
+      userId: feedback.managerId,
+      title: 'Agent Responded to Feedback',
+      message: `Agent ${req.user.name} replied to coaching feedback: "${response.substring(0, 30)}..."`,
+      type: 'INFO',
+      priority: 'HIGH'
+    });
+
+    triggerRealtimeEvent(`user_${feedback.managerId}`, 'feedback:replied', feedback);
+
+    await logActivity({
+      actorId: agentId,
+      actorRole: 'AGENT',
+      action: 'feedback.replied',
+      entityType: 'FEEDBACK',
+      entityId: feedback.id,
+      newValue: { response },
+      teamId: req.user.teamId
+    });
+
+    res.json({ success: true, data: feedback });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getMyLeads,
@@ -374,5 +494,7 @@ module.exports = {
   getMyInvoices,
   getFeedback,
   sendEmail,
-  getMyEmails
+  getMyEmails,
+  acknowledgeFeedback,
+  replyFeedback
 };

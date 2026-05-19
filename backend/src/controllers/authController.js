@@ -5,7 +5,15 @@ const { v4: uuidv4 } = require('uuid');
 
 const generateToken = (user, expiresIn = '24h') => {
   return jwt.sign(
-    { id: user.id, email: user.email, role: user.role, organizationId: user.organizationId },
+    { 
+      id: user.id, 
+      user_id: user.id, 
+      email: user.email, 
+      role: user.role, 
+      organizationId: user.organizationId,
+      teamId: user.teamId,
+      team_id: user.teamId
+    },
     process.env.JWT_SECRET,
     { expiresIn }
   );
@@ -82,6 +90,15 @@ const login = async (req, res) => {
       where: { id: user.id },
       data: { failedLoginAttempts: 0, lockedUntil: null }
     });
+
+    if (user.role === 'MANAGER') {
+      const managedTeam = await prisma.team.findFirst({
+        where: { managerId: user.id }
+      });
+      if (managedTeam) {
+        user.teamId = managedTeam.id;
+      }
+    }
 
     const accessToken = generateToken(user, rememberMe ? '7d' : '24h');
     const refreshToken = uuidv4();
@@ -186,6 +203,15 @@ const refresh = async (req, res) => {
 
     if (!session || session.expiresAt < new Date()) {
       return res.status(401).json({ message: 'Invalid or expired session' });
+    }
+
+    if (session.user && session.user.role === 'MANAGER') {
+      const managedTeam = await prisma.team.findFirst({
+        where: { managerId: session.user.id }
+      });
+      if (managedTeam) {
+        session.user.teamId = managedTeam.id;
+      }
     }
 
     const newAccessToken = generateToken(session.user);

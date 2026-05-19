@@ -8,11 +8,13 @@ import RoleBasedRoute from '../components/common/RoleBasedRoute';
 // Auth Pages
 import PortalSelection from '../pages/auth/PortalSelection';
 import AcceptInvite from '../pages/auth/AcceptInvite';
+import JoinInvite from '../pages/auth/JoinInvite';
 
 // Admin Pages
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import AdminTeams from '../pages/admin/AdminTeams';
 import AdminAgents from '../pages/admin/AdminAgents';
+import AdminInviteAgents from '../pages/admin/AdminInviteAgents';
 import LeadManagement from '../pages/admin/LeadManagement';
 import LeadPipeline from '../pages/admin/LeadPipeline';
 import SystemIntegrations from '../pages/admin/SystemIntegrations';
@@ -26,12 +28,14 @@ import AIControlPanel from '../pages/admin/ai/AIControlPanel';
 import AnalyticsCommandCenter from '../pages/admin/AnalyticsCommandCenter';
 // Manager Pages
 import ManagerDashboard from '../pages/manager/ManagerDashboard';
-import ManagerLeads from '../pages/manager/ManagerLeads';
-import ManagerCalls from '../pages/manager/ManagerCalls';
-import ManagerAgents from '../pages/manager/ManagerAgents';
+import TeamAnalytics from '../pages/manager/TeamAnalytics';
+import CallRecordings from '../pages/manager/CallRecordings';
+import QAScoring from '../pages/manager/QAScoring';
+import ManagerFeedback from '../pages/manager/AgentFeedback';
+import ManagerLeadManagement from '../pages/manager/LeadManagement';
+import TaskManager from '../pages/manager/TaskManager';
+import EmailMonitoring from '../pages/manager/EmailMonitoring';
 import ManagerInvoices from '../pages/manager/ManagerInvoices';
-import ManagerReports from '../pages/manager/ManagerReports';
-import QualityControlCenter from '../pages/manager/QualityControlCenter';
 // Agent Pages
 import AgentDashboard from '../pages/agent/AgentDashboard';
 import AgentLeads from '../pages/agent/AgentLeads';
@@ -68,6 +72,7 @@ const AppRoutes = () => {
       {/* Public Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/accept-invite/:token" element={<AcceptInvite />} />
+      <Route path="/join" element={<JoinInvite />} />
       
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
@@ -96,6 +101,7 @@ const AppRoutes = () => {
             <Route path="analytics" element={<AnalyticsCommandCenter />} />
             <Route path="teams" element={<AdminTeams />} />
             <Route path="agents" element={<AdminAgents />} />
+            <Route path="agents/invite" element={<AdminInviteAgents />} />
             <Route path="leads" element={<LeadManagement />} />
             <Route path="pipeline" element={<LeadPipeline />} />
             <Route path="integrations" element={<SystemIntegrations />} />
@@ -111,11 +117,14 @@ const AppRoutes = () => {
           <Route path="/manager" element={<DashboardLayout />}>
             <Route index element={<Navigate to="/manager/dashboard" replace />} />
             <Route path="dashboard" element={<ManagerDashboard />} />
-            <Route path="team-leads" element={<ManagerLeads />} />
-            <Route path="qcqa" element={<QualityControlCenter />} />
-            <Route path="agents" element={<ManagerAgents />} />
+            <Route path="analytics" element={<TeamAnalytics />} />
+            <Route path="recordings" element={<CallRecordings />} />
+            <Route path="qa-scoring" element={<QAScoring />} />
+            <Route path="feedback" element={<ManagerFeedback />} />
+            <Route path="leads" element={<ManagerLeadManagement />} />
+            <Route path="tasks" element={<TaskManager />} />
+            <Route path="emails" element={<EmailMonitoring />} />
             <Route path="invoices" element={<ManagerInvoices />} />
-            <Route path="reports" element={<ManagerReports />} />
           </Route>
         </Route>
 

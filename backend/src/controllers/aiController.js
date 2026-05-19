@@ -81,6 +81,11 @@ const updateAISettings = async (req, res) => {
       update: { value, category: 'AI' },
       create: { key, value, category: 'AI' }
     });
+
+    const { triggerRealtimeEvent } = require('../utils/realtimeHelper');
+    triggerRealtimeEvent('global_admins', 'setting:updated', setting);
+    triggerRealtimeEvent('global_agents', 'setting:updated', setting);
+
     res.json({ success: true, data: setting });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

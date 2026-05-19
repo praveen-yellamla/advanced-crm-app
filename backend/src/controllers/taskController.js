@@ -140,9 +140,40 @@ const createTask = async (req, res) => {
         }]
       },
       include: {
-        assignedTo: { select: { name: true, email: true, profileImage: true } },
+        assignedTo: { select: { id: true, name: true, email: true, teamId: true } },
         lead: { select: { customerName: true } }
       }
+    });
+
+    const { sendNotification, triggerRealtimeEvent, logActivity } = require('../utils/realtimeHelper');
+
+    // Notify Agent via DB and Socket
+    if (task.assignedToId) {
+      await sendNotification({
+        organizationId: req.user.organizationId,
+        userId: task.assignedToId,
+        title: 'New Task Assigned',
+        message: `You have been assigned a new task: "${title}". Due: ${dueDate ? new Date(dueDate).toLocaleDateString() : 'N/A'}.`,
+        type: 'INFO',
+        priority: priority === 'HIGH' ? 'HIGH' : 'MEDIUM',
+        metadata: { taskId: task.id }
+      });
+      triggerRealtimeEvent(`user_${task.assignedToId}`, 'task:created', task);
+    }
+
+    // Broadcast to team for live updates
+    if (task.assignedTo?.teamId) {
+      triggerRealtimeEvent(`team_${task.assignedTo.teamId}`, 'task:created', task);
+    }
+
+    await logActivity({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'task.created',
+      entityType: 'TASK',
+      entityId: task.id,
+      newValue: task,
+      teamId: task.assignedTo?.teamId || null
     });
 
     // Notify Agent via Email
@@ -197,12 +228,78 @@ const updateTask = async (req, res) => {
         completedAt: status === 'COMPLETED' && existing.status !== 'COMPLETED' ? new Date() : existing.completedAt
       },
       include: {
-        assignedTo: { select: { name: true, email: true, profileImage: true } },
+        assignedTo: { select: { id: true, name: true, email: true, profileImage: true, teamId: true } },
         lead: { select: { customerName: true } }
       }
     });
 
-    // Notify if assignment changed
+    const { sendNotification, triggerRealtimeEvent, logActivity } = require('../utils/realtimeHelper');
+
+    // Handle Reassignment
+    if (assignedToId && parseInt(assignedToId) !== existing.assignedToId) {
+      // Notify old agent
+      await sendNotification({
+        organizationId: req.user.organizationId,
+        userId: existing.assignedToId,
+        title: 'Task Reassigned Away',
+        message: `Task "${task.title}" has been reassigned to ${task.assignedTo?.name || 'another agent'}.`,
+        type: 'WARNING',
+        priority: 'MEDIUM'
+      });
+      triggerRealtimeEvent(`user_${existing.assignedToId}`, 'task:reassigned', { taskId: task.id, removed: true });
+
+      // Notify new agent
+      await sendNotification({
+        organizationId: req.user.organizationId,
+        userId: task.assignedToId,
+        title: 'New Task Reassigned To You',
+        message: `Task "${task.title}" has been reassigned to you.`,
+        type: 'INFO',
+        priority: 'HIGH'
+      });
+      triggerRealtimeEvent(`user_${task.assignedToId}`, 'task:created', task);
+
+      await logActivity({
+        actorId: req.user.id,
+        actorRole: req.user.role,
+        action: 'task.reassigned',
+        entityType: 'TASK',
+        entityId: task.id,
+        oldValue: { assignedToId: existing.assignedToId },
+        newValue: { assignedToId: task.assignedToId },
+        teamId: task.assignedTo?.teamId || null
+      });
+    }
+
+    // Handle Completion
+    if (status === 'COMPLETED' && existing.status !== 'COMPLETED') {
+      triggerRealtimeEvent(`org_${req.user.organizationId}`, 'task:completed', task);
+      if (task.assignedTo?.teamId) {
+        triggerRealtimeEvent(`team_${task.assignedTo.teamId}`, 'task:completed', task);
+      }
+      
+      // Notify creator/manager
+      await sendNotification({
+        organizationId: req.user.organizationId,
+        userId: task.createdById,
+        title: 'Task Completed by Agent',
+        message: `Agent ${task.assignedTo?.name || 'Agent'} has completed the task: "${task.title}".`,
+        type: 'SUCCESS',
+        priority: 'MEDIUM'
+      });
+
+      await logActivity({
+        actorId: req.user.id,
+        actorRole: req.user.role,
+        action: 'task.completed',
+        entityType: 'TASK',
+        entityId: task.id,
+        newValue: { status: 'COMPLETED' },
+        teamId: task.assignedTo?.teamId || null
+      });
+    }
+
+    // Notify if assignment changed via email
     if (assignedToId && parseInt(assignedToId) !== existing.assignedToId && task.assignedTo?.email) {
       sendTaskAssignmentEmail(
         task.assignedTo.email,
@@ -245,8 +342,40 @@ const patchTaskStatus = async (req, res) => {
         completedAt: status === 'COMPLETED' ? new Date() : null,
         activityLogs: logs
       },
-      include: { assignedTo: true, lead: true }
+      include: { 
+        assignedTo: { select: { id: true, name: true, teamId: true } }, 
+        lead: true 
+      }
     });
+
+    const { sendNotification, triggerRealtimeEvent, logActivity } = require('../utils/realtimeHelper');
+
+    if (status === 'COMPLETED') {
+      triggerRealtimeEvent(`org_${req.user.organizationId}`, 'task:completed', task);
+      if (task.assignedTo?.teamId) {
+        triggerRealtimeEvent(`team_${task.assignedTo.teamId}`, 'task:completed', task);
+      }
+
+      // Notify manager/creator
+      await sendNotification({
+        organizationId: req.user.organizationId,
+        userId: task.createdById,
+        title: 'Task Completed',
+        message: `Agent ${task.assignedTo?.name || 'Agent'} has completed the task: "${task.title}".`,
+        type: 'SUCCESS',
+        priority: 'MEDIUM'
+      });
+
+      await logActivity({
+        actorId: req.user.id,
+        actorRole: req.user.role,
+        action: 'task.completed',
+        entityType: 'TASK',
+        entityId: task.id,
+        newValue: { status: 'COMPLETED' },
+        teamId: task.assignedTo?.teamId || null
+      });
+    }
 
     res.json({ success: true, data: task });
   } catch (error) {

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import { 
   Users, Plus, Search, MoreHorizontal, Mail, Phone, 
@@ -15,6 +16,7 @@ import toast from 'react-hot-toast';
 import TableActionMenu, { TableActionItem } from '../../components/common/TableActionMenu';
 
 const AdminAgents = () => {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [editAgentId, setEditAgentId] = useState(null);
@@ -22,7 +24,25 @@ const AdminAgents = () => {
   const [search, setSearch] = useState('');
   const [generatedInviteLink, setGeneratedInviteLink] = useState('');
   const [activeMenuId, setActiveMenuId] = useState(null);
+  
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [selectedAgentForTeam, setSelectedAgentForTeam] = useState(null);
+  const [assignTeamId, setAssignTeamId] = useState('');
+
   const queryClient = useQueryClient();
+
+  const assignTeamMutation = useMutation({
+    mutationFn: ({ id, team_id }) => api.patch(`/admin/agents/${id}/assign-team`, { team_id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['adminAgents']);
+      queryClient.invalidateQueries(['adminDashboardStats']);
+      toast.success('Agent team assignment updated');
+      setAssignModalOpen(false);
+      setSelectedAgentForTeam(null);
+      setAssignTeamId('');
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Assignment failed')
+  });
 
   // Queries
   const { data: agents, isLoading: isAgentsLoading } = useQuery({
@@ -37,6 +57,14 @@ const AdminAgents = () => {
     queryKey: ['adminInvites'],
     queryFn: async () => {
       const res = await api.get('/admin/invites');
+      return res.data.data;
+    }
+  });
+
+  const { data: newPendingInvites, refetch: refetchNewPending } = useQuery({
+    queryKey: ['adminAgentInvitationsPendingList'],
+    queryFn: async () => {
+      const res = await api.get('/admin/agents/invitations', { params: { status: 'pending', limit: 100 } });
       return res.data.data;
     }
   });
@@ -79,21 +107,25 @@ const AdminAgents = () => {
   });
 
   const resendInviteMutation = useMutation({
-    mutationFn: (id) => api.post(`/admin/invites/${id}/resend`),
-    onSuccess: () => {
-      toast.success('New invitation link sent');
-      queryClient.invalidateQueries(['adminInvites']);
+    mutationFn: (id) => api.post(`/admin/agents/invitations/${id}/resend`),
+    onSuccess: (res) => {
+      toast.success('Invitation link resent');
+      if (res.data.inviteUrl) {
+        navigator.clipboard.writeText(res.data.inviteUrl);
+        toast.success('Link copied to clipboard');
+      }
+      queryClient.invalidateQueries(['adminAgentInvitationsPendingList']);
     },
-    onError: (err) => toast.error('Resend failed')
+    onError: (err) => toast.error(err.response?.data?.message || 'Resend failed')
   });
 
   const revokeInviteMutation = useMutation({
-    mutationFn: (id) => api.delete(`/admin/invites/${id}`),
+    mutationFn: (id) => api.delete(`/admin/agents/invitations/${id}`),
     onSuccess: () => {
-      toast.success('Invitation revoked');
-      queryClient.invalidateQueries(['adminInvites']);
+      toast.success('Invitation cancelled');
+      queryClient.invalidateQueries(['adminAgentInvitationsPendingList']);
     },
-    onError: (err) => toast.error('Revocation failed')
+    onError: (err) => toast.error(err.response?.data?.message || 'Cancellation failed')
   });
 
   const updateAgentMutation = useMutation({
@@ -126,7 +158,10 @@ const AdminAgents = () => {
     let list = agents || [];
     
     if (filterType === 'PENDING') {
-      return (invites || []).filter(i => i.status === 'PENDING' && (i.email.toLowerCase().includes(s) || (i.name || '').toLowerCase().includes(s)));
+      return (newPendingInvites || []).filter(i => 
+        i.email.toLowerCase().includes(s) || 
+        (i.name || '').toLowerCase().includes(s)
+      );
     }
 
     return list.filter(a => {
@@ -138,7 +173,7 @@ const AdminAgents = () => {
       if (filterType === 'INVITED') return a.agentType === 'INVITED';
       return true;
     });
-  }, [agents, invites, filterType, search]);
+  }, [agents, newPendingInvites, filterType, search]);
 
   const cards = stats?.cards || {};
 
@@ -157,17 +192,7 @@ const AdminAgents = () => {
         </div>
 
         <div className="flex flex-wrap gap-4">
-           <button 
-             onClick={() => {
-               setGeneratedInviteLink('');
-               setFormData({ ...formData, name: '', email: '', role: 'AGENT' });
-               setIsInviteModalOpen(true);
-             }}
-             className="h-14 px-8 bg-[#0F172A] text-white rounded-2xl flex items-center gap-3 text-xs font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-slate-900/10 group"
-           >
-              <Send size={18} className="text-blue-400 group-hover:rotate-12 transition-transform" /> 
-              Dispatch Invite
-           </button>
+           <button onClick={() => navigate('/admin/agents/invite')} className='h-14 px-8 bg-blue-600 text-white rounded-2xl flex items-center gap-3 text-xs font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-blue-500/20 group'><UserPlus size={18} className='text-white group-hover:rotate-12 transition-transform' /> Invite Agents Center</button>
            <button 
              onClick={() => {
                setEditAgentId(null);
@@ -218,15 +243,20 @@ const AdminAgents = () => {
          </div>
          
          <div className="flex gap-2 p-2 bg-slate-100 rounded-2xl w-full lg:w-auto">
-            {['ALL', 'MANUAL', 'INVITED', 'PENDING'].map(t => (
+            {[
+              { id: 'ALL', label: 'All' },
+              { id: 'MANUAL', label: 'Manual' },
+              { id: 'INVITED', label: 'Invited' },
+              { id: 'PENDING', label: `Pending Invites (${newPendingInvites?.length || 0})` }
+            ].map(t => (
                <button 
-                 key={t}
-                 onClick={() => setFilterType(t)}
+                 key={t.id}
+                 onClick={() => setFilterType(t.id)}
                  className={`px-6 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex-1 lg:flex-none ${
-                   filterType === t ? 'bg-white text-blue-600 shadow-md scale-105' : 'text-slate-500 hover:text-slate-900'
+                   filterType === t.id ? 'bg-white text-blue-600 shadow-md scale-105' : 'text-slate-500 hover:text-slate-900'
                  }`}
                >
-                  {t}
+                  {t.label}
                </button>
             ))}
          </div>
@@ -278,83 +308,128 @@ const AdminAgents = () => {
                           </div>
                        </td>
                        <td className="px-8 py-7">
-                          <div className="flex items-center gap-3">
-                             <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
-                                <Briefcase size={16} />
-                             </div>
-                             <div>
-                                <span className="text-sm font-black text-slate-700 uppercase tracking-tight">{item.role}</span>
-                                <p className="text-[10px] text-slate-400 font-bold">{item.team?.teamName || 'Global Pool'}</p>
-                             </div>
-                          </div>
-                       </td>
-                       <td className="px-8 py-7">
-                          {filterType === 'PENDING' ? (
+                           <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${item.team ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-400'}`}>
+                                 <Briefcase size={16} />
+                              </div>
+                              <div>
+                                 <span className="text-sm font-black text-slate-700 uppercase tracking-tight">{item.role || 'AGENT'}</span>
+                                 {(item.teamName || item.team) ? (
+                                    <div>
+                                       <p className="text-[10px] text-indigo-600 font-black uppercase tracking-wider">{item.teamName || item.team?.teamName}</p>
+                                       {item.team.manager?.name && (
+                                          <p className="text-[9px] text-slate-400 font-bold mt-0.5">Mgr: {item.team.manager.name}</p>
+                                       )}
+                                    </div>
+                                 ) : (
+                                    <p className="text-[10px] text-slate-400 font-bold">Global Pool</p>
+                                 )}
+                              </div>
+                           </div>
+                        </td>
+                        <td className="px-8 py-7">
+                           {filterType === 'PENDING' ? (
+                              <div className="flex flex-col gap-1 text-amber-500 font-black">
+                                 <div className="flex items-center gap-2">
+                                    <History size={16} className="animate-pulse" />
+                                    <span className="text-[10px] uppercase tracking-[0.1em]">Awaiting Onboarding</span>
+                                 </div>
+                                 <span className="text-[9px] text-slate-400 font-bold ml-6">
+                                    Invited {Math.max(0, Math.round((new Date() - new Date(item.createdAt)) / (1000 * 60 * 60)))}h ago
+                                 </span>
+                              </div>
+                           ) : item.agentType === 'INVITED' && item.inviteStatus === 'PENDING' ? (
                              <div className="flex items-center gap-2 text-amber-500 font-black">
-                                <History size={16} className="animate-pulse" />
-                                <span className="text-[10px] uppercase tracking-[0.1em]">Awaiting Uplink</span>
+                                <History size={16} />
+                                <span className="text-[10px] uppercase tracking-[0.1em]">Payload Pending</span>
                              </div>
-                          ) : item.agentType === 'INVITED' && item.inviteStatus === 'PENDING' ? (
-                            <div className="flex items-center gap-2 text-amber-500 font-black">
-                               <History size={16} />
-                               <span className="text-[10px] uppercase tracking-[0.1em]">Payload Pending</span>
-                            </div>
-                          ) : item.isActive ? (
-                            <div className="flex items-center gap-2 text-emerald-500 font-black">
-                               <ShieldCheck size={16} />
-                               <span className="text-[10px] uppercase tracking-[0.1em]">Verified Active</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2 text-slate-300 font-black">
-                               <Ban size={16} />
-                               <span className="text-[10px] uppercase tracking-[0.1em]">Access Denied</span>
-                            </div>
-                          )}
-                       </td>
-                       <td className="px-8 py-7">
-                          <div className="flex items-center justify-end">
-                             <TableActionMenu
-                                id={item.id}
-                                activeId={activeMenuId}
-                                setActiveId={setActiveMenuId}
-                             >
-                                {filterType === 'PENDING' ? (
-                                   <>
-                                      <TableActionItem 
-                                         icon={<RotateCcw size={16} />} 
-                                         label="Resend Invite" 
-                                         color="blue"
-                                         onClick={() => resendInviteMutation.mutate(item.id)} 
-                                      />
-                                      <TableActionItem 
-                                         icon={<Ban size={16} />} 
-                                         label="Revoke Invite" 
-                                         color="rose"
-                                         onClick={() => {
-                                            if (confirm('Revoke this invitation protocol?')) {
-                                               revokeInviteMutation.mutate(item.id);
-                                            }
-                                         }} 
-                                      />
-                                   </>
-                                ) : (
-                                   <>
-                                      <TableActionItem 
-                                         icon={<Edit3 size={16} />} 
-                                         label="Edit Profile" 
-                                         color="blue"
-                                         onClick={() => handleEdit(item)} 
-                                      />
-                                      <TableActionItem 
-                                         icon={item.isActive ? <Ban size={16} /> : <UserCheck size={16} />} 
-                                         label={item.isActive ? "Deactivate" : "Activate"} 
-                                         color="amber"
-                                         onClick={() => {
-                                            updateAgentMutation.mutate({ id: item.id, data: { isActive: !item.isActive } });
-                                         }} 
-                                      />
-                                   </>
-                                )}
+                           ) : item.isActive ? (
+                             <div className="flex items-center gap-2 text-emerald-500 font-black">
+                                <ShieldCheck size={16} />
+                                <span className="text-[10px] uppercase tracking-[0.1em]">Verified Active</span>
+                             </div>
+                           ) : (
+                             <div className="flex items-center gap-2 text-slate-300 font-black">
+                                <Ban size={16} />
+                                <span className="text-[10px] uppercase tracking-[0.1em]">Access Denied</span>
+                             </div>
+                           )}
+                        </td>
+                        <td className="px-8 py-7">
+                           <div className="flex items-center justify-end">
+                              <TableActionMenu
+                                 id={item.id}
+                                 activeId={activeMenuId}
+                                 setActiveId={setActiveMenuId}
+                              >
+                                 {filterType === 'PENDING' ? (
+                                     <>
+                                        <TableActionItem 
+                                           icon={<Copy size={16} />} 
+                                           label="Copy Link" 
+                                           color="blue"
+                                           onClick={() => {
+                                              navigator.clipboard.writeText(item.inviteUrl);
+                                              toast.success('Invitation link copied');
+                                           }} 
+                                        />
+                                        <TableActionItem 
+                                           icon={<RotateCcw size={16} />} 
+                                           label="Resend Invite" 
+                                           color="blue"
+                                           onClick={() => resendInviteMutation.mutate(item.id)} 
+                                        />
+                                        <TableActionItem 
+                                           icon={<Ban size={16} />} 
+                                           label="Revoke Invite" 
+                                           color="rose"
+                                           onClick={() => {
+                                              if (confirm('Revoke this invitation protocol?')) {
+                                                 revokeInviteMutation.mutate(item.id);
+                                              }
+                                           }} 
+                                        />
+                                     </>
+                                  ) : (
+                                    <>
+                                       <TableActionItem 
+                                          icon={<Edit3 size={16} />} 
+                                          label="Edit Profile" 
+                                          color="blue"
+                                          onClick={() => handleEdit(item)} 
+                                       />
+                                       <TableActionItem 
+                                          icon={<Users size={16} />} 
+                                          label="Assign to Team" 
+                                          color="blue"
+                                          onClick={() => {
+                                             setSelectedAgentForTeam(item);
+                                             setAssignTeamId(item.teamId || '');
+                                             setAssignModalOpen(true);
+                                          }} 
+                                       />
+                                       {item.teamId && (
+                                          <TableActionItem 
+                                             icon={<UserX size={16} />} 
+                                             label="Remove from Team" 
+                                             color="rose"
+                                             onClick={() => {
+                                                if (confirm(`Remove ${item.name} from their team?`)) {
+                                                   assignTeamMutation.mutate({ id: item.id, team_id: null });
+                                                }
+                                             }} 
+                                          />
+                                       )}
+                                       <TableActionItem 
+                                          icon={item.isActive ? <Ban size={16} /> : <UserCheck size={16} />} 
+                                          label={item.isActive ? "Deactivate" : "Activate"} 
+                                          color="amber"
+                                          onClick={() => {
+                                             updateAgentMutation.mutate({ id: item.id, data: { isActive: !item.isActive } });
+                                          }} 
+                                       />
+                                    </>
+                                 )}
                              </TableActionMenu>
                           </div>
                        </td>
@@ -552,6 +627,50 @@ const AdminAgents = () => {
                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-18 rounded-3xl bg-slate-50 text-slate-400 font-black uppercase tracking-widest text-[11px] hover:bg-slate-100 transition-all">Cancel</button>
                        <button type="submit" className="flex-[2] h-18 rounded-3xl bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all">
                           {editAgentId ? 'Commit Changes' : 'Execute Provisioning'}
+                       </button>
+                    </div>
+                 </form>
+              </motion.div>
+           </div>
+         )}
+      </AnimatePresence>
+
+      {/* ASSIGN TO TEAM MODAL */}
+      <AnimatePresence>
+         {assignModalOpen && (
+           <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#020617]/80 backdrop-blur-xl" onClick={() => setAssignModalOpen(false)}/>
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 40 }} className="relative w-full max-w-md bg-white rounded-[48px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden p-12">
+                 <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase mb-2">Assign Team</h2>
+                 <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-8">Route <span className="text-blue-600">{selectedAgentForTeam?.name}</span> to an operational team.</p>
+
+                 <form onSubmit={(e) => {
+                    e.preventDefault();
+                    assignTeamMutation.mutate({
+                       id: selectedAgentForTeam.id,
+                       team_id: assignTeamId ? parseInt(assignTeamId) : null
+                    });
+                 }} className="space-y-8">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Select Target Team</label>
+                       <select 
+                          required
+                          className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_1.5rem_center] bg-no-repeat"
+                          value={assignTeamId} onChange={e => setAssignTeamId(e.target.value)}
+                       >
+                          <option value="">Select Team...</option>
+                          {teams?.map(t => <option key={t.id} value={t.id}>{t.teamName}</option>)}
+                       </select>
+                    </div>
+
+                    <div className="flex gap-4 pt-4">
+                       <button type="button" onClick={() => setAssignModalOpen(false)} className="flex-1 h-16 rounded-3xl bg-slate-50 text-slate-400 font-black uppercase tracking-widest text-[11px] hover:bg-slate-100 transition-all">Cancel</button>
+                       <button 
+                         type="submit" 
+                         disabled={assignTeamMutation.isPending}
+                         className="flex-[2] h-16 rounded-3xl bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                       >
+                          {assignTeamMutation.isPending ? 'Assigning...' : 'Assign Team'}
                        </button>
                     </div>
                  </form>

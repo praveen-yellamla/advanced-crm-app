@@ -257,6 +257,42 @@ const handleStatusWebhook = async (req, res) => {
       }
     });
 
+    // Fetch the updated Call with relation context for real-time dispatching
+    const callRecord = await prisma.call.findFirst({
+      where: { OR: [{ sid: CallSid }, { phone: To }] },
+      include: { 
+        agent: { select: { name: true, teamId: true } }, 
+        lead: { select: { customerName: true } } 
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (callRecord) {
+      const { triggerRealtimeEvent, logActivity } = require('../utils/realtimeHelper');
+
+      if (dbStatus === 'Connected') {
+        triggerRealtimeEvent(`org_${callRecord.organizationId}`, 'call:started', callRecord);
+        if (callRecord.agent?.teamId) {
+          triggerRealtimeEvent(`team_${callRecord.agent.teamId}`, 'call:started', callRecord);
+        }
+      } else if (dbStatus === 'Completed') {
+        triggerRealtimeEvent(`org_${callRecord.organizationId}`, 'call:ended', callRecord);
+        if (callRecord.agent?.teamId) {
+          triggerRealtimeEvent(`team_${callRecord.agent.teamId}`, 'call:ended', callRecord);
+        }
+
+        await logActivity({
+          actorId: callRecord.agentId,
+          actorRole: 'AGENT',
+          action: 'call.completed',
+          entityType: 'CALL',
+          entityId: callRecord.id,
+          newValue: { duration: callRecord.duration, phone: callRecord.phone },
+          teamId: callRecord.agent?.teamId || null
+        });
+      }
+    }
+
     // 4. Handle Missed Calls
     if (['no-answer', 'failed', 'busy'].includes(CallStatus.toLowerCase())) {
       console.log(`TELEPHONY: Call failed/missed. Creating follow-up task.`);

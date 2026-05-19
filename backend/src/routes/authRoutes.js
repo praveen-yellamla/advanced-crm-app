@@ -19,6 +19,10 @@ const {
 } = require('../validators/authValidator');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/upload');
+const {
+  validateInvitationToken,
+  completeAgentRegistration
+} = require('../controllers/agentInvitationController');
 
 const router = express.Router();
 
@@ -30,6 +34,8 @@ router.post('/login', loginValidationRules(), validate, login);
 router.post('/refresh', refresh);
 router.get('/invite/:token', verifyInvite);
 router.post('/accept-invite', upload.single('image'), acceptInvite);
+router.get('/invite/validate', validateInvitationToken);
+router.post('/invite/register', completeAgentRegistration);
 
 /**
  * Private Routes

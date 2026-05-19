@@ -33,6 +33,40 @@ const createInvoice = async (req, res) => {
       include: { items: true }
     });
 
+    const { sendNotification, triggerRealtimeEvent, logActivity } = require('../utils/realtimeHelper');
+
+    // Notify Manager of team if available
+    const manager = await prisma.user.findFirst({
+      where: { role: 'MANAGER', teamId: req.user.teamId, organizationId: req.user.organizationId }
+    });
+
+    if (manager) {
+      await sendNotification({
+        organizationId: req.user.organizationId,
+        userId: manager.id,
+        title: 'New Invoice Raised',
+        message: `Agent ${req.user.name} has raised invoice ${invoice.invoiceNo} for $${invoice.amount}.`,
+        type: 'INFO',
+        priority: 'MEDIUM',
+        metadata: { invoiceId: invoice.id }
+      });
+    }
+
+    triggerRealtimeEvent(`org_${req.user.organizationId}`, 'invoice:created', invoice);
+    if (req.user.teamId) {
+      triggerRealtimeEvent(`team_${req.user.teamId}`, 'invoice:created', invoice);
+    }
+
+    await logActivity({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'invoice.created',
+      entityType: 'INVOICE',
+      entityId: invoice.id,
+      newValue: { invoiceNo: invoice.invoiceNo, amount: invoice.amount },
+      teamId: req.user.teamId
+    });
+
     res.json({ success: true, data: invoice });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -65,6 +99,13 @@ const updateInvoiceStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
   try {
+    const existing = await prisma.invoice.findFirst({
+      where: { id: parseInt(id), organizationId: req.user.organizationId },
+      include: { raisedBy: true }
+    });
+
+    if (!existing) return res.status(404).json({ success: false, message: "Invoice not found" });
+
     const invoice = await prisma.invoice.update({
       where: { 
         id: parseInt(id),
@@ -72,6 +113,42 @@ const updateInvoiceStatus = async (req, res) => {
       },
       data: { status }
     });
+
+    const { sendNotification, triggerRealtimeEvent, logActivity } = require('../utils/realtimeHelper');
+
+    // Notify Agent
+    await sendNotification({
+      organizationId: req.user.organizationId,
+      userId: invoice.raisedById,
+      title: 'Invoice Status Updated',
+      message: `Your invoice ${invoice.invoiceNo} status is now: ${status}.`,
+      type: status === 'PAID' ? 'SUCCESS' : status === 'ESCALATED' ? 'WARNING' : 'INFO',
+      priority: 'HIGH',
+      metadata: { invoiceId: invoice.id }
+    });
+
+    triggerRealtimeEvent(`user_${invoice.raisedById}`, 'invoice:updated', invoice);
+    triggerRealtimeEvent(`org_${req.user.organizationId}`, 'invoice:updated', invoice);
+    if (req.user.teamId) {
+      triggerRealtimeEvent(`team_${req.user.teamId}`, 'invoice:updated', invoice);
+    }
+
+    if (status === 'ESCALATED') {
+      // Notify Admin
+      triggerRealtimeEvent(`org_${req.user.organizationId}_admins`, 'invoice:escalated', invoice);
+    }
+
+    await logActivity({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: `invoice.${status.toLowerCase()}`,
+      entityType: 'INVOICE',
+      entityId: invoice.id,
+      oldValue: { status: existing.status },
+      newValue: { status },
+      teamId: req.user.teamId
+    });
+
     res.json({ success: true, data: invoice });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

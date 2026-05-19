@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
+import { SocketProvider } from './context/SocketContext';
 import { TelephonyProvider } from './context/TelephonyContext';
 import AppRoutes from './routes/AppRoutes';
 import { Toaster } from 'react-hot-toast';
@@ -23,26 +24,28 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <GlobalErrorBoundary>
         <AuthProvider>
-          <TelephonyProvider>
-            <Router>
-              <AppRoutes />
-              <Toaster 
-                position="top-right"
-                toastOptions={{
-                  duration: 4000,
-                  style: {
-                    background: '#0F172A',
-                    color: '#fff',
-                    borderRadius: '16px',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.1em',
-                  },
-                }}
-              />
-            </Router>
-          </TelephonyProvider>
+          <SocketProvider>
+            <TelephonyProvider>
+              <Router>
+                <AppRoutes />
+                <Toaster 
+                  position="top-right"
+                  toastOptions={{
+                    duration: 4000,
+                    style: {
+                      background: '#0F172A',
+                      color: '#fff',
+                      borderRadius: '16px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                    },
+                  }}
+                />
+              </Router>
+            </TelephonyProvider>
+          </SocketProvider>
         </AuthProvider>
       </GlobalErrorBoundary>
     </QueryClientProvider>

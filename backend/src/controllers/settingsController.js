@@ -50,6 +50,9 @@ const updateSetting = async (req, res) => {
       }
     });
 
+    const { triggerRealtimeEvent } = require('../utils/realtimeHelper');
+    triggerRealtimeEvent(`org_${organizationId}`, 'setting:updated', setting);
+
     res.json({ message: 'Configuration synchronized.', key: setting.key });
   } catch (error) {
     res.status(500).json({ message: error.message });

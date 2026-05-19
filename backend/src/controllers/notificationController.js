@@ -78,7 +78,7 @@ const markAllAsRead = async (req, res) => {
  */
 const createNotification = async ({ organizationId, userId, title, message, type, priority, link, metadata }) => {
   try {
-    return await prisma.notification.create({
+    const notif = await prisma.notification.create({
       data: {
         organizationId,
         userId,
@@ -90,6 +90,23 @@ const createNotification = async ({ organizationId, userId, title, message, type
         metadata
       }
     });
+
+    // Realtime push
+    try {
+      const { notifyUser, getIO } = require('../utils/socketService');
+      if (userId) {
+        notifyUser(userId, 'notification:new', notif);
+      } else if (organizationId) {
+        const io = getIO();
+        if (io) {
+          io.to(`org_${organizationId}`).emit('notification:new', notif);
+        }
+      }
+    } catch (realtimeErr) {
+      console.error('Failed to dispatch realtime notification event:', realtimeErr);
+    }
+
+    return notif;
   } catch (error) {
     console.error('Failed to create notification:', error);
   }

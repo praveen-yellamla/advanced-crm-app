@@ -11,7 +11,8 @@ const {
   updateAgent,
   deleteAgent,
   getAuditLogs,
-  getManagers
+  getManagers,
+  assignAgentTeam
 } = require('../controllers/adminController');
 const { 
   getInvoices, 
@@ -32,6 +33,14 @@ const {
   getIntegrations,
   connectMeta
 } = require('../controllers/integrationController');
+const {
+  inviteSingleAgent,
+  inviteBulkAgents,
+  inviteCsvAgents,
+  getInvitations,
+  resendInvitation,
+  cancelInvitation
+} = require('../controllers/agentInvitationController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // All routes here are protected and require ADMIN role
@@ -57,6 +66,15 @@ router.route('/agents')
 router.route('/agents/:id')
   .put(upload.single('image'), updateAgent)
   .delete(deleteAgent);
+
+router.patch('/agents/:id/assign-team', assignAgentTeam);
+
+router.post('/agents/invite-single', inviteSingleAgent);
+router.post('/agents/invite-bulk', inviteBulkAgents);
+router.post('/agents/invite-csv', upload.single('file'), inviteCsvAgents);
+router.get('/agents/invitations', getInvitations);
+router.post('/agents/invitations/:invitationId/resend', resendInvitation);
+router.delete('/agents/invitations/:invitationId', cancelInvitation);
 
 router.get('/audit', getAuditLogs);
 router.get('/audit-logs', getAuditLogs);

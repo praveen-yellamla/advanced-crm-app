@@ -71,7 +71,10 @@ model Organization {
   callQAs   CallQA[]
   feedbacks Feedback[]
   invites   Invite[]
+  agentInvitations AgentInvitation[] @relation("OrgAgentInvitations")
   notifications Notification[]
+  callAnnotations CallAnnotation[]
+  qaScores        QAScore[]
   
   // Security & Compliance
   twoFactorEnabled Boolean @default(false) @map("two_factor_enabled")
@@ -325,6 +328,7 @@ model User {
   chatMessages  ChatMessage[]
   emailAccounts EmailAccount[]
   notifications Notification[]
+  sentAgentInvitations AgentInvitation[] @relation("UserAgentInvitations")
 
   failedLoginAttempts Int @default(0) @map("failed_login_attempts")
   lockedUntil       DateTime? @map("locked_until")
@@ -401,6 +405,13 @@ model Team {
   managerId Int  @map("manager_id")
   manager   User @relation("TeamManager", fields: [managerId], references: [id])
   agents    User[] @relation("TeamAgents")
+  agentInvitations AgentInvitation[] @relation("TeamAgentInvitations")
+
+  monthlyLeadTarget    Int?     @default(0) @map("monthly_lead_target")
+  monthlyLeadsTarget   Int?     @default(0) @map("monthly_leads_target")
+  monthlySalesTarget   Int?     @default(0) @map("monthly_sales_target")
+  conversionTarget     Float?   @default(0) @map("conversion_target")
+  revenueGoal          Float?   @default(0) @map("revenue_goal")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -497,6 +508,8 @@ model Call {
   agent           User       @relation(fields: [agentId], references: [id])
   lead            Lead?      @relation(fields: [leadId], references: [id])
   qa              CallQA?
+  annotations     CallAnnotation[]
+  qaScore         QAScore?
 
   @@map("calls")
 }
@@ -647,17 +660,54 @@ model CallQA {
 }
 
 model Feedback {
-  id        Int   @id @default(autoincrement())
-  organizationId Int @map("organization_id")
+  id             Int          @id @default(autoincrement())
+  organizationId Int          @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id])
-  agentId   Int   @map("agent_id")
-  agent     User  @relation("AgentFeedback", fields: [agentId], references: [id])
-  managerId Int   @map("manager_id")
-  manager   User  @relation("ManagerFeedback", fields: [managerId], references: [id])
-  content     String
-  createdAt DateTime @default(now()) @map("created_at")
+  agentId        Int          @map("agent_id")
+  agent          User         @relation("AgentFeedback", fields: [agentId], references: [id])
+  managerId      Int          @map("manager_id")
+  manager        User         @relation("ManagerFeedback", fields: [managerId], references: [id])
+  content        String       @db.Text
+  type           String       @default("COACHING") // COACHING, PRAISE, CORRECTION, ESCALATION
+  callId         Int?         @map("call_id")
+  acknowledgedAt DateTime?    @map("acknowledged_at")
+  response       String?      @db.Text
+  createdAt      DateTime     @default(now()) @map("created_at")
 
   @@map("feedbacks")
+}
+
+model CallAnnotation {
+  id             Int          @id @default(autoincrement())
+  organizationId Int          @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  callId         Int          @map("call_id")
+  call           Call         @relation(fields: [callId], references: [id], onDelete: Cascade)
+  managerId      Int          @map("manager_id")
+  timestamp      Float        // seconds
+  note           String       @db.Text
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@map("call_annotations")
+}
+
+model QAScore {
+  id             Int          @id @default(autoincrement())
+  organizationId Int          @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  callId         Int          @unique @map("call_id")
+  call           Call         @relation(fields: [callId], references: [id], onDelete: Cascade)
+  managerId      Int          @map("manager_id")
+  greeting       Int          @default(0)
+  discovery      Int          @default(0)
+  pitch          Int          @default(0)
+  objection      Int          @default(0)
+  closing        Int          @default(0)
+  total          Int          @default(0)
+  notes          String?      @db.Text
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@map("qa_scores")
 }
 
 model Invite {
@@ -702,4 +752,40 @@ enum InviteStatus {
   JOINED
   EXPIRED
   REVOKED
+}
+
+model ActivityLog {
+  id         Int      @id @default(autoincrement())
+  actorId    Int?     @map("actor_id")
+  actorRole  String?  @map("actor_role")
+  action     String
+  entityType String?  @map("entity_type")
+  entityId   Int?     @map("entity_id")
+  oldValue   Json?    @map("old_value")
+  newValue   Json?    @map("new_value")
+  teamId     Int?     @map("team_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("activity_logs")
+}
+
+model AgentInvitation {
+  id              String    @id @default(uuid())
+  email           String
+  name            String?   
+  phone           String?   
+  teamId          Int       @map("team_id")
+  organizationId  Int       @map("organization_id")
+  invitedById     Int       @map("invited_by_id")
+  token           String    @unique  
+  status          String    @default("pending") // pending | accepted | expired | cancelled
+  expiresAt       DateTime  @map("expires_at")
+  acceptedAt      DateTime? @map("accepted_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  
+  team            Team      @relation("TeamAgentInvitations", fields: [teamId], references: [id])
+  invitedBy       User      @relation("UserAgentInvitations", fields: [invitedById], references: [id])
+  organization    Organization @relation("OrgAgentInvitations", fields: [organizationId], references: [id])
+
+  @@map("agent_invitations")
 }

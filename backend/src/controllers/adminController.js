@@ -134,32 +134,78 @@ const getTeams = async (req, res) => {
 
 const createTeam = async (req, res) => {
   try {
-    const { teamName, managerId, monthlyLeadsTarget, monthlySalesTarget, conversionTarget, revenueGoal } = req.body;
+    const { teamName, managerId, monthlyLeadsTarget, monthlyLeadTarget, monthlySalesTarget, conversionTarget, revenueGoal } = req.body;
     
-    // Mission-Critical: Verify Manager Ownership
-    const managerVerify = await prisma.user.findFirst({
-      where: { 
-        id: parseInt(managerId), 
-        organizationId: req.user.organizationId,
-        role: 'MANAGER'
-      }
+    // Parse Manager ID
+    const parsedManagerId = parseInt(managerId);
+    if (isNaN(parsedManagerId)) {
+      return res.status(400).json({ success: false, message: 'Invalid Manager ID' });
+    }
+
+    // Verify Manager exists
+    const managerVerify = await prisma.user.findUnique({
+      where: { id: parsedManagerId }
     });
 
     if (!managerVerify) {
-      return res.status(403).json({ success: false, message: 'IDENT_CROSS_TENANT_VIOLATION: Manager does not belong to this instance' });
+      return res.status(404).json({ success: false, message: 'Manager not found' });
     }
+
+    // Enforce Tenant Isolation (Cross-Tenant Validation)
+    const adminOrgId = req.user.organizationId;
+    if (managerVerify.organizationId !== adminOrgId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'IDENT_CROSS_TENANT_VIOLATION: Manager does not belong to this organization' 
+      });
+    }
+
+    // Validate role is manager
+    if (managerVerify.role !== 'MANAGER' && managerVerify.role !== 'manager') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Selected user is not a manager' 
+      });
+    }
+
+    // Standardize leads target fields
+    const parsedLeadsTarget = parseInt(monthlyLeadTarget !== undefined ? monthlyLeadTarget : monthlyLeadsTarget) || 0;
 
     const team = await prisma.team.create({
       data: {
         teamName,
         organizationId: req.user.organizationId,
         managerId: managerVerify.id,
-        monthlyLeadsTarget: parseInt(monthlyLeadsTarget) || 0,
+        monthlyLeadTarget: parsedLeadsTarget,
+        monthlyLeadsTarget: parsedLeadsTarget,
         monthlySalesTarget: parseInt(monthlySalesTarget) || 0,
         conversionTarget: parseFloat(conversionTarget) || 0,
         revenueGoal: parseFloat(revenueGoal) || 0,
       }
     });
+
+    const { logActivity, sendNotification, triggerRealtimeEvent } = require('../utils/realtimeHelper');
+
+    await logActivity({
+      actorId: req.user.id,
+      actorRole: 'ADMIN',
+      action: 'team.created',
+      entityType: 'TEAM',
+      entityId: team.id,
+      newValue: team,
+      teamId: team.id
+    });
+
+    await sendNotification({
+      organizationId: req.user.organizationId,
+      userId: managerVerify.id,
+      title: 'New Managed Team Assigned',
+      message: `You have been assigned as the Manager of the team: ${teamName}.`,
+      type: 'SUCCESS',
+      priority: 'HIGH'
+    });
+
+    triggerRealtimeEvent(`user_${managerVerify.id}`, 'team:updated', team);
 
     await createAuditLog(req.user.id, 'CREATE', 'TEAM', null, team);
     res.json({ success: true, data: team });
@@ -172,10 +218,11 @@ const updateTeam = async (req, res) => {
   try {
     console.log('Update Team Request Body:', req.body);
     const { id } = req.params;
+    const teamId = parseInt(id);
     
     const oldTeam = await prisma.team.findUnique({ 
       where: { 
-        id: parseInt(id),
+        id: teamId,
         organizationId: req.user.organizationId
       } 
     });
@@ -207,7 +254,7 @@ const updateTeam = async (req, res) => {
       delete updateData.managerId;
     }
     
-    const numericFields = ['monthlyLeadsTarget', 'monthlySalesTarget', 'conversionTarget', 'revenueGoal'];
+    const numericFields = ['monthlyLeadsTarget', 'monthlyLeadTarget', 'monthlySalesTarget', 'conversionTarget', 'revenueGoal'];
     for (const field of numericFields) {
       if (updateData[field] !== undefined && updateData[field] !== null && updateData[field] !== '') {
         const val = Number(updateData[field]);
@@ -220,13 +267,69 @@ const updateTeam = async (req, res) => {
       }
     }
 
+    // Synchronize both lead target variants if either is provided
+    if (updateData.monthlyLeadTarget !== undefined) {
+      updateData.monthlyLeadsTarget = updateData.monthlyLeadTarget;
+    } else if (updateData.monthlyLeadsTarget !== undefined) {
+      updateData.monthlyLeadTarget = updateData.monthlyLeadsTarget;
+    }
+
     const team = await prisma.team.update({
       where: { 
-        id: parseInt(id),
+        id: teamId,
         organizationId: req.user.organizationId // ENFORCE OWNERSHIP
       },
       data: updateData
     });
+
+    const { logActivity, sendNotification, triggerRealtimeEvent } = require('../utils/realtimeHelper');
+
+    await logActivity({
+      actorId: req.user.id,
+      actorRole: 'ADMIN',
+      action: 'team.updated',
+      entityType: 'TEAM',
+      entityId: team.id,
+      oldValue: oldTeam,
+      newValue: team,
+      teamId: team.id
+    });
+
+    // Notify new and old managers if reassigned
+    if (updateData.managerId && oldTeam.managerId !== team.managerId) {
+      await sendNotification({
+        organizationId: req.user.organizationId,
+        userId: oldTeam.managerId,
+        title: 'Team Access Terminated',
+        message: `You are no longer managing team ${team.teamName}.`,
+        type: 'WARNING',
+        priority: 'HIGH'
+      });
+      triggerRealtimeEvent(`user_${oldTeam.managerId}`, 'team:updated', { teamId: team.id, removed: true });
+
+      await sendNotification({
+        organizationId: req.user.organizationId,
+        userId: team.managerId,
+        title: 'New Managed Team Assigned',
+        message: `You have been assigned as the Manager of the team: ${team.teamName}.`,
+        type: 'SUCCESS',
+        priority: 'HIGH'
+      });
+      triggerRealtimeEvent(`user_${team.managerId}`, 'team:updated', team);
+    } else {
+      // Just targets/name updated
+      triggerRealtimeEvent(`user_${team.managerId}`, 'team:updated', team);
+    }
+
+    // Agent's personal analytics shows updated daily call target
+    if (updateData.monthlyLeadsTarget || updateData.monthlySalesTarget) {
+      const computedDailyTarget = Math.round((team.monthlyLeadsTarget || 100) / 20);
+      await prisma.user.updateMany({
+        where: { teamId: team.id },
+        data: { dailyCallsTarget: computedDailyTarget }
+      });
+      triggerRealtimeEvent(`team_${team.id}`, 'team:updated', team);
+    }
 
     await createAuditLog(req.user.id, 'UPDATE', 'TEAM', oldTeam, team);
     res.json({ success: true, data: team });
@@ -247,7 +350,12 @@ const getAgents = async (req, res) => {
         organizationId: req.user.organizationId
       },
       include: {
-        team: { select: { teamName: true } },
+        team: { 
+          select: { 
+            teamName: true,
+            manager: { select: { name: true } }
+          } 
+        },
         _count: { select: { assignedLeads: true, calls: true } }
       }
     });
@@ -270,11 +378,12 @@ const createAgent = async (req, res) => {
     }
 
     // Verify Team Ownership if provided
+    let team = null;
     if (teamId) {
-      const teamVerify = await prisma.team.findFirst({
+      team = await prisma.team.findFirst({
         where: { id: parseInt(teamId), organizationId: req.user.organizationId }
       });
-      if (!teamVerify) return res.status(403).json({ success: false, message: 'IDENT_CROSS_TENANT_VIOLATION' });
+      if (!team) return res.status(403).json({ success: false, message: 'IDENT_CROSS_TENANT_VIOLATION' });
     }
 
     const imageUrl = await uploadToCloudinary(req.file.buffer);
@@ -299,6 +408,41 @@ const createAgent = async (req, res) => {
       }
     });
 
+    const { logActivity, sendNotification, triggerRealtimeEvent } = require('../utils/realtimeHelper');
+
+    await logActivity({
+      actorId: req.user.id,
+      actorRole: 'ADMIN',
+      action: 'agent.created',
+      entityType: 'USER',
+      entityId: agent.id,
+      newValue: { id: agent.id, name: agent.name, email: agent.email },
+      teamId: agent.teamId
+    });
+
+    if (team) {
+      // Notify team manager
+      await sendNotification({
+        organizationId: req.user.organizationId,
+        userId: team.managerId,
+        title: 'New Agent Added to Team',
+        message: `${name} has been created and assigned to your team: ${team.teamName}.`,
+        type: 'SUCCESS',
+        priority: 'MEDIUM'
+      });
+      triggerRealtimeEvent(`user_${team.managerId}`, 'agent:assigned', agent);
+
+      triggerRealtimeEvent(`team_${team.id}`, 'agent:added', {
+        agent: {
+          id: agent.id,
+          name: agent.name,
+          email: agent.email,
+          avatar_url: agent.profileImage,
+          is_active: agent.isActive
+        }
+      });
+    }
+
     await createAuditLog(req.user.id, 'CREATE', 'AGENT', null, agent);
     res.json({ success: true, data: agent });
   } catch (error) {
@@ -310,7 +454,8 @@ const updateAgent = async (req, res) => {
   console.log("Incoming update data for agent:", req.params.id, req.body);
   try {
     const { id } = req.params;
-    const oldAgent = await prisma.user.findUnique({ where: { id: parseInt(id) } });
+    const agentId = parseInt(id);
+    const oldAgent = await prisma.user.findUnique({ where: { id: agentId } });
     
     if (!oldAgent) {
       return res.status(404).json({ success: false, message: "Agent not found" });
@@ -320,6 +465,7 @@ const updateAgent = async (req, res) => {
     
     // Handle nested data from FormData if necessary (strings to numbers)
     if (data.teamId) data.teamId = parseInt(data.teamId);
+    if (data.isActive !== undefined) data.isActive = data.isActive === 'true' || data.isActive === true;
     
     if (data.password) {
       const salt = await bcrypt.genSalt(10);
@@ -336,13 +482,87 @@ const updateAgent = async (req, res) => {
 
     const agent = await prisma.user.update({
       where: { 
-        id: parseInt(id),
+        id: agentId,
         organizationId: req.user.organizationId // ENFORCE OWNERSHIP
       },
       data
     });
 
-    console.log("AGENT UPDATED IN DB:", agent.name);
+    const { logActivity, sendNotification, triggerRealtimeEvent } = require('../utils/realtimeHelper');
+
+    await logActivity({
+      actorId: req.user.id,
+      actorRole: 'ADMIN',
+      action: 'agent.updated',
+      entityType: 'USER',
+      entityId: agent.id,
+      oldValue: { id: oldAgent.id, name: oldAgent.name, isActive: oldAgent.isActive },
+      newValue: { id: agent.id, name: agent.name, isActive: agent.isActive },
+      teamId: agent.teamId
+    });
+
+    // Handle Deactivation
+    if (oldAgent.isActive && !agent.isActive) {
+      // 1. Force Logout via Socket
+      triggerRealtimeEvent(`user_${agent.id}`, 'user:deactivated', { userId: agent.id });
+
+      // 2. Unassign Leads
+      await prisma.lead.updateMany({
+        where: { assignedToId: agent.id, organizationId: req.user.organizationId },
+        data: { assignedToId: null }
+      });
+
+      // 3. Notify Team Manager
+      if (agent.teamId) {
+        const teamObj = await prisma.team.findUnique({ where: { id: agent.teamId } });
+        if (teamObj) {
+          await sendNotification({
+            organizationId: req.user.organizationId,
+            userId: teamObj.managerId,
+            title: 'Agent Deactivated',
+            message: `Agent ${agent.name} was deactivated by Admin. Their assigned leads are now unassigned.`,
+            type: 'WARNING',
+            priority: 'HIGH'
+          });
+          triggerRealtimeEvent(`user_${teamObj.managerId}`, 'agent:assigned', { agentId: agent.id, removed: true });
+
+          triggerRealtimeEvent(`team_${agent.teamId}`, 'agent:deactivated', { agent_id: agent.id });
+        }
+      }
+    }
+
+    // Handle Team Reassignment
+    if (data.teamId && oldAgent.teamId !== agent.teamId) {
+      // Notify new team manager
+      const newTeam = await prisma.team.findUnique({ where: { id: agent.teamId } });
+      if (newTeam) {
+        await sendNotification({
+          organizationId: req.user.organizationId,
+          userId: newTeam.managerId,
+          title: 'Agent Assigned to Team',
+          message: `${agent.name} has been transferred to your team: ${newTeam.teamName}.`,
+          type: 'SUCCESS',
+          priority: 'MEDIUM'
+        });
+        triggerRealtimeEvent(`user_${newTeam.managerId}`, 'agent:assigned', agent);
+      }
+
+      // Notify old team manager
+      if (oldAgent.teamId) {
+        const oldTeam = await prisma.team.findUnique({ where: { id: oldAgent.teamId } });
+        if (oldTeam) {
+          await sendNotification({
+            organizationId: req.user.organizationId,
+            userId: oldTeam.managerId,
+            title: 'Agent Transferred Away',
+            message: `${agent.name} has been transferred out of your team.`,
+            type: 'WARNING',
+            priority: 'MEDIUM'
+          });
+          triggerRealtimeEvent(`user_${oldTeam.managerId}`, 'agent:assigned', { agentId: agent.id, removed: true });
+        }
+      }
+    }
 
     await createAuditLog(req.user.id, 'UPDATE', 'AGENT', oldAgent, agent);
     res.json({ 
@@ -359,9 +579,54 @@ const updateAgent = async (req, res) => {
 const deleteAgent = async (req, res) => {
   try {
     const { id } = req.params;
+    const agentId = parseInt(id);
+
+    const oldAgent = await prisma.user.findFirst({
+      where: { id: agentId, organizationId: req.user.organizationId }
+    });
+
+    if (oldAgent) {
+      const { logActivity, sendNotification, triggerRealtimeEvent } = require('../utils/realtimeHelper');
+
+      // 1. Force Logout via Socket
+      triggerRealtimeEvent(`user_${agentId}`, 'user:deactivated', { userId: agentId });
+
+      // 2. Unassign Leads
+      await prisma.lead.updateMany({
+        where: { assignedToId: agentId, organizationId: req.user.organizationId },
+        data: { assignedToId: null }
+      });
+
+      // 3. Notify Team Manager
+      if (oldAgent.teamId) {
+        const teamObj = await prisma.team.findUnique({ where: { id: oldAgent.teamId } });
+        if (teamObj) {
+          await sendNotification({
+            organizationId: req.user.organizationId,
+            userId: teamObj.managerId,
+            title: 'Agent Account Deleted',
+            message: `Agent ${oldAgent.name} was removed from the system. Their assigned leads are now unassigned.`,
+            type: 'ERROR',
+            priority: 'HIGH'
+          });
+          triggerRealtimeEvent(`user_${teamObj.managerId}`, 'agent:assigned', { agentId, removed: true });
+        }
+      }
+
+      await logActivity({
+        actorId: req.user.id,
+        actorRole: 'ADMIN',
+        action: 'agent.deleted',
+        entityType: 'USER',
+        entityId: agentId,
+        oldValue: { id: oldAgent.id, name: oldAgent.name },
+        teamId: oldAgent.teamId
+      });
+    }
+
     await prisma.user.delete({ 
       where: { 
-        id: parseInt(id),
+        id: agentId,
         organizationId: req.user.organizationId // ENFORCE OWNERSHIP
       } 
     });
@@ -420,6 +685,93 @@ const createAuditLog = async (userId, action, module, oldValue, newValue) => {
   }
 };
 
+const assignAgentTeam = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { team_id } = req.body;
+
+    const agentId = parseInt(id);
+    const parsedTeamId = team_id ? parseInt(team_id) : null;
+
+    // Check if agent exists
+    const agent = await prisma.user.findFirst({
+      where: { id: agentId, role: 'AGENT', organizationId: req.user.organizationId }
+    });
+
+    if (!agent) {
+      return res.status(404).json({ success: false, message: 'Agent not found' });
+    }
+
+    // Save previous team information for old manager notification
+    const oldTeamId = agent.teamId;
+
+    // Verify Team Ownership if team_id is provided
+    let team = null;
+    if (parsedTeamId) {
+      team = await prisma.team.findFirst({
+        where: { id: parsedTeamId, organizationId: req.user.organizationId }
+      });
+      if (!team) {
+        return res.status(403).json({ success: false, message: 'Team not found or tenant violation' });
+      }
+    }
+
+    // Update Agent
+    const updatedAgent = await prisma.user.update({
+      where: { id: agentId },
+      data: { teamId: parsedTeamId },
+      include: {
+        team: { 
+          select: { 
+            teamName: true,
+            manager: { select: { name: true } }
+          } 
+        },
+        _count: { select: { assignedLeads: true, calls: true } }
+      }
+    });
+
+    const { triggerRealtimeEvent } = require('../utils/realtimeHelper');
+
+    // Notify old manager if removed or changed
+    if (oldTeamId && oldTeamId !== parsedTeamId) {
+      const oldTeam = await prisma.team.findUnique({
+        where: { id: oldTeamId }
+      });
+      if (oldTeam) {
+        // Emit agent:left_team to old manager
+        triggerRealtimeEvent(`manager_${oldTeam.managerId}`, 'agent:left_team', { agent_id: agentId });
+        triggerRealtimeEvent(`user_${oldTeam.managerId}`, 'agent:left_team', { agent_id: agentId });
+        triggerRealtimeEvent(`team_${oldTeamId}`, 'agent:deactivated', { agent_id: agentId });
+      }
+    }
+
+    // Notify new manager if assigned
+    if (parsedTeamId && team) {
+      const payload = {
+        agent: {
+          id: updatedAgent.id,
+          name: updatedAgent.name,
+          email: updatedAgent.email,
+          avatar_url: updatedAgent.profileImage,
+          is_active: updatedAgent.isActive
+        }
+      };
+
+      triggerRealtimeEvent(`manager_${team.managerId}`, 'agent:joined_team', payload);
+      triggerRealtimeEvent(`user_${team.managerId}`, 'agent:joined_team', payload);
+      
+      // Also emit to the team's room so any live team widgets update
+      triggerRealtimeEvent(`team_${parsedTeamId}`, 'agent:added', payload);
+    }
+
+    res.json({ success: true, data: updatedAgent });
+  } catch (error) {
+    console.error('Assign agent team error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getTeams,
@@ -431,5 +783,6 @@ module.exports = {
   updateAgent,
   deleteAgent,
   getAuditLogs,
-  getManagers
+  getManagers,
+  assignAgentTeam
 };

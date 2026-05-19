@@ -9,8 +9,11 @@ const generateToken = (user) => {
   return jwt.sign(
     { 
       id: user.id, 
+      user_id: user.id,
       email: user.email, 
-      role: user.role 
+      role: user.role,
+      teamId: user.teamId,
+      team_id: user.teamId
     },
     process.env.JWT_SECRET,
     {

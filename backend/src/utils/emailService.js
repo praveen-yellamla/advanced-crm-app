@@ -174,7 +174,155 @@ const sendTaskAssignmentEmail = async (toEmail, taskTitle, priority, dueDate, na
   }
 };
 
+const sendAgentInvitationEmail = async (toEmail, inviteLink, name = "there", adminName, teamName) => {
+  try {
+    console.log(`[SMTP] Sending agent invite to: ${toEmail}`);
+    await transporter.sendMail({
+      from: `"CRM.PRO" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+      to: toEmail,
+      subject: `You're invited to join ${teamName} on CRM.PRO`,
+      text: `Hi ${name},\n\n${adminName} has invited you to join ${teamName} on CRM.PRO.\n\nAccept your invitation & set up your account here: ${inviteLink}\n\nThis invitation expires in 72 hours.\n\nIf you didn't expect this, ignore this email.`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>CRM.PRO Invitation</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 0; }
+            .container { max-width: 550px; margin: 40px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }
+            .logo-header { background-color: #0f172a; padding: 32px; text-align: center; }
+            .logo-text { font-size: 28px; font-weight: 800; color: #ffffff; margin: 0; letter-spacing: -0.5px; }
+            .logo-accent { color: #3b82f6; }
+            .body-content { padding: 40px; }
+            .headline { font-size: 22px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 12px; }
+            .text-content { font-size: 15px; color: #475569; line-height: 1.625; margin-bottom: 24px; }
+            .btn-holder { text-align: center; margin: 36px 0; }
+            .btn-cta { background-color: #3b82f6; color: #ffffff !important; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: 600; font-size: 15px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2); transition: background-color 0.2s; }
+            .btn-cta:hover { background-color: #2563eb; }
+            .meta-info { border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 13px; color: #94a3b8; line-height: 1.5; }
+            .footer-branding { background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px; text-align: center; font-size: 12px; color: #64748b; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="logo-header">
+              <h1 class="logo-text">CRM<span class="logo-accent">.PRO</span></h1>
+            </div>
+            <div class="body-content">
+              <h2 class="headline">Hi ${name || 'there'},</h2>
+              <p class="text-content">
+                <strong>${adminName}</strong> has invited you to join the <strong>${teamName}</strong> team on CRM.PRO.
+              </p>
+              <p class="text-content">
+                To accept this invitation and complete your registration, click the button below:
+              </p>
+              <div class="btn-holder">
+                <a href="${inviteLink}" class="btn-cta">Accept Invitation & Set Up Your Account</a>
+              </div>
+              <p class="text-content" style="font-size: 13px; color: #94a3b8; word-break: break-all;">
+                Or copy and paste this link in your browser: <br>
+                <a href="${inviteLink}" style="color: #3b82f6; text-decoration: none;">${inviteLink}</a>
+              </p>
+              <div class="meta-info">
+                <p style="margin: 0 0 6px 0;">⌛ This invitation link is unique to you and will expire in <strong>72 hours</strong>.</p>
+                <p style="margin: 0;">🔒 If you did not expect this invitation, you can safely ignore this email.</p>
+              </div>
+            </div>
+            <div class="footer-branding">
+              &copy; ${new Date().getFullYear()} CRM.PRO Enterprise Inc. All rights reserved.
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    });
+    console.log(`[SMTP SUCCESS] Invite successfully sent to ${toEmail}`);
+    return true;
+  } catch (error) {
+    console.error("[SMTP CRITICAL FAILURE] sendAgentInvitationEmail Error:", error.message);
+    throw new Error(`SMTP Error: ${error.message}`);
+  }
+};
+
+const sendWelcomeAgentEmail = async (toEmail, name = "there") => {
+  try {
+    console.log(`[SMTP] Sending welcome email to: ${toEmail}`);
+    const loginLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
+    await transporter.sendMail({
+      from: `"CRM.PRO" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+      to: toEmail,
+      subject: `Welcome to CRM.PRO — Your account is ready!`,
+      text: `Hi ${name},\n\nWelcome to CRM.PRO! Your agent workspace is ready.\n\nLogin Email: ${toEmail}\nLogin here: ${loginLink}\n\nQuick Start Tips:\n1. Update your profile and notification preferences.\n2. Access your dedicated Agent dashboard for real-time lead analytics.\n3. Make calls and log client activities on your cockpit.\n\nGood luck!`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Welcome to CRM.PRO</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 0; }
+            .container { max-width: 550px; margin: 40px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }
+            .logo-header { background-color: #0f172a; padding: 32px; text-align: center; }
+            .logo-text { font-size: 28px; font-weight: 800; color: #ffffff; margin: 0; letter-spacing: -0.5px; }
+            .logo-accent { color: #3b82f6; }
+            .body-content { padding: 40px; }
+            .headline { font-size: 22px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 12px; }
+            .text-content { font-size: 15px; color: #475569; line-height: 1.625; margin-bottom: 24px; }
+            .credentials-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 24px; margin: 24px 0; }
+            .credentials-item { font-size: 14px; color: #334155; margin: 4px 0; }
+            .btn-holder { text-align: center; margin: 36px 0; }
+            .btn-cta { background-color: #3b82f6; color: #ffffff !important; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: 600; font-size: 15px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2); transition: background-color 0.2s; }
+            .btn-cta:hover { background-color: #2563eb; }
+            .quickstart-list { padding-left: 20px; color: #475569; font-size: 14px; line-height: 1.7; }
+            .footer-branding { background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px; text-align: center; font-size: 12px; color: #64748b; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="logo-header">
+              <h1 class="logo-text">CRM<span class="logo-accent">.PRO</span></h1>
+            </div>
+            <div class="body-content">
+              <h2 class="headline">Welcome to CRM.PRO, ${name}! 🎉</h2>
+              <p class="text-content">
+                Your account is ready and your workspace is fully set up. You have been assigned to your sales team and are ready to receive leads.
+              </p>
+              <div class="credentials-box">
+                <div class="credentials-item"><strong>Login Email:</strong> ${toEmail}</div>
+                <div class="credentials-item"><strong>Access Role:</strong> Sales Agent</div>
+              </div>
+              <div class="btn-holder">
+                <a href="${loginLink}" class="btn-cta">Access Your CRM Cockpit</a>
+              </div>
+              <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 32px; margin-bottom: 12px;">Quick Start Guide:</h3>
+              <ol class="quickstart-list">
+                <li>Update your profile picture and setup your personal profile.</li>
+                <li>Familiarize yourself with your dedicated CRM cockpit dashboard to track lead interactions in real time.</li>
+                <li>Connect your Twilio softphone client to start making client calls with absolute efficiency.</li>
+              </ol>
+            </div>
+            <div class="footer-branding">
+              &copy; ${new Date().getFullYear()} CRM.PRO Enterprise Inc. All rights reserved.
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    });
+    console.log(`[SMTP SUCCESS] Welcome email successfully sent to ${toEmail}`);
+    return true;
+  } catch (error) {
+    console.error("[SMTP ERROR] Welcome Email Failed:", error.message);
+    return false;
+  }
+};
+
 module.exports = {
   sendInviteEmail,
-  sendTaskAssignmentEmail
+  sendTaskAssignmentEmail,
+  sendAgentInvitationEmail,
+  sendWelcomeAgentEmail
 };
