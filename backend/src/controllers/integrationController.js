@@ -88,8 +88,14 @@ const uploadCSV = async (req, res) => {
 
     // Phase 2: Fetch existing identities & agents for round-robin
     const [existingLeads, agents] = await Promise.all([
-      prisma.lead.findMany({ select: { email: true, phone: true } }),
-      prisma.user.findMany({ where: { role: 'AGENT', isActive: true }, select: { id: true } })
+      prisma.lead.findMany({ 
+        where: { organizationId: req.user.organizationId },
+        select: { email: true, phone: true } 
+      }),
+      prisma.user.findMany({ 
+        where: { role: 'AGENT', isActive: true, organizationId: req.user.organizationId }, 
+        select: { id: true } 
+      })
     ]);
     
     const existingEmails = new Set(existingLeads.map(l => l.email?.toLowerCase().trim()).filter(Boolean));
@@ -146,6 +152,7 @@ const uploadCSV = async (req, res) => {
 
       // 4. NEW LEAD
       newLeads.push({
+        organizationId: req.user.organizationId,
         customerName: name,
         email: email || null,
         phone: phone,

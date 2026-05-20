@@ -19,7 +19,13 @@ const getDashboardStats = async (req, res) => {
       totalRevenue,
       leadsByStatus,
       leadsBySource,
-      organizationInfo
+      organizationInfo,
+      totalTeams,
+      openTasks,
+      agentLeaderboard,
+      recentActivity,
+      revenueTrend,
+      callVolume
     ] = await Promise.all([
       prisma.lead.count({ where: { organizationId: orgId } }),
       prisma.lead.count({ where: { organizationId: orgId, createdAt: { gte: today } } }),
@@ -60,6 +66,41 @@ const getDashboardStats = async (req, res) => {
           lastPlatformAccessBy: true,
           accessApprovalRequired: true 
         }
+      }),
+      prisma.team.count({ where: { organizationId: orgId } }),
+      prisma.task.count({ where: { organizationId: orgId, status: 'PENDING' } }),
+      prisma.user.findMany({
+        where: { organizationId: orgId, role: 'AGENT' },
+        select: {
+          id: true,
+          name: true,
+          profileImage: true,
+          _count: { select: { calls: true } }
+        },
+        orderBy: { calls: { _count: 'desc' } },
+        take: 5
+      }),
+      prisma.auditLog.findMany({
+        where: { organizationId: orgId },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        select: {
+          id: true,
+          action: true,
+          module: true,
+          createdAt: true,
+          user: { select: { name: true } }
+        }
+      }),
+      prisma.invoice.groupBy({
+        by: ['createdAt'],
+        where: { organizationId: orgId, status: 'PAID' },
+        _sum: { amount: true }
+      }),
+      prisma.call.groupBy({
+        by: ['createdAt'],
+        where: { organizationId: orgId },
+        _count: true
       })
     ]);
 
@@ -73,18 +114,24 @@ const getDashboardStats = async (req, res) => {
         cards: {
           totalLeads,
           todayLeads,
-          activeAgents: manualAgents + invitedJoined, // Accurate Joined Count
+          activeAgents: manualAgents + invitedJoined,
           manualAgents,
           invitedTotal,
           invitedJoined,
           invitedPending,
           callsToday,
           revenueMTD: totalRevenue._sum.amount || 0,
-          conversionRate: totalLeads > 0 ? ((leadsByStatus.find(l => l.status === 'WON')?._count || 0) / totalLeads) * 100 : 0
+          conversionRate: totalLeads > 0 ? ((leadsByStatus.find(l => l.status === 'WON')?._count || 0) / totalLeads) * 100 : 0,
+          totalTeams,
+          openTasks
         },
         funnel: leadsByStatus,
         sources: leadsBySource,
-        security: organizationInfo
+        security: organizationInfo,
+        leaderboard: agentLeaderboard,
+        recentActivity,
+        revenueTrend: revenueTrend.map(r => ({ date: r.createdAt.toISOString().split('T')[0], amount: r._sum.amount })),
+        callVolume: callVolume.map(c => ({ date: c.createdAt.toISOString().split('T')[0], count: c._count }))
       }
     });
   } catch (error) {

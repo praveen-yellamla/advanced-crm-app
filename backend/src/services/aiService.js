@@ -59,7 +59,7 @@ class AIService {
       `;
 
       // 2. EXECUTION VIA PROVIDER ABSTRACTION
-      const result = await aiProvider.chat(systemPrompt, message, history);
+      const result = await aiProvider.chat(systemPrompt, message, history, organizationId);
 
       // 3. USAGE TRACKING
       await prisma.aIUsage.create({
@@ -109,7 +109,7 @@ class AIService {
         Return JSON only: { "score": number, "priority": "Low|Medium|High|Urgent", "reasoning": "string", "nextAction": "string" }
       `;
 
-      return await aiProvider.generateJSON(prompt);
+      return await aiProvider.generateJSON(prompt, lead?.organizationId);
     } catch (error) {
       console.error("AI Scoring Error:", error);
       return null;

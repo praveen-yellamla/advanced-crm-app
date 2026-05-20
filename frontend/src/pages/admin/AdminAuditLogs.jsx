@@ -83,7 +83,7 @@ const AdminAuditLogs = () => {
                        <td className="px-10 py-8">
                           <div className="flex items-center gap-4">
                              <Clock size={16} className="text-slate-300" />
-                             <span className="text-sm font-bold text-[#64748B] italic">{new Date(log.createdAt).toLocaleString()}</span>
+                             <span className="text-sm font-bold text-[#64748B] italic">{log.createdAt ? new Date(log.createdAt).toLocaleString() : 'N/A'}</span>
                           </div>
                        </td>
                        <td className="px-10 py-8">
@@ -167,7 +167,7 @@ const AdminAuditLogs = () => {
                       <DetailItem label="Action" value={selectedLog.action} />
                       <DetailItem label="Module" value={selectedLog.module} />
                       <DetailItem label="IP Address" value={selectedLog.ipAddress || '127.0.0.1'} />
-                      <DetailItem label="Timestamp" value={new Date(selectedLog.createdAt).toLocaleString()} />
+                      <DetailItem label="Timestamp" value={selectedLog.createdAt ? new Date(selectedLog.createdAt).toLocaleString() : 'N/A'} />
                    </div>
                    
                    <div className="space-y-4">

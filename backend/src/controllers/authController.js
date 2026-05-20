@@ -133,6 +133,27 @@ const login = async (req, res) => {
       }
     });
 
+    const plan = user.organization?.planId 
+      ? await prisma.plan.findUnique({ where: { id: user.organization.planId } }) 
+      : null;
+
+    const features = {
+      aiAssistant: plan?.aiAssistant ?? false,
+      aiLeadScoring: plan?.aiLeadScoring ?? false,
+      calling: plan?.callingEnabled ?? false,
+      monitoring: plan?.monitoringEnabled ?? false,
+      automation: plan?.automationEnabled ?? false,
+      analytics: plan?.analyticsEnabled ?? false,
+      customBranding: plan?.customBranding ?? false
+    };
+
+    const limits = {
+      agents: user.organization?.agentLimit ?? 0,
+      leads: user.organization?.leadLimit ?? 0,
+      aiTokens: user.organization?.aiTokenLimit ?? 0,
+      storage: user.organization?.storageLimitMb ?? 0
+    };
+
     res.json({
       status: 'success',
       user: {
@@ -142,7 +163,9 @@ const login = async (req, res) => {
         role: user.role,
         organizationId: user.organizationId,
         organizationName: user.organization?.name,
-        organizationSlug: user.organization?.slug
+        organizationSlug: user.organization?.slug,
+        features,
+        limits
       },
       token: accessToken,
       refreshToken: refreshToken, // Return refresh token for frontend persistence

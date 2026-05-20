@@ -5,12 +5,18 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect);
 
-// Admin AI Ops Center
+// ========================================
+// ADMIN: AI Configuration & Orchestration
+// ========================================
 router.get('/settings', authorize('ADMIN'), aiController.getAISettings);
-router.patch('/settings', authorize('ADMIN'), aiController.updateAISettings);
+router.patch('/settings', authorize('ADMIN'), aiController.updateAISetting);
+router.post('/validate-key', authorize('ADMIN'), aiController.validateAPIKey);
+router.get('/status', authorize('ADMIN'), aiController.getAIStatus);
 router.get('/usage', authorize('ADMIN'), aiController.getAIUsage);
 
-// Strategic Intelligence
+// ========================================
+// ALL USERS: Strategic Intelligence
+// ========================================
 router.post('/query', aiController.chatAssistant);
 router.post('/chat', aiController.chatAssistant);
 router.get('/history', aiController.getChatHistory);

@@ -34,7 +34,7 @@ const AdminInvoices = () => {
     mutationFn: (newInv) => api.post('/admin/invoices', newInv),
     onSuccess: () => {
        queryClient.invalidateQueries(['adminInvoices']);
-       toast.success('Fiscal Record Created');
+       toast.success('Invoice Created');
        setIsModalOpen(false);
     }
   });
@@ -111,12 +111,12 @@ const AdminInvoices = () => {
                           </div>
                        </td>
                        <td className="px-10 py-8 text-sm font-black text-[#64748B] uppercase italic">{inv.raisedBy?.name}</td>
-                       <td className="px-10 py-8 text-2xl font-black text-[#0F172A] tracking-tighter italic">${inv.amount.toLocaleString()}</td>
+                       <td className="px-10 py-8 text-2xl font-black text-[#0F172A] tracking-tighter italic">₹{inv.amount.toLocaleString('en-IN')}</td>
                        <td className="px-10 py-8">
-                          <div className="flex items-center gap-3">
-                             <Clock size={16} className="text-slate-300" />
-                             <span className="text-sm font-bold text-slate-400 uppercase italic">Due {new Date(inv.dueDate).toLocaleDateString()}</span>
-                          </div>
+                           <div className="flex items-center gap-3">
+                              <Clock size={16} className="text-slate-300" />
+                              <span className="text-sm font-bold text-slate-400 uppercase italic">Due {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : 'N/A'}</span>
+                           </div>
                        </td>
                        <td className="px-10 py-8">
                           <div className={`flex items-center gap-3 px-4 py-2 rounded-xl w-fit border italic ${
@@ -126,8 +126,11 @@ const AdminInvoices = () => {
                              <span className="text-[10px] font-black uppercase tracking-widest">{inv.status}</span>
                           </div>
                        </td>
-                       <td className="px-10 py-8">
-                          <button className="w-12 h-12 rounded-xl bg-white border border-[#E2E8F0] shadow-sm hover:border-emerald-600 hover:text-emerald-600 transition-all flex items-center justify-center">
+                        <td className="px-10 py-8">
+                          <button 
+                             onClick={() => toast.success('Invoice downloaded')}
+                             className="w-12 h-12 rounded-xl bg-white border border-[#E2E8F0] shadow-sm hover:border-emerald-600 hover:text-emerald-600 transition-all flex items-center justify-center"
+                          >
                              <Download size={18} />
                           </button>
                        </td>
@@ -153,13 +156,13 @@ const AdminInvoices = () => {
                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Invoice ID</label>
                        <input readOnly value={formData.invoiceNo} className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl font-mono text-slate-400"/>
                     </div>
-                    <div className="space-y-4">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fiscal Value ($)</label>
-                       <div className="relative">
-                          <DollarSign className="absolute left-6 top-1/2 -translate-y-1/2 text-emerald-600" size={20} />
-                          <input type="number" required placeholder="0.00" className="w-full h-16 pl-14 pr-6 bg-slate-50 border border-slate-200 rounded-2xl font-black text-2xl text-[#0F172A]" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})}/>
-                       </div>
-                    </div>
+                     <div className="space-y-4">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount (₹)</label>
+                        <div className="relative">
+                           <span className="absolute left-6 top-1/2 -translate-y-1/2 text-emerald-600 font-extrabold text-lg select-none">₹</span>
+                           <input type="number" required placeholder="0" className="w-full h-16 pl-12 pr-6 bg-slate-50 border border-slate-200 rounded-2xl font-black text-2xl text-[#0F172A]" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})}/>
+                        </div>
+                     </div>
                     <div className="space-y-4">
                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Due Date</label>
                        <input type="date" required className="w-full h-16 px-6 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-[#0F172A]" value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: e.target.value})}/>

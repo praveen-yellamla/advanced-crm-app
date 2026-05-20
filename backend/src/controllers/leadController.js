@@ -15,10 +15,22 @@ const getLeads = async (req, res) => {
     if (status) andConditions.push({ status });
     if (source) andConditions.push({ source });
     
-    if (startDate && endDate) {
-      andConditions.push({
-        createdAt: { gte: new Date(startDate), lte: new Date(endDate) }
-      });
+    const parseDate = (val) => {
+      if (!val) return null;
+      const num = Number(val);
+      const d = !isNaN(num) ? new Date(num) : new Date(val);
+      return isNaN(d.getTime()) ? null : d;
+    };
+
+    if (startDate || endDate) {
+      const dateFilter = {};
+      const parsedStart = parseDate(startDate);
+      const parsedEnd = parseDate(endDate);
+      if (parsedStart) dateFilter.gte = parsedStart;
+      if (parsedEnd) dateFilter.lte = parsedEnd;
+      if (Object.keys(dateFilter).length > 0) {
+        andConditions.push({ createdAt: dateFilter });
+      }
     }
 
     if (search) {

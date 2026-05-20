@@ -77,9 +77,8 @@ const testConnection = async (req, res) => {
   try {
     const { type } = req.params;
     // Simulated connection logic
-    setTimeout(() => {
-      res.json({ success: true, message: `${type} gateway verified successfully.` });
-    }, 1500);
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    res.json({ success: true, message: `${type} gateway verified successfully.` });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

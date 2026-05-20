@@ -145,6 +145,7 @@ const DashboardLayout = () => {
     ADMIN: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
       { name: 'Billing', icon: FileText, path: '/admin/billing' },
+      { name: 'Invoices', icon: FileBarChart, path: '/admin/invoices' },
       { name: 'Leads', icon: Target, path: '/admin/leads' },
       { name: 'Pipeline', icon: TrendingUp, path: '/admin/pipeline' },
       { name: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
@@ -152,6 +153,7 @@ const DashboardLayout = () => {
       { name: 'Teams', icon: Layers, path: '/admin/teams' },
       { name: 'Tasks', icon: ClipboardCheck, path: '/admin/tasks' },
       { name: 'Calls', icon: PhoneCall, path: '/admin/calls' },
+      { name: 'Emails', icon: Mail, path: '/admin/emails' },
       { name: 'AI Tools', icon: BrainCircuit, path: '/admin/ai' },
       { name: 'Settings', icon: Settings, path: '/admin/settings' },
     ],

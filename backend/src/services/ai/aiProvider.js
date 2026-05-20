@@ -2,30 +2,29 @@ const gemini = require('./gemini.service');
 
 /**
  * AI PROVIDER FACTORY
- * Locked to Gemini AI for production stability.
+ * Tenant-aware routing to the configured AI provider.
  */
 class AIProvider {
   constructor() {
-    this.providerType = 'gemini'; // Force gemini
+    this.providerType = 'gemini';
   }
 
   getService() {
-    // Only Gemini is supported now
     return gemini;
   }
 
   /**
-   * Universal Chat Method
+   * Universal Chat Method — passes organizationId for tenant-aware key resolution
    */
-  async chat(systemPrompt, userMessage, history = []) {
-    return gemini.chat(systemPrompt, userMessage, history);
+  async chat(systemPrompt, userMessage, history = [], organizationId = null) {
+    return gemini.chat(systemPrompt, userMessage, history, organizationId);
   }
 
   /**
-   * Universal JSON Generation Method
+   * Universal JSON Generation Method — passes organizationId for tenant-aware key resolution
    */
-  async generateJSON(prompt) {
-    return gemini.generateJSON(prompt);
+  async generateJSON(prompt, organizationId = null) {
+    return gemini.generateJSON(prompt, organizationId);
   }
 }
 

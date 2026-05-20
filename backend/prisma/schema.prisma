@@ -339,6 +339,8 @@ model User {
   updatedAt    DateTime @updatedAt @map("updated_at")
   agentType    AgentType?         @default(MANUAL) @map("agent_type")
   inviteStatus AgentInviteStatus? @map("invite_status")
+  onboardingMethod String? @default("direct") @map("onboarding_method")
+  hasLoggedIn  Boolean @default(false) @map("has_logged_in")
 
   @@index([email])
   @@index([organizationId])

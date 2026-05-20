@@ -146,7 +146,10 @@ const AdminTeams = () => {
                value={search} onChange={e => setSearch(e.target.value)}
             />
          </div>
-         <button className="h-12 px-5 bg-white border border-slate-200 rounded-xl flex items-center gap-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all">
+         <button 
+            onClick={() => toast.success('Advanced filters opened')}
+            className="h-12 px-5 bg-white border border-slate-200 rounded-xl flex items-center gap-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all"
+         >
             <Filter size={16} /> Advanced Filters
          </button>
       </div>
@@ -201,7 +204,7 @@ const AdminTeams = () => {
                           <div className="w-48">
                              <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-tight mb-1.5">
                                 <span>Revenue Target</span>
-                                <span className="text-blue-600 font-bold">${(team.revenueGoal ?? 0).toLocaleString()}</span>
+                                <span className="text-blue-600 font-bold">₹{(team.revenueGoal ?? 0).toLocaleString('en-IN')}</span>
                              </div>
                              <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                                 <div className="h-full bg-blue-500 rounded-full w-[0%]" />
@@ -315,7 +318,7 @@ const AdminTeams = () => {
                            )}
                         </div>
                         <div className="space-y-2">
-                           <label className="text-xs font-bold text-slate-700 ml-1">Monthly Revenue Goal ($)</label>
+                           <label className="text-xs font-bold text-slate-700 ml-1">Monthly Revenue Goal (₹)</label>
                            <input 
                               type="number" required placeholder="0.00" min="0" step="0.01"
                               className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 outline-none transition-all font-medium text-slate-900"

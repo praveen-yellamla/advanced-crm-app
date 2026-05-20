@@ -128,6 +128,18 @@ const AdminAgents = () => {
     onError: (err) => toast.error(err.response?.data?.message || 'Cancellation failed')
   });
 
+  const createAgentMutation = useMutation({
+    mutationFn: (data) => api.post('/admin/agents', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['adminAgents']);
+      toast.success('Agent provisioned successfully');
+      setIsModalOpen(false);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Failed to provision agent');
+    }
+  });
+
   const updateAgentMutation = useMutation({
     mutationFn: ({ id, data }) => api.put(`/admin/agents/${id}`, data),
     onSuccess: () => {
@@ -269,7 +281,7 @@ const AdminAgents = () => {
                <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Security Identity</th>
-                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Provision Method</th>
+                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">How They Joined</th>
                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Assignment</th>
                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Account Status</th>
                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Actions</th>
@@ -304,7 +316,7 @@ const AdminAgents = () => {
                             (item.agentType === 'MANUAL' || !item.token) ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-violet-50 text-violet-700 border-violet-100'
                           }`}>
                              {(item.agentType === 'MANUAL' || !item.token) ? <Fingerprint size={14} /> : <ExternalLink size={14} />}
-                             {(item.agentType === 'MANUAL' || !item.token) ? 'Native Provision' : 'Invite Payload'}
+                             {(item.agentType === 'MANUAL' || !item.token) ? 'Added Directly' : 'Email Invite'}
                           </div>
                        </td>
                        <td className="px-8 py-7">
@@ -316,13 +328,11 @@ const AdminAgents = () => {
                                  <span className="text-sm font-black text-slate-700 uppercase tracking-tight">{item.role || 'AGENT'}</span>
                                  {(item.teamName || item.team) ? (
                                     <div>
-                                       <p className="text-[10px] text-indigo-600 font-black uppercase tracking-wider">{item.teamName || item.team?.teamName}</p>
-                                       {item.team.manager?.name && (
-                                          <p className="text-[9px] text-slate-400 font-bold mt-0.5">Mgr: {item.team.manager.name}</p>
-                                       )}
+                                       <p className="text-[10px] text-indigo-600 font-black uppercase tracking-wider">{item.teamName || item.team?.teamName || item.team?.name || "Not Assigned to Team"}</p>
+                                       <p className="text-[9px] text-slate-400 font-bold mt-0.5">Mgr: {item.team?.manager?.name || "No Manager"}</p>
                                     </div>
                                  ) : (
-                                    <p className="text-[10px] text-slate-400 font-bold">Global Pool</p>
+                                    <p className="text-[10px] text-slate-400 font-bold">Not Assigned to Team</p>
                                  )}
                               </div>
                            </div>
@@ -341,12 +351,12 @@ const AdminAgents = () => {
                            ) : item.agentType === 'INVITED' && item.inviteStatus === 'PENDING' ? (
                              <div className="flex items-center gap-2 text-amber-500 font-black">
                                 <History size={16} />
-                                <span className="text-[10px] uppercase tracking-[0.1em]">Payload Pending</span>
+                                <span className="text-[10px] uppercase tracking-[0.1em]">Setup Pending</span>
                              </div>
                            ) : item.isActive ? (
                              <div className="flex items-center gap-2 text-emerald-500 font-black">
                                 <ShieldCheck size={16} />
-                                <span className="text-[10px] uppercase tracking-[0.1em]">Verified Active</span>
+                                <span className="text-[10px] uppercase tracking-[0.1em]">Active</span>
                              </div>
                            ) : (
                              <div className="flex items-center gap-2 text-slate-300 font-black">
@@ -579,7 +589,7 @@ const AdminAgents = () => {
                     if (editAgentId) {
                       updateAgentMutation.mutate({ id: editAgentId, data });
                     } else {
-                      // Add manual agent creation logic here if needed
+                      createAgentMutation.mutate(data);
                     }
                  }} className="p-12 pt-8 space-y-8">
                     <div className="grid grid-cols-2 gap-8">
@@ -622,6 +632,19 @@ const AdminAgents = () => {
                           />
                        </div>
                     </div>
+
+                     {!editAgentId && (
+                        <div className="grid grid-cols-2 gap-8">
+                           <div className="space-y-2 col-span-2">
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Access Password</label>
+                              <input 
+                                 type="password" required placeholder="Choose a secure password"
+                                 className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900"
+                                 value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})}
+                              />
+                           </div>
+                        </div>
+                     )}
 
                     <div className="flex gap-4 pt-12 border-t border-slate-100">
                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-18 rounded-3xl bg-slate-50 text-slate-400 font-black uppercase tracking-widest text-[11px] hover:bg-slate-100 transition-all">Cancel</button>

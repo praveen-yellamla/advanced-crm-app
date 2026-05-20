@@ -32,11 +32,22 @@ const getTasks = async (req, res) => {
       where.status = { notIn: ['COMPLETED', 'ARCHIVED'] };
     }
 
-    if (startDate && endDate) {
-      where.dueDate = {
-        gte: new Date(startDate),
-        lte: new Date(endDate)
-      };
+    const parseDate = (val) => {
+      if (!val) return null;
+      const num = Number(val);
+      const d = !isNaN(num) ? new Date(num) : new Date(val);
+      return isNaN(d.getTime()) ? null : d;
+    };
+
+    if (startDate || endDate) {
+      const dateFilter = {};
+      const parsedStart = parseDate(startDate);
+      const parsedEnd = parseDate(endDate);
+      if (parsedStart) dateFilter.gte = parsedStart;
+      if (parsedEnd) dateFilter.lte = parsedEnd;
+      if (Object.keys(dateFilter).length > 0) {
+        where.dueDate = dateFilter;
+      }
     }
 
     // Role-based scoping (Admin sees all, Managers see team, Agents see own)

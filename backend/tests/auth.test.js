@@ -1,8 +1,6 @@
 const request = require('supertest');
-const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
-
-const prisma = new PrismaClient();
+const prisma = require('../src/config/prisma');
 
 /**
  * High-Precision Auth Validation Suite.

@@ -26,12 +26,14 @@ import {
   BarChart, Bar, Cell
 } from 'recharts';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 import LiveCallMonitor from '../../components/admin/LiveCallMonitor';
 
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   const { data: statsData, isLoading } = useQuery({
     queryKey: ['adminDashboard'],
@@ -95,7 +97,7 @@ const AdminDashboard = () => {
 
   if (isLoading) return <DashboardSkeleton />;
 
-  const { cards, funnel, sources } = statsData || {};
+  const { cards, funnel, sources, leaderboard, recentActivity, revenueTrend, callVolume } = statsData || {};
 
   const funnelData = [
     { name: 'New', value: funnel?.find(l => l.status === 'NEW')?._count || 0 },
@@ -155,16 +157,20 @@ const AdminDashboard = () => {
       </div>
 
       {/* KPI CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
-        <KPICard title="Total Leads" value={cards?.totalLeads ?? 0} trend="+12%" icon={<Target />} color="blue" />
-        <KPICard title="Active Staff" value={cards?.activeAgents ?? 0} trend="Live" icon={<Users />} color="indigo" />
-        <KPICard title="Success Rate" value={`${(cards?.conversionRate || 0).toFixed(1)}%`} trend="+1.2%" icon={<TrendingUp />} color="emerald" />
-        <KPICard title="Pending Invites" value={`${inviteStats?.pending || 0}`} trend={`of ${inviteStats?.total || 0}`} icon={<ShieldCheck />} color="amber" />
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <KPICard title="Total Staff" value={cards?.activeAgents ?? 0} trend="Active" icon={<Users />} color="blue" />
+        <KPICard title="Total Teams" value={cards?.totalTeams ?? 0} trend="Live" icon={<Users />} color="indigo" />
+        <KPICard title="Leads Today" value={cards?.todayLeads ?? 0} trend="New" icon={<Target />} color="emerald" />
+        <KPICard title="Calls Today" value={cards?.callsToday ?? 0} trend="Volume" icon={<Activity />} color="amber" />
+        <KPICard title="Conversion Rate" value={`${(cards?.conversionRate || 0).toFixed(1)}%`} trend="Success" icon={<TrendingUp />} color="emerald" />
+        <KPICard title="Revenue (Month)" value={`₹${(cards?.revenueMTD || 0).toLocaleString('en-IN')}`} trend="Earned" icon={<DollarSign />} color="blue" />
+        <KPICard title="Pending Invites" value={cards?.invitedPending ?? 0} trend="Waiting" icon={<ShieldCheck />} color="amber" />
+        <KPICard title="Open Tasks" value={cards?.openTasks ?? 0} trend="To-do" icon={<Activity />} color="indigo" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* FUNNEL CHART */}
-        <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold text-[#0F172A] tracking-tight">Sales Pipeline</h3>
@@ -172,27 +178,68 @@ const AdminDashboard = () => {
             </div>
             <BarChart2 size={20} className="text-slate-300" />
           </div>
-          <div className="h-[350px]">
+          <div className="h-[250px]">
              <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={funnelData} barSize={50}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                  <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fill: '#94A3B8', fontSize: 10, fontWeight: 700}} 
-                    dy={10}
-                  />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 10, fontWeight: 700}} dy={10} />
                   <YAxis hide />
-                  <Tooltip 
-                    cursor={{fill: '#F8FAFC'}}
-                    contentStyle={{borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', padding: '12px'}}
-                  />
+                  <Tooltip cursor={{fill: '#F8FAFC'}} contentStyle={{borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', padding: '12px'}} />
                   <Bar dataKey="value" radius={[8, 8, 0, 0]}>
                     {funnelData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={index === 3 ? '#2563EB' : '#F1F5F9'} />
                     ))}
                   </Bar>
+                </BarChart>
+             </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* REVENUE TREND CHART */}
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-[#0F172A] tracking-tight">Revenue Trend</h3>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Monthly Income Tracking</p>
+            </div>
+            <DollarSign size={20} className="text-slate-300" />
+          </div>
+          <div className="h-[250px]">
+             <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={revenueTrend || []}>
+                  <defs>
+                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 10, fontWeight: 700}} dy={10} />
+                  <YAxis hide />
+                  <Tooltip contentStyle={{borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', padding: '12px'}} formatter={(value) => [`₹${value}`, 'Revenue']} />
+                  <Area type="monotone" dataKey="amount" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
+                </AreaChart>
+             </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* CALL VOLUME CHART */}
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-[#0F172A] tracking-tight">Call Volume</h3>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daily Calls Made</p>
+            </div>
+            <Activity size={20} className="text-slate-300" />
+          </div>
+          <div className="h-[250px]">
+             <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={callVolume || []} barSize={30}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 10, fontWeight: 700}} dy={10} />
+                  <YAxis hide />
+                  <Tooltip cursor={{fill: '#F8FAFC'}} contentStyle={{borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', padding: '12px'}} />
+                  <Bar dataKey="count" fill="#F59E0B" radius={[6, 6, 0, 0]} />
                 </BarChart>
              </ResponsiveContainer>
           </div>
@@ -204,7 +251,6 @@ const AdminDashboard = () => {
               <h3 className="text-lg font-bold text-[#0F172A] tracking-tight">Lead Sources</h3>
               <PieIcon size={20} className="text-slate-300" />
            </div>
-           
            <div className="space-y-6 flex-1">
               {sources?.map((source, i) => (
                 <div key={i} className="group">
@@ -213,24 +259,10 @@ const AdminDashboard = () => {
                      <span className="text-xs font-bold text-[#0F172A]">{source._count} Leads</span>
                   </div>
                   <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                     <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${(source?._count / (cards?.totalLeads || 1)) * 100}%` }}
-                        className="h-full bg-blue-600 rounded-full"
-                     />
+                     <motion.div initial={{ width: 0 }} animate={{ width: `${(source?._count / (cards?.totalLeads || 1)) * 100}%` }} className="h-full bg-blue-600 rounded-full" />
                   </div>
                 </div>
               ))}
-           </div>
-
-           <div className="mt-10 pt-8 border-t border-slate-100">
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
-                 <ShieldCheck className="text-blue-600" size={20} />
-                 <div>
-                    <p className="text-[10px] font-bold uppercase text-slate-900">System Status</p>
-                    <p className="text-[9px] font-medium text-slate-500 uppercase tracking-tighter">All systems operational & synced</p>
-                 </div>
-              </div>
            </div>
         </div>
       </div>
@@ -238,60 +270,64 @@ const AdminDashboard = () => {
       <LiveCallMonitor />
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-         {/* PLATFORM SECURITY AUDIT */}
+         {/* AGENT LEADERBOARD */}
          <div className="bg-white p-10 rounded-[48px] border border-slate-200 shadow-sm space-y-8">
             <div className="flex items-center justify-between">
                <div className="flex items-center gap-6">
-                  <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
-                     <ShieldAlert size={28} />
+                  <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                     <Users size={28} />
                   </div>
                   <div>
-                     <h3 className="text-xl font-black text-[#0F172A] tracking-tight uppercase italic">Platform Security Audit</h3>
-                     <p className="text-slate-500 font-medium text-[11px] uppercase tracking-widest mt-1">Oversight of external support interactions</p>
+                     <h3 className="text-xl font-black text-[#0F172A] tracking-tight uppercase italic">Top Agents</h3>
+                     <p className="text-slate-500 font-medium text-[11px] uppercase tracking-widest mt-1">Highest Call Volumes</p>
                   </div>
                </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-               <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Last Accessed By Platform</p>
+            <div className="space-y-4">
+              {leaderboard?.map((agent, i) => (
+                <div key={agent.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
                   <div className="flex items-center gap-4">
-                     <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-blue-600 font-bold text-xs">
-                        {statsData?.security?.lastPlatformAccessBy?.[0] || 'S'}
+                     <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">
+                        {agent.profileImage ? <img src={agent.profileImage} alt="" className="w-full h-full rounded-full object-cover" /> : agent.name.charAt(0)}
                      </div>
-                     <div>
-                        <p className="text-sm font-black text-[#0F172A] uppercase italic">{statsData?.security?.lastPlatformAccessBy || 'No access recorded'}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">
-                           {statsData?.security?.lastPlatformAccessAt ? new Date(statsData.security.lastPlatformAccessAt).toLocaleString() : 'Never'}
-                        </p>
-                     </div>
+                     <span className="text-sm font-bold text-[#0F172A] uppercase">{agent.name}</span>
                   </div>
-               </div>
-
-               <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Support Access Logic</p>
-                  <div className="flex items-center justify-between">
-                     <span className="text-xs font-black text-[#0F172A] uppercase italic">
-                        {statsData?.security?.accessApprovalRequired ? 'Manual Approval Required' : 'Open Access Policy'}
-                     </span>
-                     <div className={`w-3 h-3 rounded-full ${statsData?.security?.accessApprovalRequired ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'}`} />
-                  </div>
-               </div>
+                  <span className="text-xs font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">{agent._count?.calls || 0} Calls</span>
+                </div>
+              ))}
             </div>
          </div>
 
-         {/* EMPTY STATE PLACEHOLDER OR OTHER METRIC */}
-         <div className="bg-[#0F172A] p-10 rounded-[48px] shadow-2xl flex flex-col justify-center items-center text-center space-y-6">
-            <div className="w-20 h-20 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
-               <History size={40} />
+         {/* RECENT ACTIVITY FEED */}
+         <div className="bg-[#0F172A] p-10 rounded-[48px] shadow-2xl flex flex-col space-y-6">
+            <div className="flex items-center gap-4 mb-4">
+               <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
+                  <History size={24} />
+               </div>
+               <div>
+                  <h3 className="text-2xl font-black text-white uppercase italic tracking-tight">Recent Activity</h3>
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Latest Actions Across Platform</p>
+               </div>
             </div>
-            <div className="space-y-2">
-               <h3 className="text-2xl font-black text-white uppercase italic tracking-tight">Activity Stream</h3>
-               <p className="text-slate-400 text-xs font-medium uppercase tracking-widest max-w-[280px]">Real-time operational events will populate this secure ledger.</p>
+            <div className="flex-1 space-y-4 overflow-y-auto max-h-[300px] custom-scrollbar pr-4">
+               {recentActivity?.map((log) => (
+                 <div key={log.id} className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl">
+                    <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-1">
+                       <Activity size={14} />
+                    </div>
+                    <div>
+                       <p className="text-xs font-bold text-white leading-relaxed">
+                          <span className="text-blue-400 uppercase mr-1">{log.user?.name}</span>
+                          {log.action}
+                       </p>
+                       <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">{new Date(log.createdAt).toLocaleString()}</p>
+                    </div>
+                 </div>
+               ))}
+               {(!recentActivity || recentActivity.length === 0) && (
+                 <p className="text-center text-slate-500 text-xs py-8">No recent activity.</p>
+               )}
             </div>
-            <button className="px-8 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black text-white uppercase tracking-widest hover:bg-white/10 transition-all">
-               Open Audit Ledger
-            </button>
          </div>
       </div>
 

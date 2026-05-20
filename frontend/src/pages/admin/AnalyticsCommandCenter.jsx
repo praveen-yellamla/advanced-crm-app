@@ -319,8 +319,8 @@ const AnalyticsCommandCenter = () => {
       {/* QUICK KPI OVERVIEW */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
          {[
-           { label: 'Platform Revenue', value: kpis?.platformRevenue || '$0', icon: DollarSign, color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-           { label: 'Active Leads', value: kpis?.activeLeads || '0', icon: Users, color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-100' },
+           { label: 'Platform Revenue', value: kpis?.platformRevenue || '₹0', icon: DollarSign, color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+           { label: 'Pipeline Value', value: kpis?.pipelineValue || '₹0', icon: Target, color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-100' },
            { label: 'Avg Conversion', value: kpis?.avgConversion || '0%', icon: TrendingUp, color: 'text-violet-500', bg: 'bg-violet-50', border: 'border-violet-100' },
            { label: 'AI Performance', value: kpis?.aiEfficiency || '0%', icon: Zap, color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-100' },
            { label: 'Total Calls', value: kpis?.totalCalls || '0', icon: PhoneCall, color: 'text-rose-500', bg: 'bg-rose-50', border: 'border-rose-100' },
@@ -372,7 +372,7 @@ const AnalyticsCommandCenter = () => {
                           contentStyle={{borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 20px 40px rgba(0,0,0,0.08)', padding: '16px'}}
                           itemStyle={{fontWeight: 900, color: '#0F172A', fontSize: '16px'}}
                           labelStyle={{fontSize: '11px', color: '#64748B', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold'}}
-                          formatter={(value) => [`$${value.toLocaleString()}`, 'Revenue']}
+                          formatter={(value) => [`₹${value.toLocaleString()}`, 'Revenue']}
                        />
                        <Area type="monotone" dataKey="value" stroke="#2563EB" strokeWidth={4} fillOpacity={1} fill="url(#colorRevenue)" />
                     </AreaChart>
@@ -510,7 +510,7 @@ const AnalyticsCommandCenter = () => {
                <div className="space-y-4 flex-1">
                   {[
                     { title: 'Conversion Anomaly', text: 'Lead conversion rate dropped by 4% compared to last week. Call volume remains stable.', tag: 'ALERT' },
-                    { title: 'Revenue Forecast', text: 'Based on current pipeline velocity, projected revenue for next 30 days is $125K.', tag: 'PREDICTION' },
+                    { title: 'Revenue Forecast', text: 'Based on current pipeline velocity, projected revenue for next 30 days is ₹125K.', tag: 'PREDICTION' },
                     { title: 'Agent Coaching', text: 'Analysis of last 50 calls shows agents need improvement in objection handling.', tag: 'RECOMMENDATION' }
                   ].map((insight, i) => (
                     <div key={i} className="p-6 bg-white/5 rounded-[24px] border border-white/10 hover:bg-white/10 transition-all cursor-pointer backdrop-blur-sm group/card">

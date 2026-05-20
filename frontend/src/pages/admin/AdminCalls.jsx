@@ -6,6 +6,7 @@ import {
   Search, 
   MoreHorizontal, 
   Play, 
+  Pause,
   Download, 
   Clock, 
   User as UserIcon, 
@@ -20,7 +21,8 @@ import {
   ExternalLink,
   MessageSquare,
   Activity,
-  History
+  History,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -58,10 +60,10 @@ const AdminCalls = () => {
         <div>
            <div className="flex items-center gap-3 mb-3">
               <div className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600">Communication Registry</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600">Call Logs</span>
            </div>
-           <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Voice <span className="text-slate-200">History</span></h1>
-           <p className="text-[#64748B] font-bold text-sm tracking-tight mt-2">Audit and playback of entire organizational voice telemetry</p>
+           <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter italic uppercase leading-none">Call <span className="text-slate-200">History</span></h1>
+           <p className="text-[#64748B] font-bold text-sm tracking-tight mt-2">Audit and playback of call logs history</p>
         </div>
 
         <div className="flex gap-4">
@@ -88,8 +90,11 @@ const AdminCalls = () => {
                onChange={e => setSearch(e.target.value)}
             />
          </div>
-         <button className="h-16 px-10 bg-[#0F172A] text-white rounded-[28px] flex items-center gap-4 text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
-            <Filter size={18} /> Optimization Filter
+         <button 
+            onClick={() => toast.success('Call filters active')}
+            className="h-16 px-10 bg-[#0F172A] text-white rounded-[28px] flex items-center gap-4 text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
+         >
+            <Filter size={18} /> Filter Calls
          </button>
       </div>
 
@@ -98,17 +103,17 @@ const AdminCalls = () => {
          <table className="w-full text-left border-collapse min-w-[1000px]">
             <thead>
                <tr className="bg-slate-50/50">
-                  <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Temporal Index</th>
-                  <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Personnel</th>
-                  <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Destination</th>
+                  <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Time & Date</th>
+                  <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Agent</th>
+                  <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Customer</th>
                   <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Status</th>
-                  <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Intel</th>
+                  <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">AI Review</th>
                   <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Playback</th>
                </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
                {isLoading ? (
-                 <tr><td colSpan="6" className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest animate-pulse">Synchronizing Voice Telemetry...</td></tr>
+                 <tr><td colSpan="6" className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest animate-pulse">Loading call logs...</td></tr>
                ) : filteredCalls?.map((call) => (
                  <motion.tr 
                    initial={{ opacity: 0 }} 
@@ -118,9 +123,9 @@ const AdminCalls = () => {
                  >
                     <td className="px-10 py-8">
                        <div className="space-y-1">
-                          <p className="text-sm font-black text-[#0F172A] italic">{new Date(call.createdAt).toLocaleDateString()}</p>
+                          <p className="text-sm font-black text-[#0F172A] italic">{call.createdAt ? new Date(call.createdAt).toLocaleDateString() : 'N/A'}</p>
                           <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                             <Clock size={10} /> {new Date(call.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                             <Clock size={10} /> {call.createdAt ? new Date(call.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                           </div>
                        </div>
                     </td>

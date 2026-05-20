@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
+import { useSocket } from '../../context/SocketContext';
 import { 
   Plus, Search, Phone, Mail, Target, CheckCircle2, 
   ArrowRight, MoreVertical, ChevronRight, Filter, 
@@ -18,6 +19,25 @@ const AgentLeads = () => {
   const [activeStage, setActiveStage] = useState('ALL');
   const [sortBy, setSortBy] = useState('DATE_DESC'); // NAME_ASC, SCORE_DESC, DATE_DESC
   const queryClient = useQueryClient();
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleRealtimeLeadUpdate = (data) => {
+      console.log('[SOCKET] Agent Lead update:', data);
+      queryClient.invalidateQueries(['agentLeads']);
+    };
+
+    socket.on('lead:assigned', handleRealtimeLeadUpdate);
+    socket.on('lead:reassigned', handleRealtimeLeadUpdate);
+    socket.on('lead:stage_changed', handleRealtimeLeadUpdate);
+
+    return () => {
+      socket.off('lead:assigned', handleRealtimeLeadUpdate);
+      socket.off('lead:reassigned', handleRealtimeLeadUpdate);
+      socket.off('lead:stage_changed', handleRealtimeLeadUpdate);
+    };
+  }, [socket, queryClient]);
 
   const { data: leads, isLoading } = useQuery({
     queryKey: ['agentLeads'],

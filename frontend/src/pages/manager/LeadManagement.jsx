@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
+import { useSocket } from '../../context/SocketContext';
 import { 
   Target, Search, Filter, UserMinus, RefreshCw, Upload, Plus, Eye, History, Award, CheckCircle, Mail, Phone, ChevronRight
 } from 'lucide-react';
@@ -15,6 +16,27 @@ const LeadManagement = () => {
   
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [targetAgentId, setTargetAgentId] = useState('');
+
+  const queryClient = useQueryClient();
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleRealtimeLeadUpdate = (data) => {
+      console.log('[SOCKET] Manager Lead update:', data);
+      queryClient.invalidateQueries({ queryKey: ['managerLeads'] });
+    };
+
+    socket.on('lead:assigned', handleRealtimeLeadUpdate);
+    socket.on('lead:reassigned', handleRealtimeLeadUpdate);
+    socket.on('lead:stage_changed', handleRealtimeLeadUpdate);
+
+    return () => {
+      socket.off('lead:assigned', handleRealtimeLeadUpdate);
+      socket.off('lead:reassigned', handleRealtimeLeadUpdate);
+      socket.off('lead:stage_changed', handleRealtimeLeadUpdate);
+    };
+  }, [socket, queryClient]);
 
   // 1. Fetch leads
   const { data: leads, isLoading: isLeadsLoading, refetch } = useQuery({

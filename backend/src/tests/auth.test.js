@@ -1,6 +1,6 @@
+const { prismaMock } = require('./setup');
 const request = require('supertest');
 const app = require('../app');
-const { prismaMock } = require('./setup');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -15,9 +15,11 @@ describe('Auth API', () => {
         password: hashedPassword,
         role: 'ADMIN',
         isActive: true,
+        failedLoginAttempts: 0,
       };
 
       prismaMock.user.findUnique.mockResolvedValue(mockUser);
+      prismaMock.session.create.mockResolvedValue({ id: 'mock-session-id', token: 'mock-token' });
 
       const res = await request(app)
         .post('/api/auth/login')
@@ -40,6 +42,7 @@ describe('Auth API', () => {
         password: hashedPassword,
         role: 'ADMIN',
         isActive: true,
+        failedLoginAttempts: 0,
       };
 
       prismaMock.user.findUnique.mockResolvedValue(mockUser);
@@ -52,7 +55,7 @@ describe('Auth API', () => {
         });
 
       expect(res.statusCode).toBe(401);
-      expect(res.body.message).toBe('Invalid email or password');
+      expect(res.body.message).toBe('Invalid credentials');
     });
   });
 
@@ -66,10 +69,11 @@ describe('Auth API', () => {
         isActive: true,
       };
 
-      // Mock user lookup in protect middleware
+      // Mock user lookup and session lookup in protect middleware
       prismaMock.user.findUnique.mockResolvedValue(mockUser);
-
-      const token = jwt.sign({ userId: 2 }, process.env.JWT_SECRET || 'secret');
+      
+      const token = jwt.sign({ id: 2 }, process.env.JWT_SECRET || 'secret');
+      prismaMock.session.findUnique.mockResolvedValue({ id: 'mock-session-id', token, isActive: true });
 
       const res = await request(app)
         .get('/api/admin/teams')
@@ -80,3 +84,4 @@ describe('Auth API', () => {
     });
   });
 });
+

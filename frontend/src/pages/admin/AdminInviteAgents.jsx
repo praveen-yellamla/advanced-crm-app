@@ -241,9 +241,9 @@ const AdminInviteAgents = () => {
             <Link to="/admin/agents" className="p-2 hover:bg-slate-50 rounded-full transition-all text-slate-400 hover:text-slate-600">
               <ArrowLeft size={20} />
             </Link>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Agent Invitation Center</h1>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Invite Agents</h1>
           </div>
-          <p className="text-slate-400 font-semibold text-[11px] uppercase tracking-widest pl-12">Provision enterprise-level sales workspaces for new team assets.</p>
+          <p className="text-slate-400 font-semibold text-[11px] uppercase tracking-widest pl-12">Invite and manage access for your sales agents.</p>
         </div>
 
         <Link 
@@ -295,7 +295,7 @@ const AdminInviteAgents = () => {
             className="grid grid-cols-1 lg:grid-cols-3 gap-8"
           >
             <div className="lg:col-span-2 bg-white border border-slate-100 rounded-[32px] p-8 space-y-6 shadow-sm">
-              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Deploy Individual Workspaces</h3>
+              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Add Single Agent</h3>
               
               <form onSubmit={(e) => {
                 e.preventDefault();
@@ -392,12 +392,12 @@ const AdminInviteAgents = () => {
 
             {/* Sidebar Context */}
             <div className="bg-slate-50 rounded-[32px] p-8 space-y-6">
-              <h4 className="text-lg font-black text-slate-800 tracking-tight uppercase">Single Dispatch Flow</h4>
+              <h4 className="text-lg font-black text-slate-800 tracking-tight uppercase">Single Invitation Steps</h4>
               <div className="space-y-4">
                 {[
-                  { num: '01', title: 'Enter parameters', desc: 'Specify email, optionally name/phone, and assign target sales team.' },
-                  { num: '02', title: 'SMTP delivery', desc: 'We deliver a beautiful, branded email containing a 72-hour invite URL.' },
-                  { num: '03', title: 'Multi-channel share', desc: 'Copy the live secure URL to dispatch directly via Slack, Teams or WhatsApp.' }
+                  { num: '01', title: 'Enter Details', desc: 'Enter email, name, phone, and select their team.' },
+                  { num: '02', title: 'Email Delivery', desc: 'We send an invitation email containing a 72-hour invite link.' },
+                  { num: '03', title: 'Copy and Share Link', desc: 'Copy the invite link to send it directly via WhatsApp, SMS, or Slack.' }
                 ].map(s => (
                   <div key={s.num} className="flex gap-4">
                     <span className="text-blue-600 font-black text-lg">{s.num}</span>
@@ -512,8 +512,8 @@ const AdminInviteAgents = () => {
                 </div>
 
                 <div className="bg-slate-50 rounded-[32px] p-8 space-y-6">
-                  <h4 className="text-lg font-black text-slate-800 tracking-tight uppercase">Bulk Processing Specifications</h4>
-                  <p className="text-xs text-slate-400 font-semibold leading-relaxed">System schedules dispatches sequentially in batches of 10 with a 1-second delay between batches to respect SMTP servers rate limit bounds.</p>
+                  <h4 className="text-lg font-black text-slate-800 tracking-tight uppercase">Bulk Import Details</h4>
+                  <p className="text-xs text-slate-400 font-semibold leading-relaxed">Invitations are sent in batches to prevent email server rate limiting.</p>
                 </div>
               </div>
             ) : (
@@ -521,7 +521,7 @@ const AdminInviteAgents = () => {
                 <div className="lg:col-span-2 bg-white border border-slate-100 rounded-[32px] p-8 space-y-6 shadow-sm">
                   <div className="flex justify-between items-center">
                     <div className="space-y-1">
-                      <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">CSV Bulk Import Wizard</h3>
+                      <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Add Multiple Agents from File</h3>
                       <p className="text-xs text-slate-400 font-semibold">Upload spreadsheet file with agents emails, names, and phone numbers.</p>
                     </div>
 
@@ -715,7 +715,7 @@ const AdminInviteAgents = () => {
                 <thead>
                   <tr className="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
                     <th className="p-4 pl-6">Invitee</th>
-                    <th className="p-4">Operational Team</th>
+                    <th className="p-4">Assigned Team</th>
                     <th className="p-4">Invited By</th>
                     <th className="p-4">Sent At</th>
                     <th className="p-4">Expires At</th>
@@ -743,8 +743,8 @@ const AdminInviteAgents = () => {
                           </span>
                         </td>
                         <td className="p-4 text-xs font-bold text-slate-500">{inv.invitedBy}</td>
-                        <td className="p-4 text-xs text-slate-400">{new Date(inv.createdAt).toLocaleString()}</td>
-                        <td className="p-4 text-xs text-slate-400">{new Date(inv.expiresAt).toLocaleString()}</td>
+                        <td className="p-4 text-xs text-slate-400">{inv.createdAt ? new Date(inv.createdAt).toLocaleString() : 'N/A'}</td>
+                        <td className="p-4 text-xs text-slate-400">{inv.expiresAt ? new Date(inv.expiresAt).toLocaleString() : 'N/A'}</td>
                         <td className="p-4 pr-6 text-right">
                           <div className="flex justify-end gap-2">
                             {inv.status === 'pending' && (
@@ -787,7 +787,7 @@ const AdminInviteAgents = () => {
                               </button>
                             )}
                             {inv.status === 'accepted' && (
-                              <span className="text-[10px] font-black uppercase tracking-wider text-green-700 bg-green-50 px-2 py-0.5 rounded-md">Accepted at {new Date(inv.acceptedAt).toLocaleDateString()}</span>
+                              <span className="text-[10px] font-black uppercase tracking-wider text-green-700 bg-green-50 px-2 py-0.5 rounded-md">Accepted at {inv.acceptedAt ? new Date(inv.acceptedAt).toLocaleDateString() : 'N/A'}</span>
                             )}
                             {inv.status === 'cancelled' && (
                               <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">Cancelled</span>

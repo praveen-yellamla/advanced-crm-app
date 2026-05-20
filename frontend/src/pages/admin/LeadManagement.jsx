@@ -29,6 +29,7 @@ import toast from 'react-hot-toast';
 import TableActionMenu, { TableActionItem } from '../../components/common/TableActionMenu';
 import LeadModal from '../../components/admin/LeadModal';
 import LeadDetailModal from '../../components/admin/LeadDetailModal';
+import { useSocket } from '../../context/SocketContext';
 import AssignAgentModal from '../../components/admin/AssignAgentModal';
 
 const LeadManagement = () => {
@@ -46,6 +47,25 @@ const LeadManagement = () => {
   const [activeMenuId, setActiveMenuId] = useState(null);
 
   const queryClient = useQueryClient();
+  const { socket } = useSocket();
+
+  React.useEffect(() => {
+    if (!socket) return;
+    const handleRealtimeLeadUpdate = (data) => {
+      console.log('[SOCKET] Admin Lead update:', data);
+      queryClient.invalidateQueries({ queryKey: ['globalLeads'] });
+    };
+
+    socket.on('lead:assigned', handleRealtimeLeadUpdate);
+    socket.on('lead:reassigned', handleRealtimeLeadUpdate);
+    socket.on('lead:stage_changed', handleRealtimeLeadUpdate);
+
+    return () => {
+      socket.off('lead:assigned', handleRealtimeLeadUpdate);
+      socket.off('lead:reassigned', handleRealtimeLeadUpdate);
+      socket.off('lead:stage_changed', handleRealtimeLeadUpdate);
+    };
+  }, [socket, queryClient]);
 
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/core/leads/${id}`),

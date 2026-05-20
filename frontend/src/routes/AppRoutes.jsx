@@ -21,6 +21,7 @@ import SystemIntegrations from '../pages/admin/SystemIntegrations';
 import LeadImportWizard from '../pages/admin/LeadImportWizard';
 import UnifiedTasks from '../pages/admin/UnifiedTasks';
 import FiscalLedger from '../pages/admin/FiscalLedger';
+import EmailManagement from '../pages/admin/EmailManagement';
 import AdminCalls from '../pages/admin/AdminCalls';
 import AdminAuditLogs from '../pages/admin/AdminAuditLogs';
 import AdminSettings from '../pages/admin/AdminSettings';
@@ -107,8 +108,11 @@ const AppRoutes = () => {
             <Route path="integrations" element={<SystemIntegrations />} />
             <Route path="tasks" element={<UnifiedTasks />} />
             <Route path="calls" element={<AdminCalls />} />
+            <Route path="invoices" element={<FiscalLedger />} />
+            <Route path="emails" element={<EmailManagement />} />
             <Route path="ai" element={<AIControlPanel />} />
             <Route path="settings" element={<AdminSettings />} />
+            <Route path="settings/:tab" element={<AdminSettings />} />
           </Route>
         </Route>
 

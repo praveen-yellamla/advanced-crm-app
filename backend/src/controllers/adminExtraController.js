@@ -300,10 +300,49 @@ const exportAnalytics = async (req, res) => {
   }
 };
 
+const getEmailLogs = async (req, res) => {
+  try {
+    const { agentId, search } = req.query;
+    const organizationId = req.user.organizationId;
+
+    const whereClause = {
+      agent: {
+        organizationId: organizationId
+      }
+    };
+
+    if (agentId) {
+      whereClause.agentId = parseInt(agentId);
+    }
+
+    if (search) {
+      whereClause.OR = [
+        { subject: { contains: search, mode: 'insensitive' } },
+        { to: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    const emails = await prisma.email.findMany({
+      where: whereClause,
+      include: {
+        lead: { select: { customerName: true } },
+        agent: { select: { name: true, email: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({ success: true, data: emails });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getInvoices,
   createInvoice,
   getCalls,
   getAnalytics,
-  exportAnalytics
+  exportAnalytics,
+  getEmailLogs
 };

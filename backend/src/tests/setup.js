@@ -10,6 +10,13 @@ jest.mock('../config/prisma', () => ({
   lead: mockDeep(),
   task: mockDeep(),
   call: mockDeep(),
+  session: mockDeep(),
+  auditLog: mockDeep(),
+}));
+
+// Mock the uuid library to bypass ES module import issues in Jest environment
+jest.mock('uuid', () => ({
+  v4: () => 'mocked-uuid-v4-value-12345'
 }));
 
 // beforeEach(() => {

@@ -41,7 +41,7 @@ const AssignAgentModal = ({ isOpen, onClose, leadId, currentAgentId }) => {
     (a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     a.role.toLowerCase().includes(searchTerm.toLowerCase())) &&
     a.isActive === true &&
-    a.inviteStatus === 'ACCEPTED'
+    (a.agentType === 'MANUAL' || a.inviteStatus === 'ACCEPTED')
   ) || [];
 
   if (!isOpen) return null;
