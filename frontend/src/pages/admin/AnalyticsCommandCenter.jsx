@@ -29,6 +29,7 @@ import {
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow, format, subDays, startOfMonth, subMonths, endOfMonth, startOfQuarter, startOfYear } from 'date-fns';
+import { exportToPDF } from '../../utils/exportUtils';
 
 // Presets
 const DATE_PRESETS = [
@@ -82,32 +83,48 @@ const AnalyticsCommandCenter = () => {
   });
 
   const handleExport = async () => {
+    if (!analytics) {
+      toast.error('No analytics data available to export');
+      return;
+    }
+
     try {
       setIsExporting(true);
       setExportStep(1); // Generating report...
-      
-      const payload = getQueryObj();
-      
-      // Artificial delay for premium UX
-      await new Promise(r => setTimeout(r, 1200));
-      setExportStep(2); // Sending securely...
-      
-      const res = await api.post('/admin/analytics/export', payload);
-      
-      if (res.data.success) {
-        setExportStep(3); // Done
-        toast.success("Report sent successfully to your email!");
-        setTimeout(() => {
-          setIsExporting(false);
-          setExportStep(0);
-        }, 2000);
-      } else {
-        throw new Error(res.data.message || 'Export failed');
+
+      const { kpis, agentLeaderboard } = analytics;
+
+      const headers = ['Metric', 'Value'];
+      const data = [
+        ['Platform Revenue', kpis?.platformRevenue || '₹0'],
+        ['Pipeline Value', kpis?.pipelineValue || '₹0'],
+        ['Avg Conversion', kpis?.avgConversion || '0%'],
+        ['AI Efficiency', kpis?.aiEfficiency || '0%'],
+        ['Total Calls', kpis?.totalCalls || '0']
+      ];
+
+      // Add leaderboard to the same export or separate
+      if (agentLeaderboard && agentLeaderboard.length > 0) {
+        data.push(['---', '---']);
+        data.push(['Top Agents', 'Win Rate']);
+        agentLeaderboard.forEach(agent => {
+          data.push([agent.name, agent.conversion]);
+        });
       }
+      
+      exportToPDF('Business Overview Analytics', headers, data, 'analytics_command_center_report');
+      
+      setExportStep(3); // Done
+      toast.success("Report exported successfully as PDF!");
+      setTimeout(() => {
+        setIsExporting(false);
+        setExportStep(0);
+      }, 2000);
+
     } catch (error) {
       setIsExporting(false);
       setExportStep(0);
-      toast.error(error.response?.data?.message || error.message || 'Failed to export report');
+      toast.error('Failed to export report');
     }
   };
 

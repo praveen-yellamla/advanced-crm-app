@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 
@@ -40,6 +41,9 @@ app.options(/.*/, cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static uploads
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Routes
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
@@ -69,6 +73,8 @@ app.use('/api/webhooks', webhookRoutes);
 app.use('/api/call', require('./routes/callRoutes'));
 app.use('/api/twilio', require('./routes/callRoutes'));
 app.use('/api/email', require('./routes/emailRoutes'));
+app.use('/api/email-threads', require('./routes/threadRoutes'));
+app.use('/api/email-templates', require('./routes/templateRoutes'));
 app.use('/api/invoices', require('./routes/invoiceRoutes'));
 app.use('/api/billing', require('./routes/billingRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));

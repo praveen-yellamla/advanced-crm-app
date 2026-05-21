@@ -46,6 +46,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { exportToCSV } from '../../utils/exportUtils';
 
 const CATEGORIES = [
   { id: 'COMPANY', label: 'Company Profile', icon: Building2 },
@@ -298,6 +299,7 @@ const TeamMembersSettings = () => {
   const [inviteTeam, setInviteTeam] = useState('');
   const [csvFile, setCsvFile] = useState(null);
   const [searchMember, setSearchMember] = useState('');
+  const [lastInviteUrl, setLastInviteUrl] = useState(null); // stores inviteUrl after success
 
   const queryClient = useQueryClient();
 
@@ -328,20 +330,25 @@ const TeamMembersSettings = () => {
   const inviteMutation = useMutation({
     mutationFn: async () => {
       if (!inviteEmail) throw new Error('Email is required');
+      if (!inviteTeam) throw new Error('Please assign a team before sending the invitation');
       const payload = {
         email: inviteEmail,
         name: inviteName,
-        role: inviteRole,
-        teamId: inviteTeam ? parseInt(inviteTeam) : undefined
+        teamId: parseInt(inviteTeam)
       };
-      await api.post('/admin/invite-agent', payload);
+      // POST to /admin/agents/invite-single → saves to agentInvitation table
+      // (the same table that GET /admin/agents/invitations reads from)
+      const res = await api.post('/admin/agents/invite-single', payload);
+      return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries(['adminAgentInvitationsPendingList']);
-      toast.success('Invitation dispatched successfully');
+      setLastInviteUrl(data.inviteUrl || null);
+      toast.success(`Invitation sent to ${inviteEmail}`);
       setInviteEmail('');
       setInviteName('');
-      setIsInviteDrawerOpen(false);
+      setInviteTeam('');
+      // keep drawer open to show the Copy Link panel
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || err.message || 'Invitation failed');
@@ -349,12 +356,13 @@ const TeamMembersSettings = () => {
   });
 
   const cancelInviteMutation = useMutation({
-    mutationFn: (id) => api.delete(`/admin/invites/${id}`),
+    // DELETE /admin/agents/invitations/:id → agentInvitationController.cancelInvitation
+    mutationFn: (id) => api.delete(`/admin/agents/invitations/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries(['adminAgentInvitationsPendingList']);
-      toast.success('Invitation revoked.');
+      toast.success('Invitation cancelled.');
     },
-    onError: () => toast.error('Revocation failed')
+    onError: () => toast.error('Cancellation failed')
   });
 
   const updateStatusMutation = useMutation({
@@ -408,8 +416,26 @@ const TeamMembersSettings = () => {
               <div className="space-y-8">
                  <div className="flex items-center justify-between">
                     <h4 className="text-2xl font-black text-[#0F172A] uppercase tracking-tighter italic">Invite Member</h4>
-                    <button onClick={() => setIsInviteDrawerOpen(false)} className="text-slate-400 hover:text-slate-900 font-bold uppercase text-[10px] tracking-widest">Close</button>
+                    <button onClick={() => { setIsInviteDrawerOpen(false); setLastInviteUrl(null); }} className="text-slate-400 hover:text-slate-900 font-bold uppercase text-[10px] tracking-widest">Close</button>
                  </div>
+
+                 {/* Copy Link success panel — shown after invite is sent */}
+                 {lastInviteUrl && (
+                   <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-3">
+                     <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">✅ Invitation Sent!</p>
+                     <p className="text-xs font-bold text-slate-600">Share this link directly if they don't get the email:</p>
+                     <div className="flex items-center gap-2">
+                       <span className="flex-1 font-mono text-[10px] bg-white border border-emerald-200 rounded-xl px-3 py-2 text-slate-700 break-all">{lastInviteUrl}</span>
+                       <button
+                         onClick={() => { navigator.clipboard.writeText(lastInviteUrl); toast.success('Link copied!'); }}
+                         className="h-10 px-4 bg-emerald-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-colors shrink-0"
+                       >
+                         Copy
+                       </button>
+                     </div>
+                     <p className="text-[9px] text-slate-400 font-bold">Link expires in 72 hours.</p>
+                   </div>
+                 )}
 
                  <div className="space-y-6">
                     <FormInput label="Name" placeholder="John Doe" value={inviteName} onChange={(e) => setInviteName(e.target.value)} />
@@ -554,9 +580,9 @@ const TeamMembersSettings = () => {
             <table className="w-full text-left border-collapse">
                <thead>
                   <tr className="bg-slate-50 border-b border-slate-100">
-                     <th className="p-6 text-[9px] font-black text-slate-400 uppercase tracking-widest">Email</th>
-                     <th className="p-6 text-[9px] font-black text-slate-400 uppercase tracking-widest">Role</th>
-                     <th className="p-6 text-[9px] font-black text-slate-400 uppercase tracking-widest">Dispatched At</th>
+                     <th className="p-6 text-[9px] font-black text-slate-400 uppercase tracking-widest">Agent</th>
+                     <th className="p-6 text-[9px] font-black text-slate-400 uppercase tracking-widest">Team</th>
+                     <th className="p-6 text-[9px] font-black text-slate-400 uppercase tracking-widest">Sent At</th>
                      <th className="p-6 text-[9px] font-black text-slate-400 uppercase tracking-widest">Status</th>
                      <th className="p-6 text-[9px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                   </tr>
@@ -566,18 +592,30 @@ const TeamMembersSettings = () => {
                     <tr><td colSpan="5" className="p-10 text-center text-slate-400 text-xs italic font-bold">No pending invitations.</td></tr>
                   ) : invitations?.map((invite) => (
                     <tr key={invite.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                       <td className="p-6 text-slate-600 font-mono text-xs">{invite.email}</td>
-                       <td className="p-6"><span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-black uppercase tracking-widest">{invite.role}</span></td>
-                       <td className="p-6 text-slate-400 text-[10px]">{new Date(invite.createdAt).toLocaleDateString()}</td>
-                       <td className="p-6"><span className="text-[9px] bg-amber-50 text-amber-600 border border-amber-100 rounded-full px-3 py-1 font-black uppercase tracking-widest">Pending</span></td>
-                       <td className="p-6 flex items-center gap-3">
-                          <button 
-                            onClick={() => cancelInviteMutation.mutate(invite.id)}
-                            className="text-[9px] font-black uppercase tracking-widest text-rose-600 hover:text-rose-800"
-                          >
-                             Revoke
-                          </button>
-                       </td>
+                        <td className="p-6">
+                          <p className="text-slate-700 font-bold text-xs">{invite.name || '—'}</p>
+                          <p className="text-slate-400 font-mono text-[10px] mt-0.5">{invite.email}</p>
+                        </td>
+                        <td className="p-6 text-slate-500 text-[10px] font-bold">{invite.teamName || 'Unassigned'}</td>
+                        <td className="p-6 text-slate-400 text-[10px]">{new Date(invite.createdAt).toLocaleDateString()}</td>
+                        <td className="p-6">
+                          <span className="text-[9px] bg-amber-50 text-amber-600 border border-amber-100 rounded-full px-3 py-1 font-black uppercase tracking-widest">Pending</span>
+                        </td>
+                        <td className="p-6 flex items-center gap-2">
+                           <button
+                             onClick={() => { navigator.clipboard.writeText(invite.inviteUrl || ''); toast.success('Link copied!'); }}
+                             className="h-8 px-3 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                             title="Copy Invite Link"
+                           >
+                             Copy Link
+                           </button>
+                           <button 
+                             onClick={() => cancelInviteMutation.mutate(invite.id)}
+                             className="h-8 px-3 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                           >
+                             Cancel
+                           </button>
+                        </td>
                     </tr>
                   ))}
                </tbody>
@@ -1619,19 +1657,16 @@ const AuditLedger = () => {
   const handleExportCSV = () => {
     if (!filteredLogs || filteredLogs.length === 0) return toast.error('No logs to export');
     
-    let csvContent = 'data:text/csv;charset=utf-8,Time,Performed By,Module,Action,Target\n';
-    filteredLogs.forEach(log => {
-       const row = `"${new Date(log.createdAt).toLocaleString()}","${log.user?.name || 'SYSTEM'}","${log.module}","${log.action}","${log.entityId || ''}"\n`;
-       csvContent += row;
-    });
+    const headers = ['Time', 'Performed By', 'Module', 'Action', 'Target'];
+    const data = filteredLogs.map(log => [
+      new Date(log.createdAt).toLocaleString(),
+      log.user?.name || 'SYSTEM',
+      log.module,
+      log.action,
+      log.entityId || ''
+    ]);
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `ACRM_Audit_Logs_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    exportToCSV(headers, data, 'ACRM_Audit_Logs');
     toast.success('Audit logs CSV exported.');
   };
 

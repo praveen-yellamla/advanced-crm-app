@@ -12,14 +12,54 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { exportToPDF, exportToCSV } from '../../utils/exportUtils';
 
 const ManagerReports = () => {
-  const handleExport = async (format) => {
+  const handleExport = async (type, format) => {
     try {
-      const res = await api.get(`/manager/reports/${format}`);
-      toast.success(res.data.message);
+      toast.loading('Generating report...', { id: 'report-export' });
+      
+      let data, headers, rows, title, filename;
+
+      if (type === 'performance') {
+        const res = await api.get('/manager/analytics?period=month');
+        data = res.data.data.agents;
+        title = 'Team Performance Report';
+        filename = 'team_performance';
+        headers = ['Name', 'Status', 'Calls', 'Conversion (%)', 'Revenue'];
+        rows = data.map(a => [a.name, a.status, a.callsMade, a.conversionRate, a.revenue]);
+      } else if (type === 'qa') {
+        const res = await api.get('/manager/qa/reports');
+        data = res.data.data;
+        title = 'QA Summary Report';
+        filename = 'qa_summary';
+        headers = ['Agent', 'Lead', 'Total Score', 'Notes'];
+        rows = data.map(qa => [qa.call?.agent?.name, qa.call?.lead?.customerName, qa.total, qa.notes]);
+      } else if (type === 'leads') {
+        const res = await api.get('/manager/leads');
+        data = res.data.data;
+        title = 'Lead Assignment Log';
+        filename = 'lead_assignments';
+        headers = ['Customer Name', 'Phone', 'Source', 'Status'];
+        rows = data.map(l => [l.customerName, l.phone, l.source, l.status]);
+      } else if (type === 'revenue') {
+        const res = await api.get('/manager/invoices');
+        data = res.data.data;
+        title = 'Revenue Reconciliation';
+        filename = 'revenue_report';
+        headers = ['Invoice #', 'Customer', 'Amount', 'Status', 'Date'];
+        rows = data.map(inv => [inv.invoiceNumber, inv.lead?.customerName, inv.amount, inv.status, new Date(inv.createdAt).toLocaleDateString()]);
+      }
+
+      if (format === 'pdf') {
+        exportToPDF(title, headers, rows, filename);
+      } else {
+        exportToCSV(headers, rows, filename);
+      }
+      
+      toast.success('Report exported successfully!', { id: 'report-export' });
     } catch (err) {
-      toast.error('Export service currently unavailable');
+      toast.error('Export failed: ' + err.message, { id: 'report-export' });
     }
   };
 
@@ -38,25 +78,25 @@ const ManagerReports = () => {
             title="Team Performance PDF" 
             desc="Comprehensive breakdown of agent conversion, call duration, and revenue contribution."
             icon={<FileText className="text-blue-600" />}
-            onExport={() => handleExport('pdf')}
+            onExport={() => handleExport('performance', 'pdf')}
          />
          <ReportCard 
             title="QA Summary Excel" 
             desc="Granular dataset of all audited calls including rubric scores and manager feedback."
             icon={<FileSpreadsheet className="text-emerald-600" />}
-            onExport={() => handleExport('excel')}
+            onExport={() => handleExport('qa', 'csv')}
          />
          <ReportCard 
             title="Lead Assignment Log" 
             desc="Audit trail of regional lead flow and agent allocation policies."
             icon={<Target className="text-violet-600" />}
-            onExport={() => handleExport('excel')}
+            onExport={() => handleExport('leads', 'csv')}
          />
          <ReportCard 
             title="Revenue Reconciliation" 
             desc="Summarized fiscal report of all approved invoices and pending collections."
             icon={<TrendingUp className="text-amber-600" />}
-            onExport={() => handleExport('pdf')}
+            onExport={() => handleExport('revenue', 'pdf')}
          />
       </div>
 

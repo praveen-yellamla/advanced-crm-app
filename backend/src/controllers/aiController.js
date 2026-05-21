@@ -81,15 +81,25 @@ const getAISettings = async (req, res) => {
       if (s.key === 'AI_GEMINI_API_KEY' && s.value) {
         config[s.key] = '••••••••••••••••••••'; // Masked
         config['AI_GEMINI_KEY_CONFIGURED'] = true;
+      } else if (s.key === 'AI_OPENAI_API_KEY' && s.value) {
+        config[s.key] = '••••••••••••••••••••'; // Masked
+        config['AI_OPENAI_KEY_CONFIGURED'] = true;
       } else {
         config[s.key] = s.value;
       }
     });
 
     // Derive provider status
-    const hasKey = settings.some(s => s.key === 'AI_GEMINI_API_KEY' && s.value);
+    const currentProvider = config['AI_PROVIDER'] || 'gemini';
+    let hasKey = false;
+    if (currentProvider === 'gemini') {
+      hasKey = settings.some(s => s.key === 'AI_GEMINI_API_KEY' && s.value);
+    } else if (currentProvider === 'openai') {
+      hasKey = settings.some(s => s.key === 'AI_OPENAI_API_KEY' && s.value);
+    }
+    
     config['AI_PROVIDER_STATUS'] = hasKey ? 'CONFIGURED' : 'UNCONFIGURED';
-    config['AI_PROVIDER'] = 'GEMINI';
+    config['AI_PROVIDER'] = currentProvider;
 
     res.json({ success: true, data: config });
   } catch (error) {
@@ -111,7 +121,7 @@ const updateAISetting = async (req, res) => {
 
     // Encrypt sensitive values before persisting
     let storedValue = value;
-    if (key === 'AI_GEMINI_API_KEY' && value && !value.includes('•')) {
+    if ((key === 'AI_GEMINI_API_KEY' || key === 'AI_OPENAI_API_KEY') && value && !value.includes('•')) {
       storedValue = encrypt(value);
     }
 
@@ -142,52 +152,101 @@ const updateAISetting = async (req, res) => {
 const validateAPIKey = async (req, res) => {
   try {
     const organizationId = req.user.organizationId;
+    const { provider } = req.body || {};
 
-    // Retrieve encrypted key from org settings
-    const keySetting = await prisma.organizationSetting.findUnique({
-      where: { organizationId_key: { organizationId, key: 'AI_GEMINI_API_KEY' } }
+    const providerSetting = await prisma.organizationSetting.findUnique({
+      where: { organizationId_key: { organizationId, key: 'AI_PROVIDER' } }
     });
+    const activeProvider = provider || providerSetting?.value || 'gemini';
 
-    if (!keySetting || !keySetting.value) {
-      return res.status(400).json({
-        success: false,
-        status: 'UNCONFIGURED',
-        message: 'No Gemini API key configured for this organization.'
+    if (activeProvider === 'gemini') {
+      // Retrieve encrypted key from org settings
+      const keySetting = await prisma.organizationSetting.findUnique({
+        where: { organizationId_key: { organizationId, key: 'AI_GEMINI_API_KEY' } }
+      });
+
+      if (!keySetting || !keySetting.value) {
+        return res.status(400).json({
+          success: false,
+          status: 'UNCONFIGURED',
+          message: 'No Gemini API key configured for this organization.'
+        });
+      }
+
+      const decryptedKey = decrypt(keySetting.value);
+
+      // Validate with a minimal prompt
+      const { GoogleGenerativeAI } = require('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(decryptedKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      await model.generateContent('ping');
+
+      // Update validation timestamp
+      await prisma.organizationSetting.upsert({
+        where: { organizationId_key: { organizationId, key: 'AI_KEY_VALIDATED_AT' } },
+        update: { value: new Date().toISOString() },
+        create: { organizationId, key: 'AI_KEY_VALIDATED_AT', value: new Date().toISOString() }
+      });
+
+      res.json({
+        success: true,
+        status: 'VALID',
+        provider: 'GEMINI',
+        model: 'gemini-2.0-flash',
+        message: 'API key validated successfully. AI orchestration is online.'
+      });
+    } else {
+      // Validate OpenAI Key
+      const keySetting = await prisma.organizationSetting.findUnique({
+        where: { organizationId_key: { organizationId, key: 'AI_OPENAI_API_KEY' } }
+      });
+
+      if (!keySetting || !keySetting.value) {
+        return res.status(400).json({
+          success: false,
+          status: 'UNCONFIGURED',
+          message: 'No OpenAI API key configured for this organization.'
+        });
+      }
+
+      const decryptedKey = decrypt(keySetting.value);
+
+      // Axios request to OpenAI's models endpoint to validate key
+      const axios = require('axios');
+      await axios.get('https://api.openai.com/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${decryptedKey}`
+        }
+      });
+
+      // Update validation timestamp
+      await prisma.organizationSetting.upsert({
+        where: { organizationId_key: { organizationId, key: 'AI_OPENAI_KEY_VALIDATED_AT' } },
+        update: { value: new Date().toISOString() },
+        create: { organizationId, key: 'AI_OPENAI_KEY_VALIDATED_AT', value: new Date().toISOString() }
+      });
+
+      res.json({
+        success: true,
+        status: 'VALID',
+        provider: 'OPENAI',
+        model: 'gpt-4o',
+        message: 'API key validated successfully. AI orchestration is online.'
       });
     }
-
-    const decryptedKey = decrypt(keySetting.value);
-
-    // Validate with a minimal prompt
-    const { GoogleGenerativeAI } = require('@google/generative-ai');
-    const genAI = new GoogleGenerativeAI(decryptedKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-    await model.generateContent('ping');
-
-    // Update validation timestamp
-    await prisma.organizationSetting.upsert({
-      where: { organizationId_key: { organizationId, key: 'AI_KEY_VALIDATED_AT' } },
-      update: { value: new Date().toISOString() },
-      create: { organizationId, key: 'AI_KEY_VALIDATED_AT', value: new Date().toISOString() }
-    });
-
-    res.json({
-      success: true,
-      status: 'VALID',
-      provider: 'GEMINI',
-      model: 'gemini-2.0-flash',
-      message: 'API key validated successfully. AI orchestration is online.'
-    });
   } catch (error) {
     const isInvalidKey = error.message?.includes('API_KEY_INVALID') ||
       error.message?.includes('invalid_api_key') ||
-      error.message?.includes('API key not valid');
+      error.message?.includes('API key not valid') ||
+      error.response?.status === 401 ||
+      error.response?.data?.error?.code === 'invalid_api_key' ||
+      error.response?.data?.error?.message?.includes('Incorrect API key');
 
     res.status(isInvalidKey ? 401 : 500).json({
       success: false,
       status: 'INVALID',
       message: isInvalidKey
-        ? 'The provided Gemini API key is invalid. Please check your credentials.'
+        ? 'The provided API key is invalid. Please check your credentials.'
         : `Validation error: ${error.message}`
     });
   }
@@ -200,7 +259,7 @@ const getAIStatus = async (req, res) => {
   try {
     const organizationId = req.user.organizationId;
 
-    const [keySetting, validatedAt, usageToday] = await Promise.all([
+    const [keySetting, validatedAt, usageToday, openaiKeySetting, openaiValidatedAt, providerSetting] = await Promise.all([
       prisma.organizationSetting.findUnique({
         where: { organizationId_key: { organizationId, key: 'AI_GEMINI_API_KEY' } }
       }),
@@ -214,21 +273,43 @@ const getAIStatus = async (req, res) => {
         },
         _sum: { tokens: true, cost: true },
         _count: { _all: true }
+      }),
+      prisma.organizationSetting.findUnique({
+        where: { organizationId_key: { organizationId, key: 'AI_OPENAI_API_KEY' } }
+      }),
+      prisma.organizationSetting.findUnique({
+        where: { organizationId_key: { organizationId, key: 'AI_OPENAI_KEY_VALIDATED_AT' } }
+      }),
+      prisma.organizationSetting.findUnique({
+        where: { organizationId_key: { organizationId, key: 'AI_PROVIDER' } }
       })
     ]);
 
-    const isConfigured = !!(keySetting?.value);
-    const isValidated = !!(validatedAt?.value);
+    const activeProvider = providerSetting?.value || 'gemini';
+
+    let isConfigured = false;
+    let isValidated = false;
+    let lastValidated = null;
+
+    if (activeProvider === 'gemini') {
+      isConfigured = !!(keySetting?.value);
+      isValidated = !!(validatedAt?.value);
+      lastValidated = validatedAt?.value || null;
+    } else {
+      isConfigured = !!(openaiKeySetting?.value);
+      isValidated = !!(openaiValidatedAt?.value);
+      lastValidated = openaiValidatedAt?.value || null;
+    }
 
     res.json({
       success: true,
       data: {
         status: isConfigured && isValidated ? 'ONLINE' : isConfigured ? 'CONFIGURED' : 'OFFLINE',
-        provider: 'GEMINI',
-        model: 'gemini-2.0-flash',
+        provider: activeProvider.toUpperCase(),
+        model: activeProvider === 'gemini' ? 'gemini-2.0-flash' : 'gpt-4o',
         keyConfigured: isConfigured,
         keyValidated: isValidated,
-        lastValidated: validatedAt?.value || null,
+        lastValidated,
         todayTokens: usageToday._sum.tokens || 0,
         todayCost: usageToday._sum.cost || 0,
         todayRequests: usageToday._count._all || 0

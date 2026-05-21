@@ -13,6 +13,8 @@ import {
   BarChart, Bar, Cell
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
+import { exportToPDF } from '../../utils/exportUtils';
+import toast from 'react-hot-toast';
 
 const AgentDashboard = () => {
   const navigate = useNavigate();
@@ -30,6 +32,20 @@ const AgentDashboard = () => {
 
   const { cards, recentActivity, callbacks } = statsData || {};
 
+  const handleExport = () => {
+    if (!statsData) return toast.error('No data to export');
+    
+    const headers = ['Metric', 'Value'];
+    const data = [
+      ['Calls Today', cards?.callsToday ?? 0],
+      ['Talk Time (mins)', Math.floor((cards?.talkTimeToday || 0) / 60)],
+      ['Conversions', cards?.conversionsThisMonth ?? 0],
+      ['Revenue Generated', `₹${(cards?.revenueGenerated || 0).toLocaleString()}`]
+    ];
+    
+    exportToPDF('Agent Performance Dashboard', headers, data, 'agent_dashboard');
+  };
+
   return (
     <div className="space-y-10 pb-20">
       {/* DASHBOARD HEADER */}
@@ -43,6 +59,12 @@ const AgentDashboard = () => {
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Rank</span>
               <span className="text-sm font-black text-blue-600 italic">#14 Overall</span>
            </div>
+           <button 
+             onClick={handleExport}
+             className="h-16 px-8 bg-white border border-slate-200 text-slate-700 rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-sm hover:bg-slate-50 transition-all flex items-center gap-3"
+           >
+              Export PDF
+           </button>
            <button 
              onClick={() => navigate('/agent/calling')}
              className="h-16 px-10 bg-slate-900 text-white rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-slate-900/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-4 group"

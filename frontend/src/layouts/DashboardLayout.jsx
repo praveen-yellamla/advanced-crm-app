@@ -275,7 +275,7 @@ const DashboardLayout = () => {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         
         {/* HEADER */}
-        <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-10 shrink-0 sticky top-0 z-[1000] shadow-sm">
+        <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-10 shrink-0 sticky top-0 z-30 shadow-sm">
           
           <div className="flex items-center bg-slate-50 border border-slate-200 px-6 py-2.5 rounded-2xl w-[440px] focus-within:ring-4 focus-within:ring-blue-500/5 focus-within:border-blue-500/50 transition-all">
             <Search size={18} className="text-slate-400" />
@@ -295,7 +295,7 @@ const DashboardLayout = () => {
                     {isNotificationOpen && (
                       <motion.div 
                         initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute right-0 mt-4 w-[calc(100vw-40px)] md:w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden z-[2001]"
+                        className="absolute right-0 mt-4 w-[calc(100vw-40px)] md:w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden z-[50]"
                       >
                          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <h4 className="text-sm font-black text-[#0F172A] uppercase italic">Notifications</h4>
@@ -358,7 +358,7 @@ const DashboardLayout = () => {
                     initial={{ opacity: 0, y: 20, scale: 0.95 }} 
                     animate={{ opacity: 1, y: 0, scale: 1 }} 
                     exit={{ opacity: 0, y: 15, scale: 0.95 }}
-                    className="absolute right-0 mt-4 w-[280px] bg-white/90 backdrop-blur-2xl rounded-[32px] shadow-[0_30px_90px_rgba(0,0,0,0.2)] border border-slate-100 overflow-hidden z-[2001]"
+                    className="absolute right-0 mt-4 w-[280px] bg-white/90 backdrop-blur-2xl rounded-[32px] shadow-[0_30px_90px_rgba(0,0,0,0.2)] border border-slate-100 overflow-hidden z-[50]"
                   >
                      {/* DROPDOWN HEADER */}
                      <div className="p-6 bg-slate-900 text-white flex flex-col gap-1 relative overflow-hidden">
@@ -424,7 +424,7 @@ const DashboardLayout = () => {
       {/* HEALTH STATUS MODAL */}
       <AnimatePresence>
         {isHealthOpen && (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center p-6">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-6">
              <motion.div 
                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                className="absolute inset-0 bg-[#0F172A]/80 backdrop-blur-xl"

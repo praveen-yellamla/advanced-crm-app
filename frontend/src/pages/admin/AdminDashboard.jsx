@@ -27,6 +27,7 @@ import {
 } from 'recharts';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { exportToPDF } from '../../utils/exportUtils';
 
 import LiveCallMonitor from '../../components/admin/LiveCallMonitor';
 
@@ -62,36 +63,25 @@ const AdminDashboard = () => {
     
     const { cards, sources, funnel } = statsData;
     
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "BUSINESS PERFORMANCE REPORT\n";
-    csvContent += `Generated: ${new Date().toLocaleString()}\n\n`;
+    const headers = ['Metric/Status/Source', 'Value/Count'];
+    const data = [
+      ['--- SUMMARY ---', ''],
+      ['Total Leads', cards.totalLeads],
+      ['Active Agents', cards.activeAgents],
+      ['Conversion Rate (%)', cards.conversionRate],
+      ['--- LEAD SOURCES ---', '']
+    ];
     
-    csvContent += "SUMMARY\n";
-    csvContent += `Metric,Value\n`;
-    csvContent += `Total Leads,${cards.totalLeads}\n`;
-    csvContent += `Active Agents,${cards.activeAgents}\n`;
-    csvContent += `Conversion Rate,${cards.conversionRate}%\n\n`;
-    
-    csvContent += "LEAD SOURCES\n";
-    csvContent += `Source,Count\n`;
     sources.forEach(s => {
-      csvContent += `${s.source},${s._count}\n`;
+      data.push([s.source, s._count]);
     });
     
-    csvContent += "\nPIPELINE STAGES\n";
-    csvContent += `Status,Count\n`;
+    data.push(['--- PIPELINE STAGES ---', '']);
     funnel.forEach(f => {
-      csvContent += `${f.status},${f._count}\n`;
+      data.push([f.status, f._count]);
     });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Business_Report_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
     
+    exportToPDF('Business Performance Report', headers, data, 'business_report');
     toast.success('Report downloaded successfully');
   };
 

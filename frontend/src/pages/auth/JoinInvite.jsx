@@ -219,14 +219,18 @@ const JoinInvite = () => {
           <div className="space-y-2">
             <h2 className="text-2xl font-black uppercase tracking-tight text-white">Workspace Activated! 🎉</h2>
             <p className="text-slate-400 font-medium text-xs leading-relaxed">
-              Welcome to the team, <strong>{name}</strong>! Your sales cockpit is fully active and assigned.
+              Welcome to the team, <strong>{name}</strong>! Your {tokenInfo?.role === 'manager' ? 'management cockpit' : 'sales cockpit'} is fully active and assigned.
             </p>
           </div>
 
           <div className="p-6 bg-slate-900/40 border border-slate-800 rounded-2xl space-y-2 text-left text-xs">
             <div className="text-slate-400 font-bold uppercase tracking-wider text-[9px] mb-1">Onboarding Checklist:</div>
             <div className="flex items-center gap-2 text-green-400 font-semibold"><CheckCircle2 size={13} /> Account provisioned</div>
-            <div className="flex items-center gap-2 text-green-400 font-semibold"><CheckCircle2 size={13} /> Assigned to {tokenInfo.teamName}</div>
+            {tokenInfo?.teamName && tokenInfo.teamName !== 'Unassigned' && (
+              <div className="flex items-center gap-2 text-green-400 font-semibold">
+                <CheckCircle2 size={13} /> {tokenInfo?.role === 'manager' ? 'Managing' : 'Assigned to'} {tokenInfo.teamName}
+              </div>
+            )}
             <div className="flex items-center gap-2 text-green-400 font-semibold"><CheckCircle2 size={13} /> Welcome pack delivered to email</div>
           </div>
 
@@ -248,7 +252,9 @@ const JoinInvite = () => {
         <h1 className="text-3xl font-black text-white tracking-tighter uppercase">
           CRM<span className="text-blue-500">.PRO</span>
         </h1>
-        <h2 className="text-xl font-extrabold text-slate-300">Complete Team Registration</h2>
+        <h2 className="text-xl font-extrabold text-slate-300">
+          {tokenInfo?.role === 'manager' ? 'Complete Manager Registration' : 'Complete Team Registration'}
+        </h2>
         
         {tokenInfo && (
           <div className="inline-block px-4 py-2 bg-slate-900 border border-slate-800 rounded-2xl text-[11px] font-bold text-slate-400">
@@ -263,11 +269,29 @@ const JoinInvite = () => {
           animate={{ opacity: 1, y: 0 }}
           className="bg-[#0b0f19] border border-slate-900 py-10 px-10 rounded-[32px] shadow-2xl space-y-8"
         >
-          {/* Header Banner for assigned team */}
-          <div className="p-5 bg-blue-950/30 border border-blue-900/30 rounded-2xl flex items-center justify-between">
-            <div className="space-y-0.5">
-              <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Assigned Protocol Team:</span>
-              <h4 className="text-sm font-black text-slate-200 uppercase tracking-wide">{tokenInfo?.teamName}</h4>
+          {/* Header Banner for role and assigned team */}
+          <div className="p-5 bg-[#1e1b4b]/30 border border-[#4338ca]/30 rounded-2xl flex items-center justify-between">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Your Role:</span>
+                {tokenInfo?.role === 'manager' ? (
+                  <span className="inline-flex items-center bg-purple-900/60 text-purple-200 text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md border border-purple-800">
+                    👔 Manager
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center bg-blue-900/60 text-blue-200 text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md border border-blue-800">
+                    👤 Agent
+                  </span>
+                )}
+              </div>
+              {tokenInfo?.teamName && tokenInfo?.teamName !== 'Unassigned' && (
+                <div>
+                  <span className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider block">
+                    {tokenInfo?.role === 'manager' ? 'Managing sales team:' : 'Assigned protocol team:'}
+                  </span>
+                  <h4 className="text-sm font-black text-slate-200 uppercase tracking-wide mt-0.5">{tokenInfo?.teamName}</h4>
+                </div>
+              )}
             </div>
             {timeLeft && (
               <div className="text-right">

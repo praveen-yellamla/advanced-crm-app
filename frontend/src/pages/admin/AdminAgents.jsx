@@ -91,8 +91,19 @@ const AdminAgents = () => {
     password: '',
     phone: '',
     teamId: '',
-    role: 'AGENT'
+    role: 'agent'
   });
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      email: '',
+      password: '',
+      phone: '',
+      teamId: '',
+      role: 'agent'
+    });
+  };
 
   // Mutations
   const inviteUserMutation = useMutation({
@@ -129,14 +140,18 @@ const AdminAgents = () => {
   });
 
   const createAgentMutation = useMutation({
-    mutationFn: (data) => api.post('/admin/agents', data),
-    onSuccess: () => {
+    mutationFn: (data) => {
+      const endpoint = data.role?.toLowerCase() === 'manager' ? '/admin/managers/create' : '/admin/agents/create';
+      return api.post(endpoint, data);
+    },
+    onSuccess: (res, variables) => {
       queryClient.invalidateQueries(['adminAgents']);
-      toast.success('Agent provisioned successfully');
+      toast.success(variables.role?.toLowerCase() === 'manager' ? 'Manager provisioned successfully' : 'Agent provisioned successfully');
       setIsModalOpen(false);
+      resetForm();
     },
     onError: (err) => {
-      toast.error(err.response?.data?.message || 'Failed to provision agent');
+      toast.error(err.response?.data?.message || 'Failed to provision member');
     }
   });
 
@@ -198,22 +213,22 @@ const AdminAgents = () => {
               <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
                  <Users size={20} />
               </div>
-              <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase">Member HQ</h1>
+              <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase">Team Members</h1>
            </div>
-           <p className="text-slate-500 font-bold text-xs uppercase tracking-widest ml-1">Identity Management & Access Control</p>
+           <p className="text-slate-500 font-bold text-xs uppercase tracking-widest ml-1">Manage your agents and managers</p>
         </div>
 
         <div className="flex flex-wrap gap-4">
-           <button onClick={() => navigate('/admin/agents/invite')} className='h-14 px-8 bg-blue-600 text-white rounded-2xl flex items-center gap-3 text-xs font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-blue-500/20 group'><UserPlus size={18} className='text-white group-hover:rotate-12 transition-transform' /> Invite Agents Center</button>
+           <button onClick={() => navigate('/admin/agents/invite')} className='h-14 px-8 bg-blue-600 text-white rounded-2xl flex items-center gap-3 text-xs font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-blue-500/20 group'><UserPlus size={18} className='text-white group-hover:rotate-12 transition-transform' /> Invite by Email</button>
            <button 
              onClick={() => {
                setEditAgentId(null);
-               setFormData({ name: '', email: '', password: '', phone: '', teamId: '', role: 'AGENT' });
+               resetForm();
                setIsModalOpen(true);
              }}
              className="h-14 px-8 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center gap-3"
            >
-              <Plus size={18} /> Provision Manually
+              <Plus size={18} /> Add Manually
            </button>
         </div>
       </div>
@@ -221,10 +236,10 @@ const AdminAgents = () => {
       {/* STATS TILES */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
          {[
-           { label: 'Verified Identities', val: cards.manualAgents + cards.invitedJoined || 0, icon: UserCheck, color: 'blue' },
-           { label: 'Outbound Invites', val: cards.invitedTotal || 0, icon: Send, color: 'violet' },
-           { label: 'Live Sessions', val: agents?.filter(a => a.isActive).length || 0, icon: Zap, color: 'emerald' },
-           { label: 'Awaiting Uplink', val: cards.invitedPending || 0, icon: Clock, color: 'amber' }
+           { label: 'Active Agents', val: agents?.filter(a => a.isActive).length || 0, icon: UserCheck, color: 'blue' },
+           { label: 'Invitations Sent', val: newPendingInvites?.length || 0, icon: Send, color: 'violet' },
+           { label: 'Agents Online Now', val: agents?.filter(a => a.isActive).length || 0, icon: Zap, color: 'emerald' },
+           { label: 'Pending Invites', val: newPendingInvites?.length || 0, icon: Clock, color: 'amber' }
          ].map((stat, i) => (
            <motion.div 
              key={i}
@@ -372,7 +387,7 @@ const AdminAgents = () => {
                                  activeId={activeMenuId}
                                  setActiveId={setActiveMenuId}
                               >
-                                 {filterType === 'PENDING' ? (
+                                 {(item.inviteStatus === 'PENDING' || (item.agentType === 'INVITED' && item.inviteStatus !== 'ACCEPTED')) ? (
                                      <>
                                         <TableActionItem 
                                            icon={<Copy size={16} />} 
@@ -568,33 +583,68 @@ const AdminAgents = () => {
       <AnimatePresence>
          {isModalOpen && (
            <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#020617]/80 backdrop-blur-xl" onClick={() => setIsModalOpen(false)}/>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#020617]/80 backdrop-blur-xl" onClick={() => { setIsModalOpen(false); resetForm(); }}/>
               <motion.div initial={{ opacity: 0, scale: 0.95, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 40 }} className="relative w-full max-w-2xl bg-white rounded-[48px] shadow-2xl overflow-hidden">
                  <div className="p-12 pb-6 border-b border-slate-100">
-                    <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">{editAgentId ? 'Modify Identity' : 'Native Provisioning'}</h2>
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">{editAgentId ? 'Modify Identity' : (formData.role === 'manager' ? 'Add Manager Manually' : 'Add Agent Manually')}</h2>
                     <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2">Configure permanent system access for this entity.</p>
                  </div>
 
                  <form onSubmit={(e) => {
-                    e.preventDefault();
-                    const data = new FormData();
-                    data.append('name', formData.name);
-                    data.append('email', formData.email);
-                    data.append('phone', formData.phone);
-                    data.append('role', formData.role);
-                    data.append('teamId', formData.teamId);
-                    if (formData.password) data.append('password', formData.password);
-                    if (formData.image) data.append('image', formData.image);
+                     e.preventDefault();
+                     if (editAgentId) {
+                       const data = new FormData();
+                       data.append('name', formData.name);
+                       data.append('email', formData.email);
+                       data.append('phone', formData.phone);
+                       data.append('role', formData.role);
+                       data.append('teamId', formData.teamId);
+                       if (formData.password) data.append('password', formData.password);
+                       updateAgentMutation.mutate({ id: editAgentId, data });
+                     } else {
+                       createAgentMutation.mutate({
+                         name: formData.name,
+                         email: formData.email,
+                         password: formData.password,
+                         phone: formData.phone,
+                         teamId: formData.teamId ? parseInt(formData.teamId) : null,
+                         role: formData.role?.toLowerCase()
+                       });
+                     }
+                  }} className="p-12 pt-8 space-y-8">
+                     {!editAgentId && (
+                        <div className="space-y-3 pb-4 border-b border-slate-100">
+                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Adding a:</label>
+                           <div className="grid grid-cols-2 gap-4">
+                              <button
+                                 type="button"
+                                 onClick={() => setFormData({ ...formData, role: 'agent' })}
+                                 className={`h-14 px-6 rounded-2xl border font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all ${
+                                    formData.role === 'agent'
+                                       ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20'
+                                       : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
+                                 }`}
+                              >
+                                 <span>👤 Agent</span>
+                              </button>
+                              <button
+                                 type="button"
+                                 onClick={() => setFormData({ ...formData, role: 'manager' })}
+                                 className={`h-14 px-6 rounded-2xl border font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all ${
+                                    formData.role === 'manager'
+                                       ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20'
+                                       : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
+                                 }`}
+                              >
+                                 <span>👔 Manager</span>
+                              </button>
+                           </div>
+                        </div>
+                     )}
 
-                    if (editAgentId) {
-                      updateAgentMutation.mutate({ id: editAgentId, data });
-                    } else {
-                      createAgentMutation.mutate(data);
-                    }
-                 }} className="p-12 pt-8 space-y-8">
                     <div className="grid grid-cols-2 gap-8">
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Entity Name</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Full Name</label>
                           <input 
                              type="text" required placeholder="e.g. John Doe"
                              className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900"
@@ -602,9 +652,9 @@ const AdminAgents = () => {
                           />
                        </div>
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Network Email</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
                           <input 
-                             type="email" required placeholder="name@domain.com"
+                             type="email" required placeholder="e.g. agent@company.com" autoComplete="new-email"
                              className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900"
                              value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
                           />
@@ -613,18 +663,25 @@ const AdminAgents = () => {
 
                     <div className="grid grid-cols-2 gap-8">
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Operational Team</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                             {formData.role === 'manager' ? 'Team to Manage (optional)' : 'Assign to Team'}
+                          </label>
                           <select 
-                             required 
+                             required={formData.role !== 'manager'}
                              className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_1.5rem_center] bg-no-repeat"
                              value={formData.teamId} onChange={e => setFormData({...formData, teamId: e.target.value})}
                           >
-                             <option value="">Select Protocol Unit...</option>
+                             <option value="">{formData.role === 'manager' ? 'Select a team to manage...' : 'Select a team...'}</option>
                              {teams?.map(t => <option key={t.id} value={t.id}>{t.teamName}</option>)}
                           </select>
+                          {formData.role === 'manager' && (
+                              <p className="text-[10px] text-slate-400 font-bold mt-1.5 ml-1">
+                                 You can assign a team later from the Teams page
+                              </p>
+                           )}
                        </div>
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Contact Protocol</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Phone Number</label>
                           <input 
                              type="text" placeholder="+1 (555) 000-0000"
                              className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900"
@@ -636,7 +693,7 @@ const AdminAgents = () => {
                      {!editAgentId && (
                         <div className="grid grid-cols-2 gap-8">
                            <div className="space-y-2 col-span-2">
-                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Access Password</label>
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Set Password</label>
                               <input 
                                  type="password" required placeholder="Choose a secure password"
                                  className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900"
@@ -647,9 +704,9 @@ const AdminAgents = () => {
                      )}
 
                     <div className="flex gap-4 pt-12 border-t border-slate-100">
-                       <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-18 rounded-3xl bg-slate-50 text-slate-400 font-black uppercase tracking-widest text-[11px] hover:bg-slate-100 transition-all">Cancel</button>
+                       <button type="button" onClick={() => { setIsModalOpen(false); resetForm(); }} className="flex-1 h-18 rounded-3xl bg-slate-50 text-slate-400 font-black uppercase tracking-widest text-[11px] hover:bg-slate-100 transition-all">Cancel</button>
                        <button type="submit" className="flex-[2] h-18 rounded-3xl bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all">
-                          {editAgentId ? 'Commit Changes' : 'Execute Provisioning'}
+                          {editAgentId ? 'Commit Changes' : (formData.role === 'manager' ? 'Add Manager' : 'Add Agent')}
                        </button>
                     </div>
                  </form>

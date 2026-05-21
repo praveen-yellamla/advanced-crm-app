@@ -45,7 +45,7 @@ class AIService {
       `;
 
       const systemPrompt = `
-        You are "Zia", the Advanced CRM Intelligence Assistant. 
+        You are "AI Assistant", the Advanced CRM Intelligence Assistant. 
         You have access to real-time CRM data and operations for this workspace.
         Your goal is to help users manage their pipeline and analyze performance.
         

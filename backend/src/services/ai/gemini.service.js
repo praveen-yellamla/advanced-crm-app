@@ -56,7 +56,7 @@ class GeminiService {
     const key = await this.resolveKey(organizationId);
 
     if (!key) {
-      console.warn('[GEMINI SERVICE] No API key configured — running in simulation mode.');
+      console.warn('[GEMINI SERVICE] No API key configured — running in Demo Mode (No API Key).');
       return this._simulateChat(userMessage);
     }
 
@@ -132,25 +132,25 @@ class GeminiService {
     let content;
 
     if (msg.includes('score') || msg.includes('probability')) {
-      content = '### AI Conversion Prediction\n\n- **Score:** 88/100\n- **Priority:** High\n- **Next Action:** Dispatch proposal deck via email.\n\n> *Simulation mode — configure your Gemini API key to enable real AI.*';
+      content = '### AI Conversion Prediction\n\n- **Score:** 88/100\n- **Priority:** High\n- **Next Action:** Dispatch proposal deck via email.\n\n> *Demo Mode (No API Key) — configure your Gemini API key to enable real AI.*';
     } else if (msg.includes('lead') || msg.includes('summary')) {
-      content = '### Lead Executive Summary\n\nThis prospect shows high interest in service scalability. Recommend highlighting Enterprise security features.\n\n> *Simulation mode — configure your Gemini API key to enable real AI.*';
+      content = '### Lead Executive Summary\n\nThis prospect shows high interest in service scalability. Recommend highlighting Enterprise security features.\n\n> *Demo Mode (No API Key) — configure your Gemini API key to enable real AI.*';
     } else {
-      content = '### CRM Intelligence (Simulation)\n\n**Workspace Status:** Healthy\n**Recommended Action:** 3 hot opportunities in pipeline — schedule immediate follow-ups.\n\n> *Configure your Gemini API key in AI Settings to enable real-time intelligence.*';
+      content = '### CRM Intelligence (Demo Mode (No API Key))\n\n**Workspace Status:** Healthy\n**Recommended Action:** 3 hot opportunities in pipeline — schedule immediate follow-ups.\n\n> *Configure your Gemini API key in AI Settings to enable real-time intelligence.*';
     }
 
-    return { content, tokens: 150, provider: 'SIMULATION', simulation: true };
+    return { content, tokens: 150, provider: 'DEMO', simulation: true };
   }
 
   _simulateJSON(prompt) {
     const p = prompt.toLowerCase();
     if (p.includes('score') || p.includes('priority')) {
-      return { score: 85, priority: 'High', reasoning: 'Simulation mode', nextAction: 'Propose contract' };
+      return { score: 85, priority: 'High', reasoning: 'Demo Mode (No API Key)', nextAction: 'Propose contract' };
     }
     if (p.includes('sentiment') || p.includes('transcript')) {
-      return { sentiment: 'Positive', objections: ['pricing'], summary: 'Simulation mode', rating: 4 };
+      return { sentiment: 'Positive', objections: ['pricing'], summary: 'Demo Mode (No API Key)', rating: 4 };
     }
-    return { status: 'SIMULATED', message: 'Configure Gemini API key for real intelligence.' };
+    return { status: 'DEMO', message: 'Configure Gemini API key for real intelligence.' };
   }
 }
 

@@ -2,17 +2,16 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { 
-  Mail, Search, Users, Eye, Clock, BarChart2, CheckCircle, ArrowUpRight, TrendingUp, RefreshCw, Layers
+  Mail, Search, Users, Eye, Clock, BarChart2, CheckCircle, TrendingUp, RefreshCw, AlertTriangle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const EmailMonitoring = () => {
   const [selectedAgentId, setSelectedAgentId] = useState('');
   const [search, setSearch] = useState('');
-  
   const [activeEmail, setActiveEmail] = useState(null);
 
-  // 1. Fetch team emails
+  // Fetch team emails
   const { data: emails, isLoading, refetch } = useQuery({
     queryKey: ['managerEmails', selectedAgentId],
     queryFn: async () => {
@@ -21,7 +20,7 @@ const EmailMonitoring = () => {
     }
   });
 
-  // 2. Fetch Agents (for dropdown)
+  // Fetch Agents (for dropdown)
   const { data: agents } = useQuery({
     queryKey: ['managerEmailsAgentsList'],
     queryFn: async () => {
@@ -38,9 +37,9 @@ const EmailMonitoring = () => {
   if (isLoading) {
     return (
       <div className="space-y-8 animate-pulse p-4">
-        <div className="h-16 bg-slate-100 rounded-2xl w-full" />
+        <div className="h-16 bg-slate-100 rounded-xl w-full" />
         <div className="grid grid-cols-4 gap-6">
-          {[1,2,3,4].map(i => <div key={i} className="h-28 bg-slate-100 rounded-2xl" />)}
+          {[1,2,3,4].map(i => <div key={i} className="h-28 bg-slate-100 rounded-xl" />)}
         </div>
       </div>
     );
@@ -49,47 +48,52 @@ const EmailMonitoring = () => {
   // Filter Emails
   const filteredEmails = emails?.filter(email => {
     if (!search) return true;
+    const term = search.toLowerCase();
     return (
-      email.subject?.toLowerCase().includes(search.toLowerCase()) ||
-      email.lead?.customerName?.toLowerCase().includes(search.toLowerCase())
+      email.subject?.toLowerCase().includes(term) ||
+      email.lead?.customerName?.toLowerCase().includes(term) ||
+      email.to?.toLowerCase().includes(term)
     );
   }) || [];
 
   return (
-    <div className="space-y-8 pb-16 px-4 md:px-0">
+    <div className="space-y-6 pb-16 px-4 md:px-0">
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Email Monitoring</h1>
-          <p className="text-slate-500 font-medium text-sm mt-1">Audit outgoing proposals, track average open/click rates, and inspect conversation threads.</p>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+            <Users className="text-indigo-600" size={28} />
+            Team Email Performance
+          </h1>
+          <p className="text-slate-500 font-medium text-sm mt-1">Monitor agent communication, track open rates, and inspect conversation timelines.</p>
         </div>
         
         <button 
           onClick={handleRefresh}
-          className="h-12 px-5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-bold shadow-sm flex items-center gap-2"
+          className="h-10 px-4 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-sm font-semibold shadow-sm flex items-center gap-2 transition-colors"
         >
-          <RefreshCw size={14} /> Refresh Log
+          <RefreshCw size={16} /> Refresh Data
         </button>
       </div>
 
       {/* STATS OVERVIEW CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <StatCard title="Open Rate" value="64.5%" subText="+4.2% versus last week" icon={<Eye />} color="indigo" />
-        <StatCard title="Click Rate" value="38.2%" subText="+1.5% versus last week" icon={<ArrowUpRight />} color="emerald" />
-        <StatCard title="Reply Rate" value="22.1%" subText="-0.4% versus last week" icon={<CheckCircle />} color="violet" />
-        <StatCard title="Templates Active" value="12 Templates" subText="Top performing: Solar Proposal" icon={<BarChart2 />} color="amber" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="Team Open Rate" value="64.5%" subText="+4.2% versus last week" icon={<Eye />} color="indigo" />
+        <StatCard title="Total Dispatched" value={emails?.length || 0} subText="Emails sent by team" icon={<Mail />} color="blue" />
+        <StatCard title="Response Rate" value="22.1%" subText="Leads replying" icon={<TrendingUp />} color="emerald" />
+        <StatCard title="Flagged Emails" value={emails?.filter(e => e.status === 'FAILED').length || 0} subText="Requires attention" icon={<AlertTriangle />} color="amber" />
       </div>
 
       {/* DYNAMIC FILTERS */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="relative col-span-2">
-          <Search className="absolute left-3.5 top-3.5 text-slate-400" size={16} />
+          <Search className="absolute left-3 top-3 text-slate-400" size={18} />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search email subject or customer..."
-            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:border-indigo-500"
+            placeholder="Search email subject, customer, or recipient..."
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
           />
         </div>
 
@@ -97,7 +101,7 @@ const EmailMonitoring = () => {
           <select
             value={selectedAgentId}
             onChange={(e) => setSelectedAgentId(e.target.value)}
-            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500"
+            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all cursor-pointer"
           >
             <option value="">All Team Members</option>
             {agents?.map(a => (
@@ -108,50 +112,46 @@ const EmailMonitoring = () => {
       </div>
 
       {/* TWO PANEL LIST-DETAIL */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* EMAIL LOG TABLE */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="text-base font-extrabold text-slate-800">Outgoing Communications</h3>
-            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">{filteredEmails.length} Outgoing</span>
+        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[600px]">
+          <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
+            <h3 className="text-sm font-semibold text-slate-800">Agent Communications</h3>
+            <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-2.5 py-1 rounded-md">{filteredEmails.length} Outgoing</span>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-y-auto flex-1">
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                  <th className="p-4">Customer Lead</th>
-                  <th className="p-4">Subject</th>
-                  <th className="p-4">Advisor</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Action</th>
+              <thead className="sticky top-0 bg-white shadow-sm z-10">
+                <tr className="border-b border-slate-200 text-xs font-semibold text-slate-500 bg-slate-50">
+                  <th className="p-3">Customer Lead</th>
+                  <th className="p-3">Subject</th>
+                  <th className="p-3">Agent</th>
+                  <th className="p-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
-                {filteredEmails.map(email => (
+              <tbody className="divide-y divide-slate-100">
+                {filteredEmails.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="p-8 text-center text-slate-500 text-sm">No emails found matching your filters.</td>
+                  </tr>
+                ) : filteredEmails.map(email => (
                   <tr 
                     key={email.id} 
                     onClick={() => setActiveEmail(email)}
-                    className={`text-xs hover:bg-slate-50/50 cursor-pointer transition-colors ${activeEmail?.id === email.id ? 'bg-indigo-50/30' : ''}`}
+                    className={`text-sm hover:bg-slate-50 cursor-pointer transition-colors ${activeEmail?.id === email.id ? 'bg-indigo-50/50' : ''}`}
                   >
-                    <td className="p-4 font-extrabold text-slate-800">{email.lead?.customerName}</td>
-                    <td className="p-4 font-semibold text-slate-600 max-w-[200px] truncate">{email.subject}</td>
-                    <td className="p-4 font-bold text-slate-500">{email.agent?.name}</td>
-                    <td className="p-4">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
-                        email.status === 'DELIVERED' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-600'
+                    <td className="p-3 font-medium text-slate-900">{email.lead?.customerName || email.to}</td>
+                    <td className="p-3 text-slate-600 max-w-[200px] truncate">{email.subject}</td>
+                    <td className="p-3 text-slate-600">{email.agent?.name}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        email.status === 'DELIVERED' || email.status === 'SENT' ? 'bg-green-100 text-green-700' 
+                        : email.status === 'FAILED' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'
                       }`}>
                         {email.status}
                       </span>
-                    </td>
-                    <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => setActiveEmail(email)}
-                        className="p-1.5 bg-slate-50 hover:bg-indigo-600 text-slate-700 hover:text-white rounded-lg border border-slate-100 transition-all"
-                      >
-                        <Eye size={14} />
-                      </button>
                     </td>
                   </tr>
                 ))}
@@ -161,46 +161,66 @@ const EmailMonitoring = () => {
         </div>
 
         {/* THREAD CONVERSATION DRAWER */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-[500px]">
-          {activeEmail ? (
-            <div className="flex flex-col h-full justify-between overflow-hidden">
-              <div className="overflow-y-auto space-y-6 flex-1 pr-2">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-[600px]">
+          <div className="p-4 border-b border-slate-200 bg-slate-50 shrink-0">
+            <h3 className="text-sm font-semibold text-slate-800">Email Insight</h3>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-5">
+            {activeEmail ? (
+              <div className="space-y-6">
+                
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900">Email Thread Details</h3>
-                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-0.5">Linked customer conversation</p>
-                </div>
-
-                <div className="space-y-4 pt-4 border-t border-slate-100">
-                  <div>
-                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Subject Line</span>
-                    <p className="text-xs font-extrabold text-slate-800 mt-1">{activeEmail.subject}</p>
-                  </div>
-
-                  <div>
-                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Sender Advisor</span>
-                    <p className="text-xs font-bold text-slate-600 mt-1">{activeEmail.agent?.name}</p>
-                  </div>
-
-                  <div>
-                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">HTML Body Thread</span>
-                    <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs text-slate-700 mt-2 leading-relaxed whitespace-pre-line font-medium italic">
-                      "{activeEmail.content}"
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Message Content</h4>
+                  <div className="space-y-3 text-sm">
+                    <div>
+                      <span className="block text-slate-500 mb-0.5">Subject:</span>
+                      <span className="font-medium text-slate-900 block">{activeEmail.subject}</span>
+                    </div>
+                    <div>
+                      <span className="block text-slate-500 mb-0.5">Sent By:</span>
+                      <span className="font-medium text-slate-900 block">{activeEmail.agent?.name}</span>
+                    </div>
+                    <div>
+                      <span className="block text-slate-500 mb-2">HTML Body:</span>
+                      <div 
+                        className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 max-h-[250px] overflow-y-auto"
+                        dangerouslySetInnerHTML={{ __html: activeEmail.content }}
+                      />
                     </div>
                   </div>
                 </div>
+
+                <div>
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Delivery Metrics</h4>
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Status:</span>
+                      <span className="font-medium text-slate-900">{activeEmail.status}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Sent At:</span>
+                      <span className="text-slate-900">{activeEmail.sentAt ? new Date(activeEmail.sentAt).toLocaleString() : new Date(activeEmail.createdAt).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Delivered:</span>
+                      <span className="text-slate-900">{activeEmail.deliveredAt ? new Date(activeEmail.deliveredAt).toLocaleString() : 'Pending'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Opened:</span>
+                      <span className="text-slate-900">{activeEmail.openedAt ? new Date(activeEmail.openedAt).toLocaleString() : 'No'}</span>
+                    </div>
+                  </div>
+                </div>
+
               </div>
-              <div className="pt-4 border-t border-slate-100">
-                <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-1">
-                  <Clock size={12} /> Dispatched on {new Date(activeEmail.createdAt).toLocaleString()}
-                </span>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-center text-slate-400">
+                <Users size={40} className="text-slate-200 mb-3" />
+                <p className="text-sm font-medium">Select an email to view timeline and delivery metrics</p>
               </div>
-            </div>
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center text-center text-slate-400">
-              <Mail size={36} className="text-slate-200 mb-2 animate-pulse" />
-              <p className="text-xs font-bold uppercase tracking-wider">Select a conversation thread to activate drawer panel</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -213,18 +233,17 @@ const StatCard = ({ title, value, subText, icon, color }) => {
     amber: "text-amber-600 bg-amber-50 border-amber-100",
     indigo: "text-indigo-600 bg-indigo-50 border-indigo-100",
     emerald: "text-emerald-600 bg-emerald-50 border-emerald-100",
-    violet: "text-violet-600 bg-violet-50 border-violet-100",
   };
 
   return (
-    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${colors[color]} shadow-sm`}>
-        {React.cloneElement(icon, { size: 20 })}
+    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+      <div className={`w-12 h-12 rounded-lg flex items-center justify-center border ${colors[color]}`}>
+        {React.cloneElement(icon, { size: 24 })}
       </div>
       <div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">{title}</p>
-        <h4 className="text-lg font-black text-slate-900 mt-1 leading-none">{value}</h4>
-        <p className="text-[9px] text-slate-400 font-bold mt-1.5 leading-none">{subText}</p>
+        <p className="text-xs font-semibold text-slate-500">{title}</p>
+        <h4 className="text-xl font-bold text-slate-900 mt-0.5">{value}</h4>
+        <p className="text-[11px] text-slate-400 font-medium mt-1">{subText}</p>
       </div>
     </div>
   );

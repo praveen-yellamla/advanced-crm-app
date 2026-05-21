@@ -33,6 +33,7 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [notActivated, setNotActivated] = useState(false); // specific banner for pending invite agents
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -53,6 +54,7 @@ const Login = () => {
     if (!email || !password) return toast.error('Required fields missing');
 
     setIsSubmitting(true);
+    setNotActivated(false);
     try {
       const user = await login(email, password, rememberMe);
       toast.success(`Welcome back, ${user.name}`);
@@ -66,7 +68,12 @@ const Login = () => {
       
       navigate(rolePath[user.role] || '/unauthorized');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Verification failed');
+      const code = err.response?.data?.code;
+      if (code === 'ACCOUNT_NOT_ACTIVATED') {
+        setNotActivated(true);
+      } else {
+        toast.error(err.response?.data?.message || 'Verification failed');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -174,6 +181,22 @@ const Login = () => {
             </div>
 
             <form onSubmit={handleLogin} className="space-y-8" autoComplete="off">
+
+               {/* Account Not Activated Banner */}
+               {notActivated && (
+                 <div className="p-5 bg-amber-50 border border-amber-200 rounded-[20px] flex gap-4 items-start">
+                   <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+                     <ShieldAlert size={16} className="text-amber-600" />
+                   </div>
+                   <div>
+                     <p className="text-xs font-black text-amber-800 uppercase tracking-widest">⚠️ Account not activated yet</p>
+                     <p className="text-[11px] text-amber-700 font-bold mt-1 leading-relaxed">
+                       Check your email for the invitation link and complete your account setup to log in.
+                     </p>
+                   </div>
+                 </div>
+               )}
+
                {/* Email Field */}
                <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#64748B] ml-1">Email Address</label>

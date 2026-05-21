@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const csv = require('csv-parser');
 const prisma = require('../config/prisma');
-const { sendAgentInvitationEmail, sendWelcomeAgentEmail } = require('../utils/emailService');
+const { sendAgentInvitationEmail, sendWelcomeAgentEmail, sendManagerInvitationEmail } = require('../utils/emailService');
 const getFrontendUrl = require('../utils/getFrontendUrl');
 const { logActivity, sendNotification, triggerRealtimeEvent } = require('../utils/realtimeHelper');
 
@@ -126,13 +126,123 @@ const inviteSingleAgent = async (req, res) => {
 };
 
 /**
+ * 2AA. Invite Manager API
+ */
+const inviteManager = async (req, res) => {
+  try {
+    const { email, name, phone, teamId } = req.body;
+    const organizationId = req.user.organizationId;
+    const invitedById = req.user.id;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ success: false, message: 'Invalid email format' });
+    }
+
+    // 1. Check if user already exists
+    const userExists = await prisma.user.findUnique({
+      where: { email: email.trim().toLowerCase() }
+    });
+    if (userExists) {
+      return res.status(409).json({ success: false, message: 'User with this email already exists in the system' });
+    }
+
+    // 2. Check if a pending invite already exists
+    const pendingInvite = await prisma.agentInvitation.findFirst({
+      where: {
+        email: email.trim().toLowerCase(),
+        status: 'pending',
+        expiresAt: { gt: new Date() }
+      }
+    });
+    if (pendingInvite) {
+      return res.status(409).json({ success: false, message: 'A pending invitation already exists for this email' });
+    }
+
+    // 3. Find Team and Organization if teamId is provided
+    let team = null;
+    if (teamId) {
+      team = await prisma.team.findUnique({
+        where: { id: parseInt(teamId), organizationId }
+      });
+      if (!team) {
+        return res.status(404).json({ success: false, message: 'Assigned Team not found in this organization' });
+      }
+    }
+
+    // 4. Generate secure token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72 Hours
+
+    // 5. Create Invitation
+    const invitation = await prisma.agentInvitation.create({
+      data: {
+        email: email.trim().toLowerCase(),
+        name: name ? name.trim() : null,
+        phone: phone ? phone.trim() : null,
+        teamId: team ? team.id : null,
+        organizationId,
+        invitedById,
+        token,
+        status: 'pending',
+        role: 'manager',
+        expiresAt
+      }
+    });
+
+    // 6. Build URL
+    const frontendUrl = getFrontendUrl();
+    const inviteUrl = `${frontendUrl}/join?token=${token}`;
+
+    // 7. Send Email
+    try {
+      await sendManagerInvitationEmail(
+        invitation.email,
+        inviteUrl,
+        invitation.name || 'there',
+        req.user.name || 'Admin',
+        team ? team.teamName : null
+      );
+    } catch (emailError) {
+      console.error('[SMTP Single Manager Invite Failure]', emailError);
+    }
+
+    // Log Activity
+    await logActivity({
+      actorId: invitedById,
+      actorRole: 'ADMIN',
+      action: 'manager_invite.created',
+      entityType: 'AGENT_INVITATION',
+      entityId: parseInt(invitation.id) || null,
+      newValue: { email: invitation.email, team: team ? team.teamName : 'Unassigned' },
+      teamId: team ? team.id : null
+    });
+
+    return res.json({
+      success: true,
+      inviteUrl,
+      expiresAt,
+      message: 'Manager invitation dispatched successfully'
+    });
+  } catch (error) {
+    console.error('[Single Manager Invite Controller Error]', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
  * 2B. Bulk Email Invite API
  */
 const inviteBulkAgents = async (req, res) => {
   try {
-    const { invites, teamId } = req.body;
+    const { invites, teamId, role } = req.body;
     const organizationId = req.user.organizationId;
     const invitedById = req.user.id;
+    const targetRole = role || 'agent';
 
     if (!Array.isArray(invites) || invites.length === 0) {
       return res.status(400).json({ success: false, message: 'Invites array is required and cannot be empty' });
@@ -140,15 +250,18 @@ const inviteBulkAgents = async (req, res) => {
     if (invites.length > 500) {
       return res.status(400).json({ success: false, message: 'Cannot invite more than 500 agents at once' });
     }
-    if (!teamId) {
+    if (!teamId && targetRole !== 'manager') {
       return res.status(400).json({ success: false, message: 'Team ID is required' });
     }
 
-    const team = await prisma.team.findUnique({
-      where: { id: parseInt(teamId), organizationId }
-    });
-    if (!team) {
-      return res.status(404).json({ success: false, message: 'Assigned Team not found in this organization' });
+    let team = null;
+    if (teamId) {
+      team = await prisma.team.findUnique({
+        where: { id: parseInt(teamId), organizationId }
+      });
+      if (!team) {
+        return res.status(404).json({ success: false, message: 'Assigned Team not found in this organization' });
+      }
     }
 
     const skipped = [];
@@ -201,11 +314,12 @@ const inviteBulkAgents = async (req, res) => {
               email,
               name: inv.name ? inv.name.trim() : null,
               phone: inv.phone ? inv.phone.trim() : null,
-              teamId: team.id,
+              teamId: team ? team.id : null,
               organizationId,
               invitedById,
               token,
               status: 'pending',
+              role: targetRole,
               expiresAt
             }
           });
@@ -213,13 +327,23 @@ const inviteBulkAgents = async (req, res) => {
           const frontendUrl = getFrontendUrl();
           const inviteUrl = `${frontendUrl}/join?token=${token}`;
 
-          await sendAgentInvitationEmail(
-            email,
-            inviteUrl,
-            invitation.name || 'there',
-            req.user.name || 'Admin',
-            team.teamName
-          );
+          if (targetRole === 'manager') {
+            await sendManagerInvitationEmail(
+              email,
+              inviteUrl,
+              invitation.name || 'there',
+              req.user.name || 'Admin',
+              team ? team.teamName : null
+            );
+          } else {
+            await sendAgentInvitationEmail(
+              email,
+              inviteUrl,
+              invitation.name || 'there',
+              req.user.name || 'Admin',
+              team.teamName
+            );
+          }
 
           sentCount++;
         } catch (err) {
@@ -254,22 +378,26 @@ const inviteBulkAgents = async (req, res) => {
  */
 const inviteCsvAgents = async (req, res) => {
   try {
-    const { teamId } = req.body;
+    const { teamId, role } = req.body;
     const organizationId = req.user.organizationId;
     const invitedById = req.user.id;
+    const targetRole = role || 'agent';
 
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Please upload a CSV file' });
     }
-    if (!teamId) {
+    if (!teamId && targetRole !== 'manager') {
       return res.status(400).json({ success: false, message: 'Team ID is required' });
     }
 
-    const team = await prisma.team.findUnique({
-      where: { id: parseInt(teamId), organizationId }
-    });
-    if (!team) {
-      return res.status(404).json({ success: false, message: 'Assigned Team not found' });
+    let team = null;
+    if (teamId) {
+      team = await prisma.team.findUnique({
+        where: { id: parseInt(teamId), organizationId }
+      });
+      if (!team) {
+        return res.status(404).json({ success: false, message: 'Assigned Team not found' });
+      }
     }
 
     // Parse CSV file
@@ -345,11 +473,12 @@ const inviteCsvAgents = async (req, res) => {
               email: inv.email,
               name: inv.name || null,
               phone: inv.phone || null,
-              teamId: team.id,
+              teamId: team ? team.id : null,
               organizationId,
               invitedById,
               token,
               status: 'pending',
+              role: targetRole,
               expiresAt
             }
           });
@@ -357,13 +486,23 @@ const inviteCsvAgents = async (req, res) => {
           const frontendUrl = getFrontendUrl();
           const inviteUrl = `${frontendUrl}/join?token=${token}`;
 
-          await sendAgentInvitationEmail(
-            inv.email,
-            inviteUrl,
-            invitation.name || 'there',
-            req.user.name || 'Admin',
-            team.teamName
-          );
+          if (targetRole === 'manager') {
+            await sendManagerInvitationEmail(
+              inv.email,
+              inviteUrl,
+              invitation.name || 'there',
+              req.user.name || 'Admin',
+              team ? team.teamName : null
+            );
+          } else {
+            await sendAgentInvitationEmail(
+              inv.email,
+              inviteUrl,
+              invitation.name || 'there',
+              req.user.name || 'Admin',
+              team.teamName
+            );
+          }
 
           sentCount++;
         } catch (err) {
@@ -436,6 +575,7 @@ const getInvitations = async (req, res) => {
         teamName: inv.team?.teamName || 'Unassigned',
         invitedBy: inv.invitedBy?.name || 'Admin',
         status: inv.status,
+        role: inv.role,
         createdAt: inv.createdAt,
         expiresAt: inv.expiresAt,
         acceptedAt: inv.acceptedAt,
@@ -493,13 +633,23 @@ const resendInvitation = async (req, res) => {
     const inviteUrl = `${frontendUrl}/join?token=${token}`;
 
     try {
-      await sendAgentInvitationEmail(
-        updatedInvite.email,
-        inviteUrl,
-        updatedInvite.name || 'there',
-        req.user.name || 'Admin',
-        invitation.team?.teamName || 'CRM Team'
-      );
+      if (invitation.role === 'manager') {
+        await sendManagerInvitationEmail(
+          updatedInvite.email,
+          inviteUrl,
+          updatedInvite.name || 'there',
+          req.user.name || 'Admin',
+          invitation.team?.teamName || null
+        );
+      } else {
+        await sendAgentInvitationEmail(
+          updatedInvite.email,
+          inviteUrl,
+          updatedInvite.name || 'there',
+          req.user.name || 'Admin',
+          invitation.team?.teamName || 'CRM Team'
+        );
+      }
     } catch (emailError) {
       console.error('[SMTP Resend Invite Failure]', emailError);
     }
@@ -589,6 +739,7 @@ const validateInvitationToken = async (req, res) => {
       email: invitation.email,
       name: invitation.name,
       phone: invitation.phone,
+      role: invitation.role,
       teamName: invitation.team?.teamName || 'Unassigned',
       organizationName: invitation.organization?.name || 'CRM.PRO Portal',
       invitedBy: invitation.invitedBy?.name || 'Admin',
@@ -669,6 +820,9 @@ const completeAgentRegistration = async (req, res) => {
     // 4. Hash password with bcryptjs
     const passwordHash = await bcrypt.hash(password, 12);
 
+    const isManager = invitation.role === 'manager';
+    const userRole = isManager ? 'MANAGER' : 'AGENT';
+
     // 5. Create user
     const user = await prisma.user.create({
       data: {
@@ -676,14 +830,22 @@ const completeAgentRegistration = async (req, res) => {
         email: email.trim().toLowerCase(),
         phone: phone.trim(),
         password: passwordHash,
-        role: 'AGENT',
-        teamId: invitation.teamId,
+        role: userRole,
+        teamId: invitation.teamId || null,
         organizationId: invitation.organizationId,
         isActive: true,
         agentType: 'MANUAL',
         inviteStatus: 'ACCEPTED'
       }
     });
+
+    // If manager is associated with a team, update the team's managerId
+    if (isManager && invitation.teamId) {
+      await prisma.team.update({
+        where: { id: invitation.teamId },
+        data: { managerId: user.id }
+      });
+    }
 
     // 6. Update invitation
     await prisma.agentInvitation.update({
@@ -697,12 +859,12 @@ const completeAgentRegistration = async (req, res) => {
     // 7. Write to Activity Log
     await logActivity({
       actorId: user.id,
-      actorRole: 'AGENT',
-      action: 'agent.registered',
+      actorRole: userRole,
+      action: isManager ? 'manager.registered' : 'agent.registered',
       entityType: 'USER',
       entityId: user.id,
       newValue: { name: user.name, team: invitation.team?.teamName },
-      teamId: invitation.teamId
+      teamId: invitation.teamId || null
     });
 
     // 8. In-app notifications
@@ -710,15 +872,17 @@ const completeAgentRegistration = async (req, res) => {
     await sendNotification({
       organizationId: invitation.organizationId,
       userId: invitation.invitedById,
-      title: 'Agent Invitation Accepted',
-      message: `${user.name} accepted your invitation and joined ${invitation.team?.teamName || 'your team'}.`,
+      title: isManager ? 'Manager Invitation Accepted' : 'Agent Invitation Accepted',
+      message: isManager 
+        ? `${user.name} accepted your invitation and joined as Manager ${invitation.team?.teamName ? 'of ' + invitation.team?.teamName : ''}.`
+        : `${user.name} accepted your invitation and joined ${invitation.team?.teamName || 'your team'}.`,
       type: 'SUCCESS',
       priority: 'MEDIUM',
       link: `/admin/agents`
     });
 
     // Notify manager of team if team has a manager
-    if (invitation.team?.managerId) {
+    if (!isManager && invitation.team?.managerId) {
       await sendNotification({
         organizationId: invitation.organizationId,
         userId: invitation.team.managerId,
@@ -760,6 +924,7 @@ const completeAgentRegistration = async (req, res) => {
 
 module.exports = {
   inviteSingleAgent,
+  inviteManager,
   inviteBulkAgents,
   inviteCsvAgents,
   getInvitations,

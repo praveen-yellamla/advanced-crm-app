@@ -67,6 +67,9 @@ model Organization {
   aiUsage   AIUsage[]
   emails    Email[]
   emailAccounts EmailAccount[]
+  emailThreads  EmailThread[]
+  emailTemplates EmailTemplate[]
+  emailLabels   EmailLabel[]
   leadActivities LeadActivity[]
   callQAs   CallQA[]
   feedbacks Feedback[]
@@ -75,6 +78,7 @@ model Organization {
   notifications Notification[]
   callAnnotations CallAnnotation[]
   qaScores        QAScore[]
+  emailAuditLogs  EmailAuditLog[]
   
   // Security & Compliance
   twoFactorEnabled Boolean @default(false) @map("two_factor_enabled")
@@ -320,6 +324,7 @@ model User {
   tasksCreated  Task[]     @relation("TaskCreator")
   auditLogs     AuditLog[]
   invoices      Invoice[]  @relation("InvoiceRaisedBy")
+  approvedInvoices Invoice[] @relation("InvoiceApprover")
   emailsSent    Email[]    @relation("AgentEmails")
   qaPerformed   CallQA[]   @relation("QAManager")
   feedbacksReceived Feedback[] @relation("AgentFeedback")
@@ -327,8 +332,11 @@ model User {
   aiUsage       AIUsage[]
   chatMessages  ChatMessage[]
   emailAccounts EmailAccount[]
+  assignedThreads EmailThread[] @relation("ThreadAssignee")
   notifications Notification[]
   sentAgentInvitations AgentInvitation[] @relation("UserAgentInvitations")
+  emailAuditLogsAgent EmailAuditLog[] @relation("EmailAuditAgent")
+  emailAuditLogsManager EmailAuditLog[] @relation("EmailAuditManager")
 
   failedLoginAttempts Int @default(0) @map("failed_login_attempts")
   lockedUntil       DateTime? @map("locked_until")
@@ -440,8 +448,10 @@ model Lead {
 
   calls      Call[]
   emails     Email[]
+  emailThreads EmailThread[]
   tasks      Task[]         @relation("LeadTasks")
   activities LeadActivity[]
+  invoices   Invoice[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
@@ -524,13 +534,34 @@ model Invoice {
   invoiceNo  String        @unique @map("invoice_no")
   raisedById Int           @map("raised_by_id")
   raisedBy   User          @relation("InvoiceRaisedBy", fields: [raisedById], references: [id])
-  amount     Float
-  status     String        @default("PENDING")
-  dueDate    DateTime      @map("due_date")
   
+  clientId   Int?          @map("client_id")
+  client     Lead?         @relation(fields: [clientId], references: [id])
+  
+  approverId Int?          @map("approver_id")
+  approver   User?         @relation("InvoiceApprover", fields: [approverId], references: [id])
+
+  amount     Float
+  currency   String        @default("USD")
+  discount   Float?        @default(0)
+  tax        Float?        @default(0)
+  subtotal   Float?        @default(0)
+  
+  notes      String?       @db.Text
+  status     String        @default("DRAFT")
+  dueDate    DateTime?     @map("due_date")
+  
+  sentAt     DateTime?     @map("sent_at")
+  viewedAt   DateTime?     @map("viewed_at")
+  paidAt     DateTime?     @map("paid_at")
+  pdfUrl     String?       @map("pdf_url")
+  activityLogs Json?       @map("activity_logs")
+
   createdAt  DateTime      @default(now()) @map("created_at")
   updatedAt  DateTime      @updatedAt @map("updated_at")
   items      InvoiceItem[]
+  auditLogs  InvoiceAuditLog[]
+  deliveryLogs InvoiceDeliveryLog[]
 
   @@map("invoices")
 }
@@ -545,6 +576,41 @@ model InvoiceItem {
   total       Float
 
   @@map("invoice_items")
+}
+
+model InvoiceAuditLog {
+  id        Int      @id @default(autoincrement())
+  invoiceId Int      @map("invoice_id")
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  
+  action    String
+  by        String?
+  userId    Int?     @map("user_id")
+  
+  messageId String?  @map("message_id")
+  error     String?  @db.Text
+  
+  timestamp DateTime @default(now())
+  
+  @@map("invoice_audit_logs")
+}
+
+model InvoiceDeliveryLog {
+  id        Int      @id @default(autoincrement())
+  invoiceId Int      @map("invoice_id")
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  
+  to        String?
+  cc        String?
+  bcc       String?
+  
+  status    String   // ACCEPTED, DELIVERED, BOUNCED, FAILED
+  messageId String?  @map("message_id")
+  error     String?  @db.Text
+  
+  timestamp DateTime @default(now())
+  
+  @@map("invoice_delivery_logs")
 }
 
 // ==========================================
@@ -618,7 +684,60 @@ model Email {
   status       String  @default("SENT")
   createdAt    DateTime @default(now()) @map("created_at")
 
+  // Newly added fields for full compatibility & functionality
+  messageId    String? @unique @map("message_id")
+  from         String?
+  to           String?
+  cc           String?
+  bcc          String?
+  folder       String  @default("INBOX") // INBOX, SENT, TRASH, SPAM, DRAFTS, ARCHIVED
+  isRead       Boolean @default(false) @map("is_read")
+  isStarred    Boolean @default(false) @map("is_starred")
+  
+  // Delivery Tracking Fields
+  smtpMessageId String? @map("smtp_message_id")
+  sentAt        DateTime? @map("sent_at")
+  deliveredAt   DateTime? @map("delivered_at")
+  openedAt      DateTime? @map("opened_at")
+  failedAt      DateTime? @map("failed_at")
+  
+  threadId     Int?    @map("thread_id")
+  thread       EmailThread? @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  
+  attachments  EmailAttachment[]
+  events       EmailDeliveryEvent[]
+  auditLogs    EmailAuditLog[]
+
   @@map("emails")
+}
+
+model EmailThread {
+  id            Int      @id @default(autoincrement())
+  organizationId Int     @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  leadId        Int?     @map("lead_id")
+  lead          Lead?    @relation(fields: [leadId], references: [id])
+  subject       String
+  snippet       String?  @db.Text
+  folder        String   @default("INBOX") // INBOX, SENT, ARCHIVED, SPAM, TRASH, DRAFTS
+  isRead        Boolean  @default(false) @map("is_read")
+  isStarred     Boolean  @default(false) @map("is_starred")
+  urgency       String   @default("LOW") // LOW, MEDIUM, HIGH, URGENT
+  sentiment     String   @default("NEUTRAL") // POSITIVE, NEUTRAL, NEGATIVE
+  summary       String?  @db.Text
+  replySuggestions Json? @map("reply_suggestions") // 3 reply suggestions
+  lastMessageAt DateTime @default(now()) @map("last_message_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  messages      Email[]
+  events        EmailDeliveryEvent[]
+  labels        EmailLabel[] @relation("ThreadLabels")
+
+  assignedToId  Int?     @map("assigned_to_id")
+  assignedTo    User?    @relation("ThreadAssignee", fields: [assignedToId], references: [id])
+
+  @@map("email_threads")
 }
 
 model EmailAccount {
@@ -630,9 +749,88 @@ model EmailAccount {
   provider    String
   email       String   @unique
   password    String?
+  
+  smtpHost     String?   @map("smtp_host")
+  smtpPort     Int?      @map("smtp_port")
+  imapHost     String?   @map("imap_host")
+  imapPort     Int?      @map("imap_port")
+  syncStatus   String    @default("CONNECTED") @map("sync_status") // CONNECTED, DISCONNECTED, ERROR
+  lastSyncedAt DateTime? @map("last_synced_at")
+  
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("email_accounts")
+}
+
+model EmailAttachment {
+  id        Int      @id @default(autoincrement())
+  emailId   Int      @map("email_id")
+  email     Email    @relation(fields: [emailId], references: [id], onDelete: Cascade)
+  filename  String
+  filePath  String   @map("file_path")
+  fileSize  Int      @map("file_size")
+  mimeType  String   @map("mime_type")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("email_attachments")
+}
+
+model EmailTemplate {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  subject        String
+  content        String   @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("email_templates")
+}
+
+model EmailDeliveryEvent {
+  id        Int      @id @default(autoincrement())
+  emailId   Int?     @map("email_id")
+  email     Email?   @relation(fields: [emailId], references: [id], onDelete: Cascade)
+  threadId  Int?     @map("thread_id")
+  thread    EmailThread? @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  eventType String   @map("event_type") // DELIVERED, OPENED, CLICKED, BOUNCED, REPLIED
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("email_delivery_events")
+}
+
+model EmailAuditLog {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  emailId        Int      @map("email_id")
+  email          Email    @relation(fields: [emailId], references: [id], onDelete: Cascade)
+  agentId        Int      @map("agent_id")
+  agent          User     @relation("EmailAuditAgent", fields: [agentId], references: [id])
+  managerId      Int?     @map("manager_id")
+  manager        User?    @relation("EmailAuditManager", fields: [managerId], references: [id])
+  
+  adminVisible   Boolean  @default(true) @map("admin_visible")
+  eventType      String   @map("event_type") // SENT, DELIVERED, BOUNCED, FLAGGED
+  details        Json?
+  
+  eventTimestamp DateTime @default(now()) @map("event_timestamp")
+
+  @@map("email_audit_logs")
+}
+
+model EmailLabel {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  color          String   @default("#6B7280")
+  threads        EmailThread[] @relation("ThreadLabels")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("email_labels")
 }
 
 model LeadActivity {
@@ -776,16 +974,17 @@ model AgentInvitation {
   email           String
   name            String?   
   phone           String?   
-  teamId          Int       @map("team_id")
+  teamId          Int?      @map("team_id")
   organizationId  Int       @map("organization_id")
   invitedById     Int       @map("invited_by_id")
   token           String    @unique  
+  role            String    @default("agent")
   status          String    @default("pending") // pending | accepted | expired | cancelled
   expiresAt       DateTime  @map("expires_at")
   acceptedAt      DateTime? @map("accepted_at")
   createdAt       DateTime  @default(now()) @map("created_at")
   
-  team            Team      @relation("TeamAgentInvitations", fields: [teamId], references: [id])
+  team            Team?     @relation("TeamAgentInvitations", fields: [teamId], references: [id])
   invitedBy       User      @relation("UserAgentInvitations", fields: [invitedById], references: [id])
   organization    Organization @relation("OrgAgentInvitations", fields: [organizationId], references: [id])
 

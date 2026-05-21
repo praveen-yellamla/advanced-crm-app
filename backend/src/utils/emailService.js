@@ -320,9 +320,91 @@ const sendWelcomeAgentEmail = async (toEmail, name = "there") => {
   }
 };
 
+const sendManagerInvitationEmail = async (toEmail, inviteLink, name = "there", adminName, teamName) => {
+  try {
+    console.log(`[SMTP] Sending manager invite to: ${toEmail}`);
+    const teamText = teamName ? `\n\nYou will be managing: ${teamName}` : '';
+    const teamHtml = teamName ? `
+              <p class="text-content">
+                You will be managing: <strong>${teamName}</strong>
+              </p>
+    ` : '';
+    
+    await transporter.sendMail({
+      from: `"CRM.PRO" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+      to: toEmail,
+      subject: "You've been invited to manage a team on CRM.PRO",
+      text: `Hi ${name},\n\n${adminName} has invited you to join CRM.PRO as a Team Manager.${teamText}\n\nAccept your invitation & set up your manager account here: ${inviteLink}\n\nThis invitation expires in 72 hours.\n\nIf you didn't expect this, ignore this email.`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>CRM.PRO Manager Invitation</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 0; }
+            .container { max-width: 550px; margin: 40px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }
+            .logo-header { background-color: #0f172a; padding: 32px; text-align: center; }
+            .logo-text { font-size: 28px; font-weight: 800; color: #ffffff; margin: 0; letter-spacing: -0.5px; }
+            .logo-accent { color: #3b82f6; }
+            .body-content { padding: 40px; }
+            .headline { font-size: 22px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 12px; }
+            .text-content { font-size: 15px; color: #475569; line-height: 1.625; margin-bottom: 24px; }
+            .btn-holder { text-align: center; margin: 36px 0; }
+            .btn-cta { background-color: #3b82f6; color: #ffffff !important; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: 600; font-size: 15px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2); transition: background-color 0.2s; }
+            .btn-cta:hover { background-color: #2563eb; }
+            .meta-info { border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 13px; color: #94a3b8; line-height: 1.5; }
+            .footer-branding { background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px; text-align: center; font-size: 12px; color: #64748b; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="logo-header">
+              <h1 class="logo-text">CRM<span class="logo-accent">.PRO</span></h1>
+            </div>
+            <div class="body-content">
+              <h2 class="headline">Hi ${name || 'there'},</h2>
+              <p class="text-content">
+                <strong>${adminName}</strong> has invited you to join CRM.PRO as a Team Manager.
+              </p>
+              ${teamHtml}
+              <p class="text-content">
+                To accept this invitation and complete your registration, click the button below:
+              </p>
+              <div class="btn-holder">
+                <a href="${inviteLink}" class="btn-cta">Accept Invitation & Set Up Your Manager Account</a>
+              </div>
+              <p class="text-content" style="font-size: 13px; color: #94a3b8; word-break: break-all;">
+                Or copy and paste this link in your browser: <br>
+                <a href="${inviteLink}" style="color: #3b82f6; text-decoration: none;">${inviteLink}</a>
+              </p>
+              <div class="meta-info">
+                <p style="margin: 0 0 6px 0;">⌛ This invitation link is unique to you and will expire in <strong>72 hours</strong>.</p>
+                <p style="margin: 0;">🔒 If you did not expect this invitation, you can safely ignore this email.</p>
+              </div>
+            </div>
+            <div class="footer-branding">
+              &copy; ${new Date().getFullYear()} CRM.PRO Enterprise Inc. All rights reserved.
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    });
+    console.log(`[SMTP SUCCESS] Invite successfully sent to ${toEmail}`);
+    return true;
+  } catch (error) {
+    console.error("[SMTP CRITICAL FAILURE] sendManagerInvitationEmail Error:", error.message);
+    throw new Error(`SMTP Error: ${error.message}`);
+  }
+};
+
 module.exports = {
+  transporter,
   sendInviteEmail,
   sendTaskAssignmentEmail,
   sendAgentInvitationEmail,
-  sendWelcomeAgentEmail
+  sendWelcomeAgentEmail,
+  sendManagerInvitationEmail
 };

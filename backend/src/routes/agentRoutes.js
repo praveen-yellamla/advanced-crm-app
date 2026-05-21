@@ -28,6 +28,8 @@ router.delete('/tasks/:id', agentController.deleteTask);
 // Invoices
 router.get('/invoices', agentController.getMyInvoices);
 router.post('/invoices', agentController.createInvoice);
+router.put('/invoices/:id', agentController.updateInvoice);
+router.post('/invoices/:id/send', agentController.sendInvoiceEmail);
 
 // Feedback & Monitoring
 router.get('/feedback', agentController.getFeedback);

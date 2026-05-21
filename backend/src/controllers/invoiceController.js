@@ -28,9 +28,12 @@ const createInvoice = async (req, res) => {
             tax: (item.quantity * item.unitPrice) * (taxRate / 100),
             total: (item.quantity * item.unitPrice) + ((item.quantity * item.unitPrice) * (taxRate / 100))
           }))
+        },
+        auditLogs: {
+          create: { action: 'Created Invoice', by: req.user.name, userId: req.user.id }
         }
       },
-      include: { items: true }
+      include: { items: true, auditLogs: true, deliveryLogs: true }
     });
 
     const { sendNotification, triggerRealtimeEvent, logActivity } = require('../utils/realtimeHelper');
@@ -84,6 +87,8 @@ const getInvoice = async (req, res) => {
       },
       include: { 
         items: true, 
+        auditLogs: true,
+        deliveryLogs: true,
         raisedBy: { select: { name: true, email: true } },
         lead: true
       }
@@ -111,7 +116,13 @@ const updateInvoiceStatus = async (req, res) => {
         id: parseInt(id),
         organizationId: req.user.organizationId
       },
-      data: { status }
+      data: { 
+        status,
+        auditLogs: {
+          create: { action: `Status changed to ${status}`, by: req.user.name, userId: req.user.id }
+        }
+      },
+      include: { auditLogs: true, deliveryLogs: true }
     });
 
     const { sendNotification, triggerRealtimeEvent, logActivity } = require('../utils/realtimeHelper');
@@ -160,7 +171,12 @@ const getInvoices = async (req, res) => {
   try {
     const invoices = await prisma.invoice.findMany({
       where: { organizationId: req.user.organizationId },
-      include: { raisedBy: { select: { name: true } }, lead: { select: { customerName: true } } },
+      include: { 
+        auditLogs: true,
+        deliveryLogs: true,
+        raisedBy: { select: { name: true } }, 
+        lead: { select: { customerName: true } } 
+      },
       orderBy: { createdAt: 'desc' }
     });
     res.json({ success: true, data: invoices });

@@ -262,28 +262,220 @@ const deleteTask = async (req, res) => {
 // ==================================================
 const createInvoice = async (req, res) => {
   try {
-    const { clientId, amount, dueDate, items } = req.body;
+    const { leadId, amount, dueDate, items, currency, notes, discount, tax, subtotal } = req.body;
+    
+    // Auto-generate invoice number
+    const count = await prisma.invoice.count({ where: { organizationId: req.user.organizationId } });
+    const invoiceNo = `INV-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
+    
     const invoice = await prisma.invoice.create({
       data: {
         organizationId: req.user.organizationId,
-        invoiceNo: `INV-${Date.now()}`,
-        clientId: parseInt(clientId),
+        invoiceNo,
+        clientId: leadId ? parseInt(leadId) : null,
         raisedById: req.user.id,
-        amount: parseFloat(amount),
-        dueDate: new Date(dueDate),
-        status: 'PENDING',
+        amount: parseFloat(amount) || 0,
+        subtotal: parseFloat(subtotal) || 0,
+        tax: parseFloat(tax) || 0,
+        discount: parseFloat(discount) || 0,
+        currency: currency || 'USD',
+        notes: notes || '',
+        dueDate: dueDate ? new Date(dueDate) : null,
+        status: 'DRAFT',
         items: {
-          create: items.map(item => ({
+          create: items?.map(item => ({
             description: item.description,
-            quantity: parseInt(item.quantity),
-            unitPrice: parseFloat(item.unitPrice),
-            tax: parseFloat(item.tax) || 0,
-            total: (parseInt(item.quantity) * parseFloat(item.unitPrice)) + (parseFloat(item.tax) || 0)
-          }))
+            quantity: parseInt(item.quantity) || 1,
+            unitPrice: parseFloat(item.unitPrice) || 0,
+            total: (parseInt(item.quantity || 1) * parseFloat(item.unitPrice || 0)) + (parseFloat(item.tax) || 0)
+          })) || []
+        },
+        auditLogs: {
+          create: { action: 'Created Draft', by: req.user.name, userId: req.user.id }
         }
-      }
+      },
+      include: { items: true, auditLogs: true, deliveryLogs: true }
     });
     res.json({ success: true, data: invoice });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const updateInvoice = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { leadId, amount, dueDate, items, currency, notes, discount, tax, subtotal, status } = req.body;
+    
+    const invoiceId = parseInt(id);
+
+    const [deletedItems, invoice] = await prisma.$transaction([
+      prisma.invoiceItem.deleteMany({ where: { invoiceId } }),
+      prisma.invoice.update({
+        where: { id: invoiceId, organizationId: req.user.organizationId },
+        data: {
+          clientId: leadId ? parseInt(leadId) : null,
+          amount: parseFloat(amount) || 0,
+          subtotal: parseFloat(subtotal) || 0,
+          tax: parseFloat(tax) || 0,
+          discount: parseFloat(discount) || 0,
+          currency: currency || 'USD',
+          notes: notes || '',
+          dueDate: dueDate ? new Date(dueDate) : null,
+          status: status || undefined,
+          items: {
+            create: items?.map(item => ({
+              description: item.description,
+              quantity: parseInt(item.quantity) || 1,
+              unitPrice: parseFloat(item.unitPrice) || 0,
+              total: (parseInt(item.quantity || 1) * parseFloat(item.unitPrice || 0)) + (parseFloat(item.tax) || 0)
+            })) || []
+          },
+          auditLogs: {
+            create: { action: status === 'PENDING_APPROVAL' ? 'Submitted for Approval' : 'Updated Draft', by: req.user.name, userId: req.user.id }
+          }
+        },
+        include: { items: true, auditLogs: true, deliveryLogs: true }
+      })
+    ]);
+    res.json({ success: true, data: invoice });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const sendInvoiceEmail = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { pdfBase64, to, cc, bcc } = req.body;
+    
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: parseInt(id), organizationId: req.user.organizationId },
+      include: { client: true }
+    });
+    
+    const recipientEmail = to || invoice?.client?.email;
+    
+    if (!invoice || !recipientEmail) {
+      return res.status(400).json({ success: false, message: 'Invalid invoice or missing client email.' });
+    }
+
+    // Reuse existing email service
+    const { transporter } = require('../utils/emailService');
+    const pdfBuffer = Buffer.from(pdfBase64.split(',')[1] || pdfBase64, 'base64');
+
+    const mailOptions = {
+      from: `"CRM.PRO Billing" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+      to: recipientEmail,
+      cc: cc || undefined,
+      bcc: bcc || undefined,
+      subject: `Invoice ${invoice.invoiceNo} from ${req.user.name}`,
+      text: `Hello ${invoice.client.customerName},\n\nPlease find attached your invoice ${invoice.invoiceNo} for ${invoice.amount} ${invoice.currency}.\n\nNotes: ${invoice.notes || 'None'}\n\nThank you,\n${req.user.name}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Invoice ${invoice.invoiceNo}</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
+            .header { background-color: #0f172a; padding: 30px; text-align: center; color: #ffffff; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+            .content { padding: 40px; }
+            .greeting { font-size: 18px; font-weight: 700; color: #0f172a; margin-top: 0; }
+            .message { font-size: 15px; color: #475569; line-height: 1.6; }
+            .invoice-box { background-color: #f1f5f9; border-radius: 12px; padding: 24px; margin: 30px 0; border: 1px solid #e2e8f0; }
+            .invoice-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; color: #334155; }
+            .invoice-row.total { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 0; margin-top: 16px; padding-top: 16px; border-top: 1px solid #cbd5e1; }
+            .footer { background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px; text-align: center; font-size: 12px; color: #64748b; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>CRM.PRO</h1>
+            </div>
+            <div class="content">
+              <p class="greeting">Hello ${invoice.client.customerName},</p>
+              <p class="message">Please find your invoice <strong>${invoice.invoiceNo}</strong> attached to this email. We appreciate your business.</p>
+              
+              <div class="invoice-box">
+                <div class="invoice-row">
+                  <span>Invoice Number</span>
+                  <strong>${invoice.invoiceNo}</strong>
+                </div>
+                <div class="invoice-row">
+                  <span>Due Date</span>
+                  <strong>${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'Upon receipt'}</strong>
+                </div>
+                <div class="invoice-row total">
+                  <span>Amount Due</span>
+                  <span>${invoice.currency} ${invoice.amount.toLocaleString()}</span>
+                </div>
+              </div>
+              
+              ${invoice.notes ? `<p class="message" style="font-size: 13px; font-style: italic;"><strong>Notes:</strong> ${invoice.notes}</p>` : ''}
+              
+              <p class="message" style="margin-top: 30px;">
+                Thank you,<br>
+                <strong>${req.user.name}</strong>
+              </p>
+            </div>
+            <div class="footer">
+              &copy; ${new Date().getFullYear()} CRM.PRO Enterprise Inc.<br>
+              An official PDF of your invoice is attached.
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      attachments: [
+        {
+          filename: `${invoice.invoiceNo}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf'
+        }
+      ]
+    };
+
+    let info;
+    try {
+      info = await transporter.sendMail(mailOptions);
+    } catch (sendError) {
+      // Log failure in activityLogs
+      await prisma.invoice.update({
+        where: { id: parseInt(id) },
+        data: {
+          auditLogs: {
+            create: { action: 'Failed to Send Invoice', by: req.user.name, userId: req.user.id, error: sendError.message }
+          },
+          deliveryLogs: {
+            create: { status: 'FAILED', error: sendError.message, to: recipientEmail, cc: cc || null, bcc: bcc || null }
+          }
+        }
+      });
+      return res.status(500).json({ success: false, message: `SMTP Failed: ${sendError.message}` });
+    }
+    
+    // Update invoice status on success
+    const updatedInvoice = await prisma.invoice.update({
+      where: { id: parseInt(id) },
+      data: {
+        status: 'SENT',
+        sentAt: new Date(),
+        auditLogs: {
+          create: { action: 'Sent Invoice via Email', by: req.user.name, userId: req.user.id, messageId: info.messageId }
+        },
+        deliveryLogs: {
+          create: { status: 'DELIVERED', messageId: info.messageId, to: recipientEmail, cc: cc || null, bcc: bcc || null }
+        }
+      },
+      include: { items: true, auditLogs: true, deliveryLogs: true }
+    });
+
+    res.json({ success: true, data: updatedInvoice });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -296,7 +488,14 @@ const getMyInvoices = async (req, res) => {
         organizationId: req.user.organizationId,
         raisedById: req.user.id 
       },
-      include: { items: true },
+      include: { 
+        items: true,
+        auditLogs: true,
+        deliveryLogs: true,
+        client: { select: { customerName: true } },
+        raisedBy: { select: { name: true } },
+        approver: { select: { name: true } }
+      },
       orderBy: { createdAt: 'desc' }
     });
     res.json({ success: true, data: invoices });
@@ -491,6 +690,8 @@ module.exports = {
   updateTask,
   deleteTask,
   createInvoice,
+  updateInvoice,
+  sendInvoiceEmail,
   getMyInvoices,
   getFeedback,
   sendEmail,

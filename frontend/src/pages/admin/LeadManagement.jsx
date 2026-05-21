@@ -28,6 +28,7 @@ import { useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import TableActionMenu, { TableActionItem } from '../../components/common/TableActionMenu';
 import LeadModal from '../../components/admin/LeadModal';
+import { exportToCSV } from '../../utils/exportUtils';
 import LeadDetailModal from '../../components/admin/LeadDetailModal';
 import { useSocket } from '../../context/SocketContext';
 import AssignAgentModal from '../../components/admin/AssignAgentModal';
@@ -125,20 +126,18 @@ const LeadManagement = () => {
   const handleExport = () => {
     if (leads.length === 0) return;
     
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Lead Name,Email,Phone,Source,Status,Assigned To,Created At\n";
-    
-    leads.forEach(l => {
-      csvContent += `"${l.customerName}","${l.email || ''}","${l.phone}","${l.source}","${l.status}","${l.assignedTo?.name || 'Unassigned'}","${l.createdAt}"\n`;
-    });
+    const headers = ['Lead Name', 'Email', 'Phone', 'Source', 'Status', 'Assigned To', 'Created At'];
+    const data = leads.map(l => [
+      l.customerName,
+      l.email || '',
+      l.phone,
+      l.source,
+      l.status,
+      l.assignedTo?.name || 'Unassigned',
+      l.createdAt
+    ]);
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Leads_Export_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    exportToCSV(headers, data, 'leads_export');
     toast.success('Lead list exported successfully');
   };
 

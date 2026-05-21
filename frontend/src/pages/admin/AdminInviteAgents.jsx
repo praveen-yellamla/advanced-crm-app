@@ -7,13 +7,18 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../utils/api';
 
 const AdminInviteAgents = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryRole = searchParams.get('role');
+  const queryTeamId = searchParams.get('teamId');
+
   const [activeTab, setActiveTab] = useState('single'); // single, bulk, pending
+  const [selectedRole, setSelectedRole] = useState('agent'); // agent, manager
   const [selectedTeamId, setSelectedTeamId] = useState('');
   
   // Tab 1 state
@@ -26,6 +31,7 @@ const AdminInviteAgents = () => {
   const [bulkOption, setBulkOption] = useState('manual'); // manual, csv
   const [bulkText, setBulkText] = useState('');
   const [bulkReport, setBulkReport] = useState(null);
+  const [bulkRole, setBulkRole] = useState('agent'); // agent, manager
 
   // Tab 2 CSV state
   const [csvFile, setCsvFile] = useState(null);
@@ -65,11 +71,26 @@ const AdminInviteAgents = () => {
     return () => clearInterval(timer);
   }, [refetchInvitations]);
 
+  // Sync role and teamId from searchParams
+  useEffect(() => {
+    if (queryRole === 'manager') {
+      setSelectedRole('manager');
+    } else {
+      setSelectedRole('agent');
+    }
+    if (queryTeamId) {
+      setSelectedTeamId(queryTeamId);
+    }
+  }, [queryRole, queryTeamId]);
+
   // Mutations
   const inviteSingleMutation = useMutation({
-    mutationFn: (data) => api.post('/admin/agents/invite-single', data),
+    mutationFn: (data) => {
+      const endpoint = data.role === 'manager' ? '/admin/managers/invite' : '/admin/agents/invite-single';
+      return api.post(endpoint, data);
+    },
     onSuccess: (res) => {
-      toast.success('Agent invitation dispatched successfully');
+      toast.success(selectedRole === 'manager' ? 'Manager invitation dispatched successfully' : 'Agent invitation dispatched successfully');
       setSingleSentLink(res.data.inviteUrl);
       queryClient.invalidateQueries(['adminInvitations']);
     },
@@ -178,15 +199,16 @@ const AdminInviteAgents = () => {
 
   // Submit CSV file
   const handleCsvSubmit = async () => {
-    if (!csvFile || !selectedTeamId) {
-      toast.error('CSV file and Team are required');
+    if (!csvFile || (!selectedTeamId && bulkRole !== 'manager')) {
+      toast.error(bulkRole === 'manager' ? 'CSV file is required' : 'CSV file and Team are required');
       return;
     }
 
     setIsCsvUploading(true);
     const formData = new FormData();
     formData.append('file', csvFile);
-    formData.append('teamId', selectedTeamId);
+    formData.append('teamId', selectedTeamId || '');
+    formData.append('role', bulkRole);
 
     try {
       const res = await api.post('/admin/agents/invite-csv', formData, {
@@ -206,8 +228,8 @@ const AdminInviteAgents = () => {
 
   // Manual Bulk Send
   const handleBulkManualSend = () => {
-    if (!bulkText || !selectedTeamId) {
-      toast.error('Please enter email addresses and select a team');
+    if (!bulkText || (!selectedTeamId && bulkRole !== 'manager')) {
+      toast.error(bulkRole === 'manager' ? 'Please enter email addresses' : 'Please enter email addresses and select a team');
       return;
     }
 
@@ -223,7 +245,8 @@ const AdminInviteAgents = () => {
 
     inviteBulkMutation.mutate({
       invites,
-      teamId: selectedTeamId
+      teamId: selectedTeamId || null,
+      role: bulkRole
     });
   };
 
@@ -241,9 +264,9 @@ const AdminInviteAgents = () => {
             <Link to="/admin/agents" className="p-2 hover:bg-slate-50 rounded-full transition-all text-slate-400 hover:text-slate-600">
               <ArrowLeft size={20} />
             </Link>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Invite Agents</h1>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Invite Team</h1>
           </div>
-          <p className="text-slate-400 font-semibold text-[11px] uppercase tracking-widest pl-12">Invite and manage access for your sales agents.</p>
+          <p className="text-slate-400 font-semibold text-[11px] uppercase tracking-widest pl-12">Invite and manage access for your agents and managers.</p>
         </div>
 
         <Link 
@@ -271,6 +294,7 @@ const AdminInviteAgents = () => {
                 setBulkReport(null);
                 setCsvReport(null);
                 setSingleSentLink('');
+                setBulkRole('agent');
               }}
               className={`flex-1 flex items-center justify-center gap-2 h-12 rounded-2xl font-black uppercase tracking-wider text-[11px] transition-all duration-300 ${
                 isActive 
@@ -295,34 +319,86 @@ const AdminInviteAgents = () => {
             className="grid grid-cols-1 lg:grid-cols-3 gap-8"
           >
             <div className="lg:col-span-2 bg-white border border-slate-100 rounded-[32px] p-8 space-y-6 shadow-sm">
-              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Add Single Agent</h3>
+              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">{selectedRole === 'manager' ? 'Invite Manager' : 'Invite Agent'}</h3>
               
+              {/* Role Selection cards */}
+              <div className="space-y-4 border-b border-slate-100 pb-6">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Who are you inviting?</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Agent Card */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRole('agent')}
+                    className={`flex items-start gap-4 p-5 rounded-2xl border text-left transition-all ${
+                      selectedRole === 'agent'
+                        ? 'border-blue-600 bg-blue-50/10 shadow-sm scale-[1.01]'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                    }`}
+                  >
+                    <div className={`p-3 rounded-xl ${selectedRole === 'agent' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                      <UserPlus size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-slate-900 text-sm uppercase tracking-wide">👤 Agent</h4>
+                      <p className="text-slate-400 font-semibold text-[11px] mt-1 leading-normal">Front-line sales, works leads, handles calls.</p>
+                    </div>
+                  </button>
+
+                  {/* Manager Card */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedRole('manager');
+                      setSelectedTeamId('');
+                    }}
+                    className={`flex items-start gap-4 p-5 rounded-2xl border text-left transition-all ${
+                      selectedRole === 'manager'
+                        ? 'border-purple-600 bg-purple-50/10 shadow-sm scale-[1.01]'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                    }`}
+                  >
+                    <div className={`p-3 rounded-xl ${selectedRole === 'manager' ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                      <Users size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-slate-900 text-sm uppercase tracking-wide">👔 Manager</h4>
+                      <p className="text-slate-400 font-semibold text-[11px] mt-1 leading-normal">Team leader, oversees performance, runs QAs.</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
               <form onSubmit={(e) => {
                 e.preventDefault();
                 inviteSingleMutation.mutate({
                   email: singleEmail,
                   name: singleName,
                   phone: singlePhone,
-                  teamId: selectedTeamId
+                  teamId: selectedTeamId || null,
+                  role: selectedRole
                 });
               }} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Network Email Address *</label>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                      {selectedRole === 'manager' ? 'Manager Email Address *' : 'Email Address *'}
+                    </label>
                     <input 
-                      type="email" required placeholder="e.g. agent@company.com"
+                      type="email" required placeholder={selectedRole === 'manager' ? "e.g. manager@company.com" : "e.g. agent@company.com"}
                       className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900"
                       value={singleEmail} onChange={e => setSingleEmail(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Target Sales Team *</label>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                      {selectedRole === 'manager' ? 'Assigned Team (Optional)' : 'Assign to Team *'}
+                    </label>
                     <select 
-                      required
+                      required={selectedRole !== 'manager'}
                       className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.2rem_1.2rem] bg-[right_1.2rem_center] bg-no-repeat"
                       value={selectedTeamId} onChange={e => setSelectedTeamId(e.target.value)}
                     >
-                      <option value="">Choose team...</option>
+                      <option value="">{selectedRole === 'manager' ? 'Who will they be managing?' : 'Choose team...'}</option>
                       {teams?.map(t => <option key={t.id} value={t.id}>{t.teamName}</option>)}
                     </select>
                   </div>
@@ -419,18 +495,71 @@ const AdminInviteAgents = () => {
             exit={{ opacity: 0, y: -15 }}
             className="space-y-8"
           >
+            {/* Role Selection cards for Bulk Import */}
+            <div className="bg-white border border-slate-100 rounded-[32px] p-6 space-y-4 shadow-sm">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Who are you inviting in bulk?</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Bulk Add Agents Card */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBulkRole('agent');
+                    setBulkReport(null);
+                    setCsvReport(null);
+                  }}
+                  className={`flex items-start gap-4 p-4 rounded-2xl border text-left transition-all ${
+                    bulkRole === 'agent'
+                      ? 'border-blue-600 bg-blue-50/10 shadow-sm scale-[1.01]'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className={`p-2.5 rounded-xl ${bulkRole === 'agent' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                    <UserPlus size={18} />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wide">👤 Bulk Add Agents</h4>
+                    <p className="text-slate-400 font-semibold text-[10px] mt-0.5 leading-normal">Invite multiple front-line sales agents to a specific team.</p>
+                  </div>
+                </button>
+
+                {/* Bulk Add Managers Card */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBulkRole('manager');
+                    setBulkReport(null);
+                    setCsvReport(null);
+                    setSelectedTeamId('');
+                  }}
+                  className={`flex items-start gap-4 p-4 rounded-2xl border text-left transition-all ${
+                    bulkRole === 'manager'
+                      ? 'border-purple-600 bg-purple-50/10 shadow-sm scale-[1.01]'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className={`p-2.5 rounded-xl ${bulkRole === 'manager' ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                    <Users size={18} />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wide">👔 Bulk Add Managers</h4>
+                    <p className="text-slate-400 font-semibold text-[10px] mt-0.5 leading-normal">Invite multiple team leaders with optional team assignments.</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             <div className="flex gap-4 p-1.5 bg-slate-100 rounded-2xl max-w-xs">
               <button 
                 onClick={() => { setBulkOption('manual'); setBulkReport(null); setCsvReport(null); }}
                 className={`flex-1 h-9 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${bulkOption === 'manual' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
               >
-                Manual Entry
+                Type Emails
               </button>
               <button 
                 onClick={() => { setBulkOption('csv'); setBulkReport(null); setCsvReport(null); }}
                 className={`flex-1 h-9 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${bulkOption === 'csv' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
               >
-                CSV Upload
+                Upload CSV File
               </button>
             </div>
 
@@ -438,25 +567,37 @@ const AdminInviteAgents = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 bg-white border border-slate-100 rounded-[32px] p-8 space-y-6 shadow-sm">
                   <div className="space-y-2">
-                    <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Manual Bulk Entry</h3>
+                    <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Enter Emails Manually</h3>
                     <p className="text-xs text-slate-400 font-semibold leading-relaxed">Enter recipient emails, one per line or separated by commas. Format: <code>email@domain.com</code> or <code>Name &lt;email@domain.com&gt;</code>.</p>
                   </div>
 
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Target Sales Team *</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                        {bulkRole === 'manager' ? 'Team to Manage (optional — assign later)' : 'Assign to Team *'}
+                      </label>
                       <select 
-                        required
+                        required={bulkRole !== 'manager'}
                         className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.2rem_1.2rem] bg-[right_1.2rem_center] bg-no-repeat"
                         value={selectedTeamId} onChange={e => setSelectedTeamId(e.target.value)}
                       >
-                        <option value="">Choose team...</option>
+                        <option value="">{bulkRole === 'manager' ? 'Select a team to manage...' : 'Choose team...'}</option>
                         {teams?.map(t => <option key={t.id} value={t.id}>{t.teamName}</option>)}
                       </select>
+                      {bulkRole === 'manager' && (
+                        <p className="text-[11px] text-slate-400 font-bold mt-1 leading-normal">
+                          You can assign a team later from the Teams page.
+                        </p>
+                      )}
+                      {bulkRole === 'manager' && selectedTeamId && (
+                        <p className="text-[11px] text-amber-500 font-bold mt-1.5 flex items-center gap-1">
+                          <AlertCircle size={12} /> Only one manager per team. Remaining managers will be unassigned.
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Email Addresses List</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Email Addresses</label>
                       <textarea
                         rows={6}
                         placeholder="John Smith <john@example.com>&#10;priya@example.com&#10;arjun@example.com"
@@ -473,7 +614,7 @@ const AdminInviteAgents = () => {
                       {inviteBulkMutation.isPending ? (
                         <Loader2 className="animate-spin" size={16} />
                       ) : (
-                        <>Dispatch Bulk invitations <Send size={14} /></>
+                        <>{bulkRole === 'manager' ? 'Dispatch Bulk Manager Invitations' : 'Dispatch Bulk invitations'} <Send size={14} /></>
                       )}
                     </button>
                   </div>
@@ -512,7 +653,7 @@ const AdminInviteAgents = () => {
                 </div>
 
                 <div className="bg-slate-50 rounded-[32px] p-8 space-y-6">
-                  <h4 className="text-lg font-black text-slate-800 tracking-tight uppercase">Bulk Import Details</h4>
+                  <h4 className="text-lg font-black text-slate-800 tracking-tight uppercase">How Bulk Import Works</h4>
                   <p className="text-xs text-slate-400 font-semibold leading-relaxed">Invitations are sent in batches to prevent email server rate limiting.</p>
                 </div>
               </div>
@@ -521,8 +662,12 @@ const AdminInviteAgents = () => {
                 <div className="lg:col-span-2 bg-white border border-slate-100 rounded-[32px] p-8 space-y-6 shadow-sm">
                   <div className="flex justify-between items-center">
                     <div className="space-y-1">
-                      <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Add Multiple Agents from File</h3>
-                      <p className="text-xs text-slate-400 font-semibold">Upload spreadsheet file with agents emails, names, and phone numbers.</p>
+                      <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                        {bulkRole === 'manager' ? 'Add Multiple Managers from File' : 'Add Multiple Agents from File'}
+                      </h3>
+                      <p className="text-xs text-slate-400 font-semibold">
+                        {bulkRole === 'manager' ? 'Upload spreadsheet file with managers emails, names, and phone numbers.' : 'Upload spreadsheet file with agents emails, names, and phone numbers.'}
+                      </p>
                     </div>
 
                     <a 
@@ -537,15 +682,27 @@ const AdminInviteAgents = () => {
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Target Sales Team *</label>
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                          {bulkRole === 'manager' ? 'Team to Manage (optional — assign later)' : 'Assign to Team *'}
+                        </label>
                         <select 
-                          required
+                          required={bulkRole !== 'manager'}
                           className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.2rem_1.2rem] bg-[right_1.2rem_center] bg-no-repeat"
                           value={selectedTeamId} onChange={e => setSelectedTeamId(e.target.value)}
                         >
-                          <option value="">Choose team...</option>
+                          <option value="">{bulkRole === 'manager' ? 'Select a team to manage...' : 'Choose team...'}</option>
                           {teams?.map(t => <option key={t.id} value={t.id}>{t.teamName}</option>)}
                         </select>
+                        {bulkRole === 'manager' && (
+                          <p className="text-[11px] text-slate-400 font-bold mt-1 leading-normal">
+                            You can assign a team later from the Teams page.
+                          </p>
+                        )}
+                        {bulkRole === 'manager' && selectedTeamId && (
+                          <p className="text-[11px] text-amber-500 font-bold mt-1.5 flex items-center gap-1">
+                            <AlertCircle size={12} /> Only one manager per team. Remaining managers will be unassigned.
+                          </p>
+                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -732,8 +889,19 @@ const AdminInviteAgents = () => {
                   ) : (
                     invitationsData?.data?.map((inv) => (
                       <tr key={inv.id} className="border-b border-slate-50 font-semibold text-slate-600 hover:bg-slate-50/50 transition-all">
-                        <td className="p-4 pl-6 space-y-1">
-                          <div className="font-extrabold text-slate-900">{inv.name || 'there'}</div>
+                        <td className="p-4 pl-6 space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-slate-900">{inv.name || 'there'}</span>
+                            {inv.role === 'manager' ? (
+                              <span className="inline-flex items-center bg-purple-50 text-purple-700 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border border-purple-100">
+                                👔 Manager
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center bg-blue-50 text-blue-700 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border border-blue-100">
+                                👤 Agent
+                              </span>
+                            )}
+                          </div>
                           <div className="text-[11px] text-slate-400 font-mono">{inv.email}</div>
                           {inv.phone && <div className="text-[10px] text-slate-400">{inv.phone}</div>}
                         </td>

@@ -187,12 +187,21 @@ const AdminTeams = () => {
                           </div>
                        </td>
                        <td className="px-6 py-5">
-                          <div className="flex items-center gap-3">
-                             <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-xs border border-slate-200">
-                                {team.manager?.name?.charAt(0)}
+                          {team.manager ? (
+                             <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-xs border border-slate-200">
+                                   {team.manager?.name?.charAt(0)}
+                                </div>
+                                <span className="text-sm font-medium text-slate-600">{team.manager?.name}</span>
                              </div>
-                             <span className="text-sm font-medium text-slate-600">{team.manager?.name || 'Unassigned'}</span>
-                          </div>
+                          ) : (
+                             <button
+                                onClick={() => navigate(`/admin/agents/invite?role=manager&teamId=${team.id}`)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+                             >
+                                <Plus size={13} /> Invite Manager
+                             </button>
+                          )}
                        </td>
                        <td className="px-6 py-5">
                           <div className="flex items-center gap-2">

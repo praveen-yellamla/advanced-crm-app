@@ -4,7 +4,10 @@ const getInvoices = async (req, res) => {
   try {
     const invoices = await prisma.invoice.findMany({
       include: {
-        raisedBy: { select: { name: true } }
+        items: true,
+        client: { select: { customerName: true } },
+        raisedBy: { select: { name: true } },
+        approver: { select: { name: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -338,11 +341,31 @@ const getEmailLogs = async (req, res) => {
   }
 };
 
+const getEmailAudit = async (req, res) => {
+  try {
+    const logs = await prisma.emailAuditLog.findMany({
+      where: { organizationId: req.user.organizationId },
+      include: {
+        email: {
+          select: { subject: true, to: true, from: true, folder: true, status: true, smtpMessageId: true, deliveredAt: true, openedAt: true, failedAt: true }
+        },
+        agent: { select: { name: true, email: true } },
+        manager: { select: { name: true, email: true } }
+      },
+      orderBy: { eventTimestamp: 'desc' }
+    });
+    res.json({ success: true, data: logs });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getInvoices,
   createInvoice,
   getCalls,
   getAnalytics,
   exportAnalytics,
-  getEmailLogs
+  getEmailLogs,
+  getEmailAudit
 };

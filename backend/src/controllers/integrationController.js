@@ -93,9 +93,10 @@ const uploadCSV = async (req, res) => {
         select: { email: true, phone: true } 
       }),
       prisma.user.findMany({ 
-        where: { role: 'AGENT', isActive: true, organizationId: req.user.organizationId }, 
+        where: { role: 'AGENT', isActive: true, organizationId: req.user.organizationId, inviteStatus: 'ACCEPTED' }, 
         select: { id: true } 
       })
+
     ]);
     
     const existingEmails = new Set(existingLeads.map(l => l.email?.toLowerCase().trim()).filter(Boolean));

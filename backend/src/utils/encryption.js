@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'adv_crm_master_key_32_chars_long!'; // Must be 32 chars
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'adv_crm_master_key_32_char_long!'; // Must be 32 chars
 const IV_LENGTH = 16; 
 
 /**

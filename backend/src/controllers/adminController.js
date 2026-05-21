@@ -394,7 +394,15 @@ const getAgents = async (req, res) => {
     const agents = await prisma.user.findMany({
       where: { 
         role: 'AGENT',
-        organizationId: req.user.organizationId
+        organizationId: req.user.organizationId,
+        // Exclude invited agents who have not yet completed setup.
+        // These agents have no real access and must not appear in team/lead dropdowns.
+        NOT: {
+          AND: [
+            { agentType: 'INVITED' },
+            { inviteStatus: 'PENDING' }
+          ]
+        }
       },
       include: {
         team: { 
@@ -492,6 +500,170 @@ const createAgent = async (req, res) => {
 
     await createAuditLog(req.user.id, 'CREATE', 'AGENT', null, agent);
     res.json({ success: true, data: agent });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const createAgentManually = async (req, res) => {
+  try {
+    const { name, email, password, teamId, phone } = req.body;
+
+    if (!name || !email || !password || !teamId) {
+      return res.status(400).json({ success: false, message: 'Name, email, password, and team are required for manually provisioning an agent' });
+    }
+
+    // Check if email already used
+    const existingUser = await prisma.user.findUnique({
+      where: { email: email.trim().toLowerCase() }
+    });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'Email address already in use' });
+    }
+
+    // Verify Team Ownership
+    const team = await prisma.team.findFirst({
+      where: { id: parseInt(teamId), organizationId: req.user.organizationId }
+    });
+    if (!team) {
+      return res.status(403).json({ success: false, message: 'IDENT_CROSS_TENANT_VIOLATION' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = await prisma.user.create({
+      data: {
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        password: hashedPassword,
+        phone: phone ? phone.trim() : null,
+        role: 'AGENT',
+        organizationId: req.user.organizationId,
+        teamId: parseInt(teamId),
+        isActive: true,
+        agentType: 'MANUAL',
+        inviteStatus: 'ACCEPTED'
+      }
+    });
+
+    const { logActivity, sendNotification, triggerRealtimeEvent } = require('../utils/realtimeHelper');
+
+    await logActivity({
+      actorId: req.user.id,
+      actorRole: 'ADMIN',
+      action: 'agent.created',
+      entityType: 'USER',
+      entityId: user.id,
+      newValue: { id: user.id, name: user.name, email: user.email },
+      teamId: user.teamId
+    });
+
+    if (team.managerId) {
+      // Notify team manager
+      await sendNotification({
+        organizationId: req.user.organizationId,
+        userId: team.managerId,
+        title: 'New Agent Added to Team',
+        message: `${name} has been created and assigned to your team: ${team.teamName}.`,
+        type: 'SUCCESS',
+        priority: 'MEDIUM'
+      });
+      
+      triggerRealtimeEvent(`user_${team.managerId}`, 'agent:joined_team', {
+        agent: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          isActive: user.isActive
+        }
+      });
+    }
+
+    await createAuditLog(req.user.id, 'CREATE', 'AGENT', null, user);
+    res.json({ success: true, data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const createManagerManually = async (req, res) => {
+  try {
+    const { name, email, password, teamId, phone } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, message: 'Name, email, and password are required' });
+    }
+
+    // Check if email already used
+    const existingUser = await prisma.user.findUnique({
+      where: { email: email.trim().toLowerCase() }
+    });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'Email address already in use' });
+    }
+
+    // Verify Team Ownership if provided
+    let team = null;
+    if (teamId) {
+      team = await prisma.team.findFirst({
+        where: { id: parseInt(teamId), organizationId: req.user.organizationId }
+      });
+      if (!team) {
+        return res.status(403).json({ success: false, message: 'IDENT_CROSS_TENANT_VIOLATION' });
+      }
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = await prisma.user.create({
+      data: {
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        password: hashedPassword,
+        phone: phone ? phone.trim() : null,
+        role: 'MANAGER',
+        organizationId: req.user.organizationId,
+        isActive: true,
+        agentType: 'MANUAL',
+        inviteStatus: 'ACCEPTED'
+      }
+    });
+
+    // If teamId is provided, update team's managerId to this new manager
+    if (teamId) {
+      await prisma.team.update({
+        where: { id: parseInt(teamId) },
+        data: { managerId: user.id }
+      });
+    }
+
+    const { logActivity, triggerRealtimeEvent } = require('../utils/realtimeHelper');
+
+    await logActivity({
+      actorId: req.user.id,
+      actorRole: 'ADMIN',
+      action: 'manager.created',
+      entityType: 'USER',
+      entityId: user.id,
+      newValue: { id: user.id, name: user.name, email: user.email },
+      teamId: teamId ? parseInt(teamId) : null
+    });
+
+    triggerRealtimeEvent(`user_${req.user.id}`, 'manager:assigned', {
+      manager: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        isActive: user.isActive
+      }
+    });
+
+    await createAuditLog(req.user.id, 'CREATE', 'MANAGER', null, user);
+    res.json({ success: true, data: user });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -749,6 +921,14 @@ const assignAgentTeam = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Agent not found' });
     }
 
+    // Block team assignment for agents who have not completed account setup
+    if (agent.inviteStatus === 'PENDING') {
+      return res.status(403).json({
+        success: false,
+        message: 'Cannot assign team to an agent who has not completed account setup. The agent must accept their invitation first.'
+      });
+    }
+
     // Save previous team information for old manager notification
     const oldTeamId = agent.teamId;
 
@@ -827,6 +1007,8 @@ module.exports = {
   deleteTeam,
   getAgents,
   createAgent,
+  createAgentManually,
+  createManagerManually,
   updateAgent,
   deleteAgent,
   getAuditLogs,

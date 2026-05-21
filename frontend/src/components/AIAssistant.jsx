@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 
 const GREETINGS = ['hi', 'hii', 'hello', 'hey', 'good morning', 'good evening', 'how are you'];
 const GREETING_RESPONSES = [
-  "Hello 👋 I am Zia, your CRM Intelligence Assistant. How can I assist you today?",
+  "Hello 👋 I am AI Assistant, your CRM Intelligence Assistant. How can I assist you today?",
   "Hi there! I can help you analyze leads, calculate revenue trends, or summarize team performance.",
   "Welcome back. I have the latest CRM snapshot ready for your analysis.",
   "Systems online. What strategic insights are you looking for today?"
@@ -152,7 +152,7 @@ const AIAssistant = ({ embedded = false }) => {
             </div>
             <div>
                <div className="flex items-center gap-2">
-                  <h4 className="text-sm font-black tracking-tight uppercase">Zia Intelligence</h4>
+                  <h4 className="text-sm font-black tracking-tight uppercase">CRM Intelligence</h4>
                   <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-[8px] font-black text-blue-400 uppercase tracking-widest">v4.0</span>
                </div>
                <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">
@@ -276,7 +276,7 @@ const AIAssistant = ({ embedded = false }) => {
             <div className="relative flex-1 group">
                <input 
                  type="text" 
-                 placeholder="Command Zia..." 
+                 placeholder="Command AI Assistant..." 
                  autoFocus
                  className="w-full h-14 pl-12 pr-6 bg-white/5 border border-white/10 rounded-2xl font-black text-[14px] outline-none focus:border-blue-600 focus:bg-white/10 text-white placeholder:text-slate-600 transition-all box-border"
                  value={query}
@@ -347,7 +347,7 @@ const AIAssistant = ({ embedded = false }) => {
           ) : (
             <motion.div key="open" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 1.5, opacity: 0 }} className="relative z-10 flex flex-col items-center">
               <Sparkles size={44} className="text-blue-500 group-hover:text-white transition-colors" />
-              <span className="text-[8px] font-black uppercase tracking-[0.2em] mt-1 text-slate-500 group-hover:text-white/70">ZIA AI</span>
+              <span className="text-[8px] font-black uppercase tracking-[0.2em] mt-1 text-slate-500 group-hover:text-white/70">AI Assistant</span>
             </motion.div>
           )}
         </AnimatePresence>

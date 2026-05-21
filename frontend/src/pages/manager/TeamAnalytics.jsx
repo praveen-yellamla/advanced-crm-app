@@ -10,6 +10,7 @@ import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Legend
 } from 'recharts';
 import toast from 'react-hot-toast';
+import { exportToPDF } from '../../utils/exportUtils';
 
 const TeamAnalytics = () => {
   const [period, setPeriod] = useState('month');
@@ -101,15 +102,32 @@ const TeamAnalytics = () => {
     toast.success(`Period changed to ${newPeriod}`);
   };
 
+  const { agents: analyticsAgents } = analyticsData || {};
+
   const handleExport = () => {
-    toast.promise(
-      new Promise(resolve => setTimeout(resolve, 1500)),
-      {
-        loading: 'Compiling analytics package...',
-        success: 'Analytics report exported as PDF successfully!',
-        error: 'Export failed'
-      }
-    );
+    if (!analyticsAgents || analyticsAgents.length === 0) {
+      toast.error('No data available to export');
+      return;
+    }
+
+    try {
+      const headers = ['Agent Name', 'Status', 'Calls Made', 'Conversion Rate', 'Talk Time (min)', 'Avg Handle Time (min)', 'Revenue MTD (₹)'];
+      const data = analyticsAgents.map(agent => [
+        agent.name,
+        agent.status,
+        agent.callsMade,
+        `${agent.conversionRate}%`,
+        agent.talkTime,
+        agent.avgHandleTime,
+        agent.revenue
+      ]);
+
+      exportToPDF('Team Analytics Report', headers, data, 'team_analytics_report');
+      toast.success('Analytics report exported as PDF successfully!');
+    } catch (error) {
+      console.error('Export Error:', error);
+      toast.error('Failed to export PDF');
+    }
   };
 
   if (isLoading) {
@@ -123,8 +141,6 @@ const TeamAnalytics = () => {
       </div>
     );
   }
-
-  const { agents: analyticsAgents } = analyticsData || {};
 
   // Mock Expanded Agent Daily Data
   const mockDailyData = [

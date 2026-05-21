@@ -968,7 +968,9 @@ const getTeamEmails = async (req, res) => {
       },
       include: {
         agent: { select: { name: true } },
-        lead: { select: { customerName: true } }
+        lead: { select: { customerName: true } },
+        auditLogs: true,
+        events: true
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -998,7 +1000,10 @@ const getTeamInvoices = async (req, res) => {
         raisedById: agentId ? parseInt(agentId) : { in: scope.agentIds }
       },
       include: {
-        raisedBy: { select: { name: true } }
+        items: true,
+        client: { select: { customerName: true } },
+        raisedBy: { select: { name: true } },
+        approver: { select: { name: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -1119,7 +1124,7 @@ const updateInvoiceStatus = async (req, res) => {
 
     if (!invoice) return res.status(404).json({ success: false, message: "Invoice not found" });
 
-    const validStatuses = ['PENDING', 'SENT', 'PAID', 'OVERDUE', 'ESCALATED'];
+    const validStatuses = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'PENDING', 'SENT', 'PAID', 'OVERDUE', 'ESCALATED', 'CANCELLED'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ success: false, message: "Invalid status value" });
     }

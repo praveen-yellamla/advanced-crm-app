@@ -8,6 +8,8 @@ const {
   deleteTeam,
   getAgents,
   createAgent,
+  createAgentManually,
+  createManagerManually,
   updateAgent,
   deleteAgent,
   getAuditLogs,
@@ -20,7 +22,8 @@ const {
   getCalls,
   getAnalytics,
   exportAnalytics,
-  getEmailLogs
+  getEmailLogs,
+  getEmailAudit
 } = require('../controllers/adminExtraController');
 const { 
   inviteUser, 
@@ -36,6 +39,7 @@ const {
 } = require('../controllers/integrationController');
 const {
   inviteSingleAgent,
+  inviteManager,
   inviteBulkAgents,
   inviteCsvAgents,
   getInvitations,
@@ -68,9 +72,13 @@ router.route('/agents/:id')
   .put(upload.single('image'), updateAgent)
   .delete(deleteAgent);
 
+router.post('/agents/create', createAgentManually);
+router.post('/managers/create', createManagerManually);
+
 router.patch('/agents/:id/assign-team', assignAgentTeam);
 
 router.post('/agents/invite-single', inviteSingleAgent);
+router.post('/managers/invite', inviteManager);
 router.post('/agents/invite-bulk', inviteBulkAgents);
 router.post('/agents/invite-csv', upload.single('file'), inviteCsvAgents);
 router.get('/agents/invitations', getInvitations);
@@ -79,6 +87,7 @@ router.delete('/agents/invitations/:invitationId', cancelInvitation);
 
 router.get('/audit', getAuditLogs);
 router.get('/audit-logs', getAuditLogs);
+router.get('/email-audit', getEmailAudit);
 
 router.get('/managers', getManagers);
 

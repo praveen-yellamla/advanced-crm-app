@@ -85,6 +85,15 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Account deactivated' });
     }
 
+    // Block login for invited agents who have not completed account setup
+    if (user.agentType === 'INVITED' && user.inviteStatus === 'PENDING') {
+      return res.status(403).json({
+        success: false,
+        code: 'ACCOUNT_NOT_ACTIVATED',
+        message: 'Your account is not active yet. Please check your email and click the invitation link to complete your setup.'
+      });
+    }
+
     // Reset failed attempts on success
     await prisma.user.update({
       where: { id: user.id },
