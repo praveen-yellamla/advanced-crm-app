@@ -517,7 +517,7 @@ const AIControlPanel = () => {
 
               {/* FEATURE BREAKDOWN TABLE */}
               <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <table className="w-full text-left border-collapse">
+                <table className="crm-table">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200">
                       <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-wider">Feature</th>
@@ -560,7 +560,7 @@ const AIControlPanel = () => {
 
       {/* SECTION 4 — RIGHT PANEL (AI ASSISTANT CHAT) */}
       <div className="w-full lg:w-96 shrink-0 h-[650px]">
-        <div className="bg-white h-full rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+        <div className="crm-card">
           
           {/* Chat Header */}
           <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -575,7 +575,7 @@ const AIControlPanel = () => {
                 ) : (
                   <>
                     <span className="w-1.5 h-1.5 rounded-full bg-[#94a3b8]" />
-                    <span className="text-[10px] font-bold text-slate-400">Simulation Mode</span>
+                    <span className="text-[10px] font-bold text-slate-400">Demo Mode</span>
                   </>
                 )}
               </div>

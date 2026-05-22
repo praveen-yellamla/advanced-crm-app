@@ -292,10 +292,10 @@ const AdminAgents = () => {
       {/* DATA GRID */}
       <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/20 overflow-hidden">
          <div className="overflow-x-auto text-sans">
-            <table className="w-full text-left border-collapse">
+            <table className="crm-table">
                <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Security Identity</th>
+                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Name</th>
                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">How They Joined</th>
                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Assignment</th>
                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Account Status</th>
@@ -516,7 +516,7 @@ const AdminAgents = () => {
                               <div className="space-y-3">
                                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Target Identity Name</label>
                                  <input 
-                                    type="text" required placeholder="Legal Entity Name"
+                                    type="text" required placeholder="Legal Full Name"
                                     className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 transition-all outline-none font-bold text-slate-900"
                                     value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
                                  />

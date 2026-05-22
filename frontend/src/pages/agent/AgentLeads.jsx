@@ -235,7 +235,7 @@ const AgentLeads = () => {
              className="bg-white rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/20 overflow-hidden"
            >
               <div className="overflow-x-auto">
-                 <table className="w-full text-left border-collapse">
+                 <table className="crm-table">
                     <thead>
                        <tr className="bg-slate-50/50 border-b border-slate-100">
                           <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Lead Name</th>

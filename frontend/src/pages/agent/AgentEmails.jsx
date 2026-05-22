@@ -100,7 +100,7 @@ const AgentEmails = () => {
       {/* EMAIL FEED / TABLE */}
       <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="crm-table">
                <thead>
                   <tr className="bg-slate-50/50 text-[11px] font-bold uppercase tracking-widest text-slate-400">
                      <th className="px-10 py-8">Communication Subject</th>

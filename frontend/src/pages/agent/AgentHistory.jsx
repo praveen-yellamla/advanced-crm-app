@@ -60,7 +60,7 @@ const AgentHistory = () => {
       </div>
 
       {/* FILTER BAR */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
+      <div className="crm-card">
          <div className="flex-1 relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={18} />
             <input 
@@ -82,7 +82,7 @@ const AgentHistory = () => {
       {/* CALL LOGS TABLE */}
       <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden">
          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="crm-table">
                <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
                      <th className="px-8 py-5 text-[11px] font-bold uppercase tracking-wider text-slate-500">Date & Time</th>
@@ -178,7 +178,7 @@ const AgentHistory = () => {
                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
                       {selectedCall?.recordingUrl ? (
                          <div className="w-full">
-                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Recording Playback</p>
+                            <p className="crm-caption mb-3">Recording Playback</p>
                             <audio controls src={selectedCall.recordingUrl} className="w-full h-12 outline-none" />
                          </div>
                       ) : (

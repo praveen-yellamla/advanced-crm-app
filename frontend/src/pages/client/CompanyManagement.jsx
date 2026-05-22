@@ -135,7 +135,7 @@ const CompanyManagement = () => {
                   </div>
 
                   <div className="space-y-8">
-                     <InputField label="Entity Name" placeholder="e.g. Nexus Multi-National" value={formData.name} onChange={v => setFormData({...formData, name: v})} />
+                     <InputField label="Full Name" placeholder="e.g. Nexus Multi-National" value={formData.name} onChange={v => setFormData({...formData, name: v})} />
                      <InputField label="Operational Industry" placeholder="e.g. Quantum Computing" value={formData.industry} onChange={v => setFormData({...formData, industry: v})} />
                      <div className="grid grid-cols-2 gap-8">
                         <InputField label="Web Address" placeholder="nexus.io" value={formData.website} onChange={v => setFormData({...formData, website: v})} />

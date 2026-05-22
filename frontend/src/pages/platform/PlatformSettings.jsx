@@ -99,7 +99,7 @@ const BrandingSettings = () => (
   <div className="space-y-12">
      <div className="space-y-3">
         <h3 className="text-3xl font-black text-[#0F172A] uppercase italic leading-none">Global Branding</h3>
-        <p className="text-sm text-slate-500 font-medium">Customize the visual identity of the SaaS platform.</p>
+        <p className="crm-body font-medium">Customize the visual identity of the SaaS platform.</p>
      </div>
 
      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -129,7 +129,7 @@ const RegistrationSettings = () => (
   <div className="space-y-12">
      <div className="space-y-3">
         <h3 className="text-3xl font-black text-[#0F172A] uppercase italic leading-none">Onboarding Flow</h3>
-        <p className="text-sm text-slate-500 font-medium">Configure how new tenants access the infrastructure.</p>
+        <p className="crm-body font-medium">Configure how new tenants access the infrastructure.</p>
      </div>
 
      <div className="space-y-8">
@@ -158,7 +158,7 @@ const MaintenanceSettings = () => (
   <div className="space-y-12">
      <div className="space-y-3">
         <h3 className="text-3xl font-black text-[#0F172A] uppercase italic leading-none">Maintenance & Access</h3>
-        <p className="text-sm text-slate-500 font-medium">Global overrides for platform availability.</p>
+        <p className="crm-body font-medium">Global overrides for platform availability.</p>
      </div>
 
      <div className="p-10 bg-rose-50 rounded-[48px] border border-rose-100 space-y-8">
@@ -169,7 +169,7 @@ const MaintenanceSettings = () => (
               </div>
               <div>
                  <h4 className="text-xl font-black text-[#0F172A] uppercase italic">Maintenance Mode</h4>
-                 <p className="text-sm text-slate-500 font-medium mt-1">Block all non-operator access to the platform.</p>
+                 <p className="crm-body font-medium mt-1">Block all non-operator access to the platform.</p>
               </div>
            </div>
            <button className="h-12 w-20 rounded-full bg-slate-200 relative"><div className="absolute top-1 left-1 w-10 h-10 bg-white rounded-full" /></button>
@@ -183,7 +183,7 @@ const AISettings = () => (
   <div className="space-y-12">
      <div className="space-y-3">
         <h3 className="text-3xl font-black text-[#0F172A] uppercase italic leading-none">AI Infrastructure</h3>
-        <p className="text-sm text-slate-500 font-medium">Global policies for AI assistance and token usage.</p>
+        <p className="crm-body font-medium">Global policies for AI assistance and token usage.</p>
      </div>
 
      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

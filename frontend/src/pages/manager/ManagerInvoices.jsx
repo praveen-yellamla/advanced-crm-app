@@ -82,7 +82,7 @@ const ManagerInvoices = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-4">
         <div>
            <h1 className="text-3xl font-extrabold text-[#0F172A] tracking-tight">Invoice Ledger & Approvals</h1>
-           <p className="text-slate-500 font-medium text-sm mt-1">Audit team commissions, verify item charges, approve payout states, or flag anomalies.</p>
+           <p className="crm-body mt-1 mt-1">Audit team commissions, verify item charges, approve payout states, or flag anomalies.</p>
         </div>
         <button
           onClick={handleExportAll}
@@ -124,7 +124,7 @@ const ManagerInvoices = () => {
       </div>
 
       {/* FILTER CONTROL PANEL */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="crm-card">
         <div className="relative col-span-2">
           <Search className="absolute left-3.5 top-3.5 text-slate-400" size={16} />
           <input
@@ -154,7 +154,7 @@ const ManagerInvoices = () => {
       {/* INVOICES LIST TABLE - 10 COLUMNS */}
       <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="crm-table">
                <thead>
                   <tr className="bg-slate-50/50 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
                      <th className="px-6 py-6 whitespace-nowrap">Invoice ID</th>

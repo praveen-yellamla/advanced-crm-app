@@ -1,18 +1,23 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { 
-  Play, Pause, Headphones, Search, Filter, MessageSquare, ShieldCheck, Flag, Clock, User, Download, Plus, Eye
+  Play, Pause, Headphones, Search, Filter, MessageSquare, ShieldCheck, Flag, Clock, User, Download, Plus, Eye, Zap, AlertTriangle, AlertCircle, FileText, CheckCircle2, XCircle, ChevronRight, BarChart3, SkipForward, FastForward, Activity, X, Sparkles, TrendingUp, Cpu
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const CallRecordings = () => {
   const [selectedCall, setSelectedCall] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [durationMin, setDurationMin] = useState('');
-  const [durationMax, setDurationMax] = useState('');
-  const [agentId, setAgentId] = useState('');
+  const [playbackProgress, setPlaybackProgress] = useState(0);
+  
+  // Filters
   const [search, setSearch] = useState('');
+  const [agentId, setAgentId] = useState('');
+  const [smartFilter, setSmartFilter] = useState('ALL'); // ALL, NEEDS_COACHING, HIGH_RISK, ANGRY
+  
+  // Panel state
   const [annotationNote, setAnnotationNote] = useState('');
   const [flagReason, setFlagReason] = useState('');
   const [showFlagModal, setShowFlagModal] = useState(false);
@@ -21,9 +26,9 @@ const CallRecordings = () => {
 
   // 1. Fetch Calls
   const { data: callsData, isLoading: isCallsLoading, refetch } = useQuery({
-    queryKey: ['managerCalls', agentId, search, durationMin, durationMax],
+    queryKey: ['managerCalls', agentId, search],
     queryFn: async () => {
-      const res = await api.get(`/manager/calls?agentId=${agentId}&search=${search}&durationMin=${durationMin}&durationMax=${durationMax}`);
+      const res = await api.get(`/manager/calls?agentId=${agentId}&search=${search}`);
       return res.data.data;
     }
   });
@@ -57,21 +62,28 @@ const CallRecordings = () => {
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Call flagged successfully');
+      toast.success('Call escalated to review');
       setShowFlagModal(false);
       setFlagReason('');
       refetch();
     }
   });
 
-  const handlePlayCall = (call) => {
-    setSelectedCall(call);
-    setIsPlaying(true);
-    if (audioRef.current) {
-      audioRef.current.src = call.recordingUrl || '';
-      audioRef.current.play().catch(e => {
-        console.error('Audio play blocked:', e);
-      });
+  // Audio Handlers
+  const handlePlayCall = (call, e) => {
+    if (e) e.stopPropagation();
+    if (selectedCall?.id !== call.id) {
+      setSelectedCall(call);
+      setIsPlaying(true);
+      setPlaybackProgress(0);
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.src = call.recordingUrl || '';
+          audioRef.current.play().catch(console.error);
+        }
+      }, 100);
+    } else {
+      handleTogglePlay();
     }
   };
 
@@ -80,9 +92,16 @@ const CallRecordings = () => {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.play().catch(e => console.error(e));
+        audioRef.current.play().catch(console.error);
       }
       setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100;
+      setPlaybackProgress(progress || 0);
     }
   };
 
@@ -104,265 +123,513 @@ const CallRecordings = () => {
     });
   };
 
+  // KPIs
+  const kpis = useMemo(() => {
+    if (!callsData) return { total: 0, avgQa: 0, risk: 0, compliance: 0 };
+    const qaScores = callsData.map(c => c.qaScore?.total).filter(Boolean);
+    const avgQa = qaScores.length ? Math.round(qaScores.reduce((a,b)=>a+b,0)/qaScores.length) : 0;
+    const riskCalls = callsData.filter(c => c.sentiment === 'NEGATIVE' || c.tags?.includes('FLAGGED')).length;
+    // Mock compliance based on QA > 70
+    const compliant = callsData.filter(c => (c.qaScore?.total || 100) >= 70).length;
+    const compliancePct = callsData.length ? Math.round((compliant / callsData.length) * 100) : 100;
+    
+    return {
+      total: callsData.length,
+      avgQa,
+      risk: riskCalls,
+      compliance: compliancePct
+    };
+  }, [callsData]);
+
+  // Derived filtered data
+  const filteredCalls = useMemo(() => {
+    if (!callsData) return [];
+    let data = callsData;
+    if (smartFilter === 'NEEDS_COACHING') {
+      data = data.filter(c => c.qaScore && c.qaScore.total < 75);
+    } else if (smartFilter === 'HIGH_RISK') {
+      data = data.filter(c => c.tags?.includes('FLAGGED') || c.sentiment === 'NEGATIVE');
+    } else if (smartFilter === 'ANGRY') {
+      data = data.filter(c => c.sentiment === 'NEGATIVE');
+    }
+    return data;
+  }, [callsData, smartFilter]);
+
+  // Helper formatting
+  const formatDuration = (seconds) => {
+    if (!seconds) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   return (
-    <div className="space-y-8 pb-16 px-4 md:px-0">
-      {/* HEADER */}
-      <div className="pt-4">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Call Recordings & QC</h1>
-        <p className="text-slate-500 font-medium text-sm mt-1">Review active recordings, audit call logs, flag violations, and leave annotations.</p>
-      </div>
-
-      {/* FILTER PANEL */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="relative">
-          <Search className="absolute left-3.5 top-3.5 text-slate-400" size={16} />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search customer or phone..."
-            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:border-indigo-500"
-          />
-        </div>
-
+    <div className="-m-[28px] h-[calc(100vh-64px)] flex flex-col bg-neutral-page overflow-hidden">
+      
+      {/* ENTERPRISE HEADER */}
+      <header className="shrink-0 px-7 py-5 bg-white border-b border-neutral-border-default flex flex-col xl:flex-row xl:items-center justify-between gap-5 z-10 relative">
         <div>
-          <select
-            value={agentId}
-            onChange={(e) => setAgentId(e.target.value)}
-            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500"
-          >
-            <option value="">All Team Members</option>
-            {agentsData?.map(a => (
-              <option key={a.id} value={a.id}>{a.name}</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2 mb-1">
+            <Cpu size={16} className="text-brand-accent" />
+            <h1 className="text-[20px] font-[800] text-neutral-primary tracking-tight">Call Intelligence & QC</h1>
+          </div>
+          <p className="text-[13px] text-neutral-secondary font-[500]">Monitor live conversations, audit recordings, detect risks, and generate compliance insights.</p>
         </div>
-
-        <div className="flex gap-2">
-          <input
-            type="number"
-            value={durationMin}
-            onChange={(e) => setDurationMin(e.target.value)}
-            placeholder="Min Secs"
-            className="w-1/2 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none"
-          />
-          <input
-            type="number"
-            value={durationMax}
-            onChange={(e) => setDurationMax(e.target.value)}
-            placeholder="Max Secs"
-            className="w-1/2 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none"
-          />
-        </div>
-
-        <button 
-          onClick={refetch}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors"
-        >
-          <Filter size={16} /> Apply Filters
-        </button>
-      </div>
-
-      {/* AUDIO PLAYER (IF SELECTED) */}
-      {selectedCall && (
-        <div className="bg-indigo-900 text-white p-6 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={handleTogglePlay}
-              className="w-12 h-12 bg-white text-indigo-900 rounded-full flex items-center justify-center font-bold hover:scale-105 transition-all shadow-md"
-            >
-              {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-1" />}
-            </button>
+        
+        {/* KPI METRICS */}
+        <div className="flex items-center gap-3 overflow-x-auto pb-1 xl:pb-0 hide-scrollbar">
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-neutral-border-default bg-neutral-hover min-w-[150px]">
+            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100">
+              <Headphones size={14} className="text-blue-600" />
+            </div>
             <div>
-              <p className="text-[10px] font-black uppercase text-indigo-300 tracking-wider">Now Playing</p>
-              <h3 className="text-base font-extrabold truncate max-w-[250px]">{selectedCall.lead?.customerName}</h3>
-              <p className="text-xs text-indigo-200 font-medium">Placed by {selectedCall.agent?.name}</p>
+              <p className="text-[11px] font-[600] text-neutral-muted uppercase tracking-wider">Queue Total</p>
+              <p className="text-[16px] font-[800] text-neutral-primary">{kpis.total}</p>
             </div>
           </div>
-          <div className="flex-1 max-w-md mx-6">
-            <audio 
-              ref={audioRef} 
-              onEnded={() => setIsPlaying(false)}
-              controls 
-              className="w-full filter invert brightness-200"
-            />
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-neutral-border-default bg-neutral-hover min-w-[150px]">
+            <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center border border-purple-100">
+              <TrendingUp size={14} className="text-purple-600" />
+            </div>
+            <div>
+              <p className="text-[11px] font-[600] text-neutral-muted uppercase tracking-wider">Avg QA Score</p>
+              <p className="text-[16px] font-[800] text-neutral-primary">{kpis.avgQa}/100</p>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => setShowFlagModal(true)}
-              className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 rounded-xl text-xs font-bold shadow-md transition-colors flex items-center gap-1.5"
-            >
-              <Flag size={14} /> Flag Call
-            </button>
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-neutral-border-default bg-neutral-hover min-w-[150px]">
+            <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100">
+              <ShieldCheck size={14} className="text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-[11px] font-[600] text-neutral-muted uppercase tracking-wider">Compliance</p>
+              <p className="text-[16px] font-[800] text-neutral-primary">{kpis.compliance}%</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-status-danger-light bg-status-danger-light/10 min-w-[150px]">
+            <div className="w-8 h-8 rounded-full bg-status-danger text-white flex items-center justify-center shadow-sm">
+              <AlertTriangle size={14} />
+            </div>
+            <div>
+              <p className="text-[11px] font-[600] text-status-danger uppercase tracking-wider">Risk Alerts</p>
+              <p className="text-[16px] font-[800] text-status-danger">{kpis.risk}</p>
+            </div>
           </div>
         </div>
-      )}
+      </header>
 
-      {/* TWO PANEL CONTENT */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* CALLS LIST TABLE */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="text-base font-extrabold text-slate-800">Recording Queue</h3>
-            <Headphones size={18} className="text-slate-400" />
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                  <th className="p-4">Customer</th>
-                  <th className="p-4">Agent</th>
-                  <th className="p-4">Duration</th>
-                  <th className="p-4">Tags / Sentiment</th>
-                  <th className="p-4">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {callsData?.map(call => (
-                  <tr key={call.id} className={`text-xs hover:bg-slate-50/50 transition-colors ${selectedCall?.id === call.id ? 'bg-indigo-50/30' : ''}`}>
-                    <td className="p-4 font-extrabold text-slate-800">
-                      <div>{call.lead?.customerName}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">{call.phone}</div>
-                    </td>
-                    <td className="p-4 font-bold text-slate-600">{call.agent?.name}</td>
-                    <td className="p-4 font-bold text-slate-600">{Math.round(call.duration / 60)}m {call.duration % 60}s</td>
-                    <td className="p-4">
-                      <div className="flex gap-2">
-                        {call.tags && (
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            call.tags.includes('Flag') ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-100 text-slate-600'
-                          }`}>
-                            {call.tags}
-                          </span>
-                        )}
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          call.sentiment === 'POSITIVE' ? 'bg-emerald-50 text-emerald-600' :
-                          call.sentiment === 'NEGATIVE' ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-600'
-                        }`}>
-                          {call.sentiment}
-                        </span>
+      {/* SMART FILTERS */}
+      <div className="shrink-0 px-7 py-3 bg-neutral-page border-b border-neutral-border-default flex items-center gap-4">
+        <div className="flex items-center bg-white border border-neutral-border-default rounded-lg h-9 px-3 w-[280px] focus-within:border-brand-focus transition-colors">
+          <Search size={14} className="text-neutral-placeholder shrink-0" />
+          <input 
+            type="text" 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search customer or phone..." 
+            className="bg-transparent border-none outline-none text-[13px] ml-2 w-full text-neutral-primary placeholder:text-neutral-placeholder font-[500]" 
+          />
+        </div>
+
+        <select
+          value={agentId}
+          onChange={(e) => setAgentId(e.target.value)}
+          className="h-9 px-3 bg-white border border-neutral-border-default rounded-lg text-[13px] font-[600] text-neutral-primary focus:outline-none focus:border-brand-focus transition-colors"
+        >
+          <option value="">All Agents</option>
+          {agentsData?.map(a => (
+            <option key={a.id} value={a.id}>{a.name}</option>
+          ))}
+        </select>
+
+        <div className="h-5 w-[1px] bg-neutral-border-default mx-1"></div>
+
+        {/* AI Pills */}
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setSmartFilter('ALL')}
+            className={`px-3 py-1.5 rounded-full text-[11px] font-[700] uppercase tracking-wide transition-all ${smartFilter === 'ALL' ? 'bg-neutral-800 text-white shadow-sm' : 'bg-white border border-neutral-border-default text-neutral-secondary hover:bg-neutral-hover'}`}
+          >
+            All Calls
+          </button>
+          <button 
+            onClick={() => setSmartFilter('NEEDS_COACHING')}
+            className={`px-3 py-1.5 rounded-full text-[11px] font-[700] uppercase tracking-wide transition-all ${smartFilter === 'NEEDS_COACHING' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white border border-neutral-border-default text-neutral-secondary hover:bg-neutral-hover'}`}
+          >
+            Needs Coaching
+          </button>
+          <button 
+            onClick={() => setSmartFilter('HIGH_RISK')}
+            className={`px-3 py-1.5 rounded-full text-[11px] font-[700] uppercase tracking-wide transition-all flex items-center gap-1 ${smartFilter === 'HIGH_RISK' ? 'bg-rose-600 text-white shadow-sm' : 'bg-white border border-neutral-border-default text-neutral-secondary hover:bg-neutral-hover'}`}
+          >
+            <AlertCircle size={12} /> High Risk
+          </button>
+          <button 
+            onClick={() => setSmartFilter('ANGRY')}
+            className={`px-3 py-1.5 rounded-full text-[11px] font-[700] uppercase tracking-wide transition-all ${smartFilter === 'ANGRY' ? 'bg-orange-500 text-white shadow-sm' : 'bg-white border border-neutral-border-default text-neutral-secondary hover:bg-neutral-hover'}`}
+          >
+            Customer Angry
+          </button>
+        </div>
+      </div>
+
+      {/* ENTERPRISE DATA GRID */}
+      <div className="flex-1 overflow-auto custom-scrollbar relative bg-white">
+        <table className="w-full text-left border-collapse whitespace-nowrap">
+          <thead className="sticky top-0 bg-neutral-hover border-b border-neutral-border-default z-10 shadow-sm">
+            <tr className="text-[11px] font-[700] text-neutral-muted uppercase tracking-wider">
+              <th className="px-6 py-4">Call Details</th>
+              <th className="px-6 py-4">Agent</th>
+              <th className="px-6 py-4">Duration</th>
+              <th className="px-6 py-4">Sentiment</th>
+              <th className="px-6 py-4">QA Score</th>
+              <th className="px-6 py-4">Risk Level</th>
+              <th className="px-6 py-4">Recording</th>
+              <th className="px-6 py-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-neutral-border-default/50">
+            {isCallsLoading ? (
+               <tr><td colSpan="8" className="p-8 text-center text-neutral-muted font-[600] text-[13px]">Loading intelligence data...</td></tr>
+            ) : filteredCalls.length === 0 ? (
+               <tr><td colSpan="8" className="p-8 text-center text-neutral-muted font-[600] text-[13px]">No matching records found.</td></tr>
+            ) : (
+              filteredCalls.map(call => (
+                <tr 
+                  key={call.id} 
+                  onClick={() => {
+                    setSelectedCall(call);
+                    setPlaybackProgress(0);
+                    setIsPlaying(false);
+                  }}
+                  className={`group cursor-pointer transition-colors ${selectedCall?.id === call.id ? 'bg-brand-focus/5' : 'hover:bg-neutral-hover'}`}
+                >
+                  <td className="px-6 py-3.5">
+                    <div className="flex flex-col">
+                      <span className="text-[14px] font-[700] text-neutral-primary">{call.lead?.customerName || 'Unknown Contact'}</span>
+                      <span className="text-[12px] font-[500] text-neutral-muted">{call.phone} • {new Date(call.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-3.5">
+                    <div className="flex items-center gap-2">
+                      {call.agent?.profileImage ? (
+                        <img src={call.agent.profileImage} className="w-6 h-6 rounded-full object-cover shadow-sm" alt="" />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-brand-accent/10 flex items-center justify-center text-brand-accent font-[700] text-[10px]">
+                          {call.agent?.name?.charAt(0)}
+                        </div>
+                      )}
+                      <span className="text-[13px] font-[600] text-neutral-secondary">{call.agent?.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-3.5">
+                    <span className="text-[13px] font-[600] text-neutral-primary">{formatDuration(call.duration)}</span>
+                  </td>
+                  <td className="px-6 py-3.5">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-[700] tracking-wide ${
+                      call.sentiment === 'POSITIVE' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                      call.sentiment === 'NEGATIVE' ? 'bg-status-danger-light/10 text-status-danger border border-status-danger-light' : 
+                      'bg-slate-100 text-slate-600 border border-slate-200'
+                    }`}>
+                      {call.sentiment || 'NEUTRAL'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3.5">
+                    {call.qaScore ? (
+                      <div className="flex items-center gap-1.5">
+                        <div className={`w-2 h-2 rounded-full ${call.qaScore.total >= 80 ? 'bg-emerald-500' : call.qaScore.total >= 60 ? 'bg-amber-500' : 'bg-rose-500'}`}></div>
+                        <span className="text-[13px] font-[700] text-neutral-primary">{call.qaScore.total}/100</span>
                       </div>
-                    </td>
-                    <td className="p-4">
-                      {call.recordingUrl ? (
-                        <button
-                          onClick={() => handlePlayCall(call)}
-                          className="h-8 w-8 rounded-lg bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white transition-all flex items-center justify-center border border-indigo-100"
+                    ) : (
+                      <span className="text-[12px] font-[600] text-neutral-muted italic">Pending QA</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-3.5">
+                    {call.tags?.includes('FLAGGED') || call.sentiment === 'NEGATIVE' ? (
+                      <div className="flex items-center gap-1.5 text-status-danger">
+                        <AlertTriangle size={14} />
+                        <span className="text-[12px] font-[700]">High Risk</span>
+                      </div>
+                    ) : (
+                      <span className="text-[12px] font-[600] text-neutral-muted">Low</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-3.5">
+                    {call.recordingUrl ? (
+                      <div className="flex items-center gap-1.5 text-brand-accent">
+                        <Activity size={14} />
+                        <span className="text-[12px] font-[700]">Available</span>
+                      </div>
+                    ) : (
+                      <span className="text-[12px] font-[500] text-neutral-muted">No Audio</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-3.5 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2">
+                      {call.recordingUrl && (
+                        <button 
+                          onClick={(e) => handlePlayCall(call, e)}
+                          className="w-8 h-8 rounded-lg bg-neutral-hover hover:bg-brand-focus text-neutral-secondary hover:text-white flex items-center justify-center transition-colors shadow-sm border border-neutral-border-default"
                         >
                           <Play size={14} className="ml-0.5" />
                         </button>
-                      ) : (
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">No audio</span>
                       )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                      <button className="w-8 h-8 rounded-lg bg-neutral-hover hover:bg-neutral-border-default/60 text-neutral-secondary flex items-center justify-center transition-colors shadow-sm border border-neutral-border-default">
+                        <MessageSquare size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
-        {/* TRANSCRIPT & NOTES PANEL */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-[600px]">
-          {selectedCall ? (
-            <div className="flex flex-col h-full justify-between">
-              <div className="overflow-y-auto space-y-6 flex-1 pr-2">
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-900">Audit Panel</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">Call transcript and custom manager timeline annotations.</p>
-                </div>
+      {/* SPLIT PANEL INTELLIGENCE CENTER */}
+      <AnimatePresence>
+        {selectedCall && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0, y: 50 }}
+            animate={{ height: '48vh', opacity: 1, y: 0 }}
+            exit={{ height: 0, opacity: 0, y: 50 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="shrink-0 border-t border-neutral-border-default bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.08)] flex flex-col z-20 relative"
+          >
+            {/* Close Button */}
+            <button 
+              onClick={() => { setSelectedCall(null); if (audioRef.current) audioRef.current.pause(); }}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-neutral-hover hover:bg-neutral-border-default/50 text-neutral-secondary flex items-center justify-center transition-colors z-50"
+            >
+              <X size={16} />
+            </button>
 
-                {/* TRANSCRIPT & NOTES */}
-                <div className="space-y-4 pt-4 border-t border-slate-100">
-                  <div>
-                    <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Agent Summary Notes</h4>
-                    <p className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs font-medium text-slate-700 mt-1.5 leading-relaxed">
-                      {selectedCall.notes || 'No agent summary notes recorded.'}
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Call Transcript Snippet</h4>
-                    <p className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs font-medium text-slate-600 mt-1.5 leading-relaxed italic max-h-40 overflow-y-auto">
-                      {selectedCall.transcript || 'Transcript generation complete.'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* TIMELINE ANNOTATIONS */}
-                <div className="pt-4 border-t border-slate-100">
-                  <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-3">Timeline Annotations</h4>
-                  <div className="space-y-3">
-                    {selectedCall.annotations?.map((ann, i) => (
-                      <div key={i} className="flex gap-2 p-2 bg-indigo-50/50 border border-indigo-50 rounded-lg text-xs">
-                        <span className="font-black text-indigo-600">{Math.floor(ann.timestamp / 60)}:{(ann.timestamp % 60).toFixed(0).padStart(2, '0')}</span>
-                        <span className="text-slate-600 font-medium">{ann.note}</span>
+            <div className="flex-1 flex overflow-hidden">
+              
+              {/* LEFT PANE: Audio & Transcript */}
+              <div className="w-[60%] border-r border-neutral-border-default flex flex-col bg-neutral-page/50">
+                
+                {/* Audio Player Header */}
+                <div className="p-6 border-b border-neutral-border-default bg-white">
+                  <div className="flex items-center gap-5">
+                    <button 
+                      onClick={handleTogglePlay}
+                      className="w-14 h-14 rounded-full bg-brand-accent text-white flex items-center justify-center shadow-[0_4px_12px_rgba(37,99,235,0.3)] hover:scale-105 transition-all shrink-0"
+                    >
+                      {isPlaying ? <Pause size={24} /> : <Play size={24} className="ml-1" />}
+                    </button>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <h3 className="text-[16px] font-[800] text-neutral-primary truncate">{selectedCall.lead?.customerName}</h3>
+                        <span className="text-[12px] text-neutral-muted font-[500]">• Agent: {selectedCall.agent?.name}</span>
                       </div>
-                    ))}
-                    {(!selectedCall.annotations || selectedCall.annotations.length === 0) && (
-                      <p className="text-[11px] text-slate-400 font-bold uppercase italic">No annotations added yet.</p>
+                      
+                      {/* Premium Waveform Mock */}
+                      <div className="relative w-full h-8 flex items-end gap-[3px] overflow-hidden group cursor-pointer">
+                        <div className="absolute inset-0 bg-neutral-hover rounded-sm"></div>
+                        <div 
+                          className="absolute inset-y-0 left-0 bg-brand-focus/20 rounded-l-sm transition-all duration-100 ease-linear"
+                          style={{ width: `${playbackProgress}%` }}
+                        ></div>
+                        <div 
+                          className="absolute inset-y-0 left-0 border-r-2 border-brand-accent transition-all duration-100 ease-linear z-10"
+                          style={{ width: `${playbackProgress}%` }}
+                        ></div>
+                        {/* Fake bars */}
+                        {Array.from({ length: 80 }).map((_, i) => (
+                          <div 
+                            key={i} 
+                            className={`w-full rounded-full relative z-0 transition-all ${i < (playbackProgress/100 * 80) ? 'bg-brand-accent' : 'bg-neutral-border-default/80'}`}
+                            style={{ height: `${Math.max(10, Math.sin(i * 0.2) * 50 + 50)}%` }}
+                          ></div>
+                        ))}
+                      </div>
+                      <div className="flex justify-between mt-1 text-[11px] font-[600] text-neutral-muted uppercase tracking-widest">
+                        <span>{formatDuration(audioRef.current?.currentTime || 0)}</span>
+                        <span>{formatDuration(selectedCall.duration)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <audio 
+                    ref={audioRef} 
+                    onTimeUpdate={handleTimeUpdate}
+                    onEnded={() => setIsPlaying(false)}
+                    className="hidden"
+                  />
+                </div>
+
+                {/* Transcript Area */}
+                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                  <h4 className="text-[11px] font-[800] text-neutral-muted uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <Sparkles size={14} className="text-brand-accent" /> AI Transcript Insights
+                  </h4>
+                  <div className="space-y-4">
+                    {/* Mock speaker separation using the raw transcript */}
+                    <div className="flex gap-4">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[11px] font-[800] shrink-0">AG</div>
+                      <div className="flex-1 bg-white p-3.5 rounded-xl border border-neutral-border-default shadow-sm relative">
+                        <p className="text-[13px] font-[500] text-neutral-primary leading-relaxed">
+                          {selectedCall.transcript || "Hello, thank you for calling. How can I assist you today?"}
+                        </p>
+                        <span className="absolute -left-2 top-4 border-[6px] border-transparent border-r-white z-10"></span>
+                        <span className="absolute -left-[9px] top-[15px] border-[7px] border-transparent border-r-neutral-border-default z-0"></span>
+                      </div>
+                    </div>
+                    {selectedCall.transcript && (
+                      <div className="flex gap-4 flex-row-reverse">
+                        <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[11px] font-[800] shrink-0">C</div>
+                        <div className="flex-1 bg-brand-accent/5 p-3.5 rounded-xl border border-brand-accent/20 relative">
+                          <p className="text-[13px] font-[500] text-neutral-primary leading-relaxed">
+                            I'm calling because I have a question about my recent enterprise renewal and the pricing changes.
+                          </p>
+                          <span className="absolute -right-2 top-4 border-[6px] border-transparent border-l-brand-accent/5 z-10"></span>
+                          <span className="absolute -right-[9px] top-[15px] border-[7px] border-transparent border-l-brand-accent/20 z-0"></span>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
+
+                {/* Annotate Box */}
+                <div className="p-4 bg-white border-t border-neutral-border-default flex gap-3">
+                   <input
+                    type="text"
+                    value={annotationNote}
+                    onChange={(e) => setAnnotationNote(e.target.value)}
+                    placeholder="Leave a coaching note at current timestamp..."
+                    className="flex-1 bg-neutral-hover border border-neutral-border-default rounded-lg px-4 py-2 text-[13px] font-[500] focus:border-brand-focus focus:bg-white transition-colors outline-none"
+                  />
+                  <button
+                    onClick={handleSaveAnnotation}
+                    className="px-4 bg-neutral-900 hover:bg-black text-white rounded-lg text-[13px] font-[700] transition-colors shadow-sm"
+                  >
+                    Annotate
+                  </button>
+                </div>
               </div>
 
-              {/* ANNOTATION INPUT */}
-              <div className="pt-4 border-t border-slate-100 flex gap-2">
-                <input
-                  type="text"
-                  value={annotationNote}
-                  onChange={(e) => setAnnotationNote(e.target.value)}
-                  placeholder="Annotate at current playback timestamp..."
-                  className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-indigo-500"
-                />
-                <button
-                  onClick={handleSaveAnnotation}
-                  className="w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center shadow-md transition-colors"
-                >
-                  <Plus size={16} />
-                </button>
+              {/* RIGHT PANE: QA Audit */}
+              <div className="w-[40%] flex flex-col bg-white">
+                <div className="p-6 border-b border-neutral-border-default">
+                  <h3 className="text-[16px] font-[800] text-neutral-primary flex items-center gap-2">
+                    <ShieldCheck size={18} className="text-emerald-600" /> QA Audit Report
+                  </h3>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                  {selectedCall.qaScore ? (
+                    <div className="space-y-6">
+                      {/* Total Score Ring Mock */}
+                      <div className="flex items-center justify-center py-2">
+                        <div className="relative w-28 h-28 flex items-center justify-center">
+                          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#f1f5f9" strokeWidth="3" />
+                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={selectedCall.qaScore.total >= 80 ? '#10b981' : '#f43f5e'} strokeWidth="3" strokeDasharray={`${selectedCall.qaScore.total}, 100`} />
+                          </svg>
+                          <div className="absolute text-center">
+                            <span className="block text-[28px] font-[900] text-neutral-primary leading-none">{selectedCall.qaScore.total}</span>
+                            <span className="block text-[10px] font-[700] text-neutral-muted uppercase tracking-wider mt-1">/ 100</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Score Bars */}
+                      <div className="space-y-4">
+                        {[
+                          { label: 'Greeting & Opening', score: selectedCall.qaScore.greeting, max: 20 },
+                          { label: 'Needs Discovery', score: selectedCall.qaScore.discovery, max: 20 },
+                          { label: 'Product Pitch', score: selectedCall.qaScore.pitch, max: 20 },
+                          { label: 'Objection Handling', score: selectedCall.qaScore.objection, max: 20 },
+                          { label: 'Closing Effectiveness', score: selectedCall.qaScore.closing, max: 20 },
+                        ].map((metric, i) => (
+                          <div key={i}>
+                            <div className="flex justify-between text-[12px] font-[700] mb-1.5">
+                              <span className="text-neutral-secondary">{metric.label}</span>
+                              <span className="text-neutral-primary">{metric.score} / {metric.max}</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-neutral-hover rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-brand-focus rounded-full"
+                                style={{ width: `${(metric.score / metric.max) * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="pt-4 border-t border-neutral-border-default">
+                        <h4 className="text-[11px] font-[800] text-neutral-muted uppercase tracking-wider mb-2">Manager Coaching Notes</h4>
+                        <p className="text-[13px] font-[500] text-neutral-primary leading-relaxed bg-neutral-hover p-4 rounded-xl border border-neutral-border-default/50">
+                          {selectedCall.qaScore.notes || 'No coaching notes provided.'}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-center text-neutral-muted">
+                      <FileText size={32} className="mb-3 opacity-50" />
+                      <p className="text-[14px] font-[700] text-neutral-primary">Pending Evaluation</p>
+                      <p className="text-[12px] font-[500] mt-1 max-w-[200px]">This call has not been scored by a QA manager yet.</p>
+                      <button className="mt-4 px-4 py-2 bg-neutral-900 text-white rounded-lg text-[12px] font-[700]">Score this call</button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Flag Actions */}
+                <div className="p-4 border-t border-neutral-border-default bg-neutral-hover flex gap-3">
+                  <button 
+                    onClick={() => setShowFlagModal(true)}
+                    className="flex-1 px-4 py-2.5 bg-white border border-neutral-border-default hover:bg-status-danger-light/10 hover:border-status-danger-light/50 hover:text-status-danger rounded-xl text-[13px] font-[700] text-neutral-secondary transition-all flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <Flag size={14} /> Escalate Risk
+                  </button>
+                </div>
               </div>
+
             </div>
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center text-center text-slate-400">
-              <Headphones size={36} className="text-slate-200 mb-2 animate-pulse" />
-              <p className="text-xs font-bold uppercase tracking-wider">Select a call recording to activate the audit panel</p>
-            </div>
-          )}
-        </div>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* FLAG CALL MODAL */}
-      {showFlagModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-100">
-            <h3 className="text-lg font-black text-slate-900">Flag Call for Escalation</h3>
-            <p className="text-xs text-slate-500 mt-1">Leave a critical reason why this call is flagged for quality coaching.</p>
-            <textarea
-              value={flagReason}
-              onChange={(e) => setFlagReason(e.target.value)}
-              placeholder="e.g. Hostile language, competitor comparison violation..."
-              className="w-full mt-4 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-indigo-500 h-24"
-            />
-            <div className="flex justify-end gap-2 mt-6">
-              <button 
-                onClick={() => setShowFlagModal(false)}
-                className="px-4 py-2 text-slate-500 text-xs font-bold hover:bg-slate-50 rounded-lg"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleFlagCall}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow-md shadow-rose-500/20"
-              >
-                Escalate Flag
-              </button>
-            </div>
+      <AnimatePresence>
+        {showFlagModal && (
+          <div className="fixed inset-0 bg-neutral-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl p-7 max-w-md w-full shadow-2xl border border-neutral-border-default"
+            >
+              <div className="w-10 h-10 rounded-full bg-status-danger-light/10 flex items-center justify-center mb-4">
+                <AlertTriangle size={18} className="text-status-danger" />
+              </div>
+              <h3 className="text-[18px] font-[800] text-neutral-primary tracking-tight">Escalate Call Risk</h3>
+              <p className="text-[13px] text-neutral-secondary font-[500] mt-1.5">Leave a critical reason why this call is flagged for quality coaching or compliance review.</p>
+              
+              <textarea
+                value={flagReason}
+                onChange={(e) => setFlagReason(e.target.value)}
+                placeholder="e.g. Hostile language, compliance violation..."
+                className="w-full mt-5 p-3.5 bg-neutral-hover border border-neutral-border-default rounded-xl text-[13px] font-[500] focus:outline-none focus:border-status-danger focus:bg-white transition-colors h-28 resize-none"
+              />
+              
+              <div className="flex justify-end gap-3 mt-6">
+                <button 
+                  onClick={() => setShowFlagModal(false)}
+                  className="px-5 py-2.5 text-neutral-secondary text-[13px] font-[700] hover:bg-neutral-hover rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleFlagCall}
+                  className="px-5 py-2.5 bg-status-danger hover:bg-red-600 text-white text-[13px] font-[700] rounded-xl shadow-sm transition-colors"
+                >
+                  Flag Call
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 };

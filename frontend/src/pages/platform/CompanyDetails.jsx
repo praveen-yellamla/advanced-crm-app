@@ -230,7 +230,7 @@ const CompanyDetails = () => {
                </div>
 
                <div className="bg-slate-900 rounded-[40px] overflow-hidden shadow-2xl">
-                  <table className="w-full text-left border-collapse">
+                  <table className="crm-table">
                      <thead>
                         <tr className="bg-slate-800/50">
                            <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Invoice ID</th>

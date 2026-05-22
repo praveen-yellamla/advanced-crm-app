@@ -336,7 +336,7 @@ const JoinInvite = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest pl-1">Network Email Address *</label>
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest pl-1">Email Address Address *</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-4 text-slate-600" size={16} />
                   <input 

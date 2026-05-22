@@ -88,13 +88,13 @@ const LeadPipeline = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
            <div>
               <h1 className="text-3xl font-black text-[#0F172A] tracking-tight">Sales Pipeline</h1>
-              <p className="text-slate-500 font-medium text-sm mt-1">Track and manage your leads through different stages of the sales process.</p>
+              <p className="crm-body mt-1 mt-1">Track and manage your leads through different stages of the sales process.</p>
            </div>
            <div className="flex gap-3">
               <button 
                 onClick={resetFilters} 
                 title="Clear all filters"
-                className="h-12 w-12 bg-white text-slate-400 rounded-2xl flex items-center justify-center hover:text-rose-500 transition-all border border-slate-200 shadow-sm"
+                className="crm-card"
               >
                  <FilterX size={18} />
               </button>

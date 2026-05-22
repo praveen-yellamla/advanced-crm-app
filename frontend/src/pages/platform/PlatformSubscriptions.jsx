@@ -144,7 +144,7 @@ const PlanCard = ({ plan, onEdit }) => (
               <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">/ MONTHLY</span>
            </div>
         </div>
-        <p className="text-sm text-slate-500 font-medium leading-relaxed italic">{plan.description || 'Optimized enterprise plan for scalable operations and resource management.'}</p>
+        <p className="crm-body font-medium leading-relaxed italic">{plan.description || 'Optimized enterprise plan for scalable operations and resource management.'}</p>
      </div>
 
      <div className="grid grid-cols-2 gap-8 py-10 border-y border-slate-100 relative z-10">

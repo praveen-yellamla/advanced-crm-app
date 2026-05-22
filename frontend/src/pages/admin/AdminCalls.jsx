@@ -100,7 +100,7 @@ const AdminCalls = () => {
 
       {/* CALL LOGS TABLE */}
       <div className="bg-white rounded-[50px] border border-slate-100 shadow-sm overflow-hidden overflow-x-auto">
-         <table className="w-full text-left border-collapse min-w-[1000px]">
+         <table className="crm-table min-w-[1000px]">
             <thead>
                <tr className="bg-slate-50/50">
                   <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Time & Date</th>

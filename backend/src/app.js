@@ -78,6 +78,7 @@ app.use('/api/email-templates', require('./routes/templateRoutes'));
 app.use('/api/invoices', require('./routes/invoiceRoutes'));
 app.use('/api/billing', require('./routes/billingRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/profile', require('./routes/profileRoutes'));
 
 const prisma = require('./config/prisma');
 

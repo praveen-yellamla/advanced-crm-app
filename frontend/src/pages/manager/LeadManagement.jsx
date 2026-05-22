@@ -111,8 +111,8 @@ const LeadManagement = () => {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Lead Management</h1>
-          <p className="text-slate-500 font-medium text-sm mt-1">Audit team distribution, reassign outbound lists, change stages, and import database CSV files.</p>
+          <h1 className="crm-h1">Lead Management</h1>
+          <p className="crm-body mt-1 mt-1">Audit team distribution, reassign outbound lists, change stages, and import database CSV files.</p>
         </div>
         
         {/* CSV IMPORT */}
@@ -125,7 +125,7 @@ const LeadManagement = () => {
       </div>
 
       {/* FILTER CONTROLS */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="crm-card">
         <div className="relative">
           <Search className="absolute left-3.5 top-3.5 text-slate-400" size={16} />
           <input
@@ -177,14 +177,14 @@ const LeadManagement = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* LEADS LIST TABLE */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="crm-card">
           <div className="p-6 border-b border-slate-100 flex items-center justify-between">
             <h3 className="text-base font-extrabold text-slate-800">Assigned Team Leads</h3>
             <span className="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">{leads?.length || 0} Total</span>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="crm-table">
               <thead>
                 <tr className="border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-wider">
                   <th className="p-4">Customer Name</th>
@@ -234,7 +234,7 @@ const LeadManagement = () => {
         </div>
 
         {/* PROFILE PREVIEW PANEL */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-[600px] overflow-hidden">
+        <div className="crm-card">
           {selectedLead ? (
             <div className="flex flex-col h-full justify-between">
               <div className="overflow-y-auto space-y-6 flex-1 pr-2">

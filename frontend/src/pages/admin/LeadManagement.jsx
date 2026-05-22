@@ -203,7 +203,7 @@ const LeadManagement = () => {
       {/* TABLE */}
       <div className="bg-white rounded-[40px] border border-[#E2E8F0] shadow-sm overflow-hidden">
          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="crm-table">
                <thead>
                   <tr className="bg-slate-50 text-[11px] font-black uppercase tracking-widest text-slate-400">
                      <th className="px-10 py-6">Lead Name</th>

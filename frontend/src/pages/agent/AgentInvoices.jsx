@@ -377,7 +377,7 @@ const AgentInvoices = () => {
       {/* TABLE */}
       <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="crm-table">
                <thead>
                   <tr className="bg-slate-50/50 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
                      <th className="px-6 py-6 whitespace-nowrap">Invoice ID</th>
@@ -562,7 +562,7 @@ const AgentInvoices = () => {
                             )}
                          </div>
                          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                            <table className="w-full text-left border-collapse">
+                            <table className="crm-table">
                                <thead className="bg-slate-50 border-b border-slate-200">
                                   <tr>
                                      <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
@@ -659,7 +659,7 @@ const AgentInvoices = () => {
                     <Send size={24} />
                  </div>
                  <h3 className="text-xl font-black text-center text-[#0F172A] mb-2">Send Invoice {invoiceId ? `INV-${invoiceId}` : ''}?</h3>
-                 <p className="text-center text-slate-500 font-medium text-sm mb-8">
+                 <p className="text-center crm-body mt-1 mb-8">
                     This will dispatch the official PDF invoice directly to:<br/>
                     <strong className="text-indigo-600">{newInvoice.recipientEmail}</strong>
                  </p>

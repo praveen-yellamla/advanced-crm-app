@@ -83,8 +83,8 @@ const TaskManager = () => {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Task & Activity board</h1>
-          <p className="text-slate-500 font-medium text-sm mt-1">Audit active task cards, filter by assigned advisor, or perform hot reassignments.</p>
+          <h1 className="crm-h1">Task & Activity board</h1>
+          <p className="crm-body mt-1 mt-1">Audit active task cards, filter by assigned advisor, or perform hot reassignments.</p>
         </div>
 
         {/* VIEW SELECTOR */}
@@ -117,7 +117,7 @@ const TaskManager = () => {
       </div>
 
       {/* FILTER CONTROL */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-4">
+      <div className="crm-card">
         <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
           <Users size={16} /> Filter by Assigned Agent:
         </div>
@@ -144,9 +144,9 @@ const TaskManager = () => {
 
       {/* LIST VIEW */}
       {viewMode === 'list' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="crm-card">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="crm-table">
               <thead>
                 <tr className="border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-wider">
                   <th className="p-4">Task Card</th>
@@ -194,7 +194,7 @@ const TaskManager = () => {
 
       {/* CALENDAR VIEW */}
       {viewMode === 'calendar' && (
-        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+        <div className="crm-card">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
             <h3 className="text-base font-extrabold text-slate-800">Weekly Task Calendar</h3>
             <Calendar size={18} className="text-slate-400" />
@@ -275,7 +275,7 @@ const KanbanColumn = ({ title, tasks, onReassign, badgeColor }) => {
       </div>
       <div className="space-y-3 overflow-y-auto flex-1">
         {tasks.map(task => (
-          <div key={task.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3 group hover:border-indigo-200 transition-colors">
+          <div key={task.id} className="crm-card">
             <div>
               <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
                 task.priority === 'High' ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-500'

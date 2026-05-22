@@ -504,7 +504,7 @@ const TeamMembersSettings = () => {
          </div>
 
          <div className="overflow-x-auto rounded-3xl border border-slate-100 bg-white">
-            <table className="w-full text-left border-collapse">
+            <table className="crm-table">
                <thead>
                   <tr className="bg-slate-50 border-b border-slate-100">
                      <th className="p-6 text-[9px] font-black text-slate-400 uppercase tracking-widest">Name</th>
@@ -577,7 +577,7 @@ const TeamMembersSettings = () => {
          <h4 className="text-xl font-black text-[#0F172A] uppercase tracking-tighter italic">Pending Invitations Ledger</h4>
          
          <div className="overflow-x-auto rounded-3xl border border-slate-100 bg-white">
-            <table className="w-full text-left border-collapse">
+            <table className="crm-table">
                <thead>
                   <tr className="bg-slate-50 border-b border-slate-100">
                      <th className="p-6 text-[9px] font-black text-slate-400 uppercase tracking-widest">Agent</th>
@@ -1043,7 +1043,7 @@ const BillingPaymentsSettings = ({ draftSettings, onChange }) => {
          <h4 className="text-xl font-black text-[#0F172A] uppercase tracking-tighter italic">Stripe Invoices Feed</h4>
          
          <div className="overflow-x-auto rounded-3xl border border-slate-100">
-            <table className="w-full text-left border-collapse bg-white">
+            <table className="crm-table bg-white">
                <thead>
                   <tr className="bg-slate-50 border-b border-slate-100">
                      <th className="p-6 text-[9px] font-black text-slate-400 uppercase tracking-widest">Invoice Code</th>
@@ -1330,7 +1330,7 @@ const StorageSettings = () => {
       <div className="space-y-4">
          <h4 className="text-xl font-black text-[#0F172A] uppercase tracking-tighter italic">Shared Files</h4>
          <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden">
-            <table className="w-full text-left border-collapse">
+            <table className="crm-table">
                <thead>
                   <tr className="bg-slate-50 border-b border-slate-100">
                      <th className="p-6 text-[9px] font-black text-slate-400 uppercase tracking-widest">Name</th>
@@ -1709,7 +1709,7 @@ const AuditLedger = () => {
 
         {/* Audit Logs Table */}
         <div className="bg-slate-900 rounded-[48px] overflow-hidden shadow-2xl">
-           <table className="w-full text-left border-collapse">
+           <table className="crm-table">
               <thead>
                  <tr className="bg-slate-800/50">
                     <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-widest">Time</th>

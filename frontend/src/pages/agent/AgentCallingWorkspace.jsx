@@ -283,7 +283,7 @@ const AgentCallingWorkspace = () => {
                         </div>
                         <div className="space-y-2">
                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Ready to Connect</h2>
-                           <p className="text-slate-500 font-medium text-sm leading-relaxed">Select a lead from your pipeline or use the dialpad to start a new conversation.</p>
+                           <p className="crm-body mt-1 leading-relaxed">Select a lead from your pipeline or use the dialpad to start a new conversation.</p>
                         </div>
                      </div>
                   </motion.div>
@@ -532,7 +532,7 @@ const AgentCallingWorkspace = () => {
                       required
                       value={newTask.dueDate}
                       onChange={e => setNewTask({...newTask, dueDate: e.target.value})}
-                      className="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-sm text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                      className="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-xl font-bold crm-body focus:outline-none focus:border-blue-500 transition-colors"
                     />
                   </div>
 
@@ -541,7 +541,7 @@ const AgentCallingWorkspace = () => {
                     <select
                       value={newTask.priority}
                       onChange={e => setNewTask({...newTask, priority: e.target.value})}
-                      className="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-sm text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                      className="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-xl font-bold crm-body focus:outline-none focus:border-blue-500 transition-colors"
                     >
                       <option value="Normal">Normal</option>
                       <option value="MEDIUM">Medium</option>

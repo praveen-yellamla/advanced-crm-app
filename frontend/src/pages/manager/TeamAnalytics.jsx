@@ -158,8 +158,8 @@ const TeamAnalytics = () => {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Team Analytics</h1>
-          <p className="text-slate-500 font-medium text-sm mt-1">Deep-dive performance evaluations, heatmaps, and talk time diagnostics.</p>
+          <h1 className="crm-h1">Team Analytics</h1>
+          <p className="crm-body mt-1 mt-1">Deep-dive performance evaluations, heatmaps, and talk time diagnostics.</p>
         </div>
         
         {/* DATE SELECTOR & EXPORT */}
@@ -187,7 +187,7 @@ const TeamAnalytics = () => {
       </div>
 
       {/* FILTER DROPDOWN */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-4">
+      <div className="crm-card">
         <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
           <Users size={16} /> Filter by Advisor:
         </div>
@@ -211,7 +211,7 @@ const TeamAnalytics = () => {
             <motion.div
               layout
               key={agent.id}
-              className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+              className="crm-card"
             >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -303,11 +303,11 @@ const TeamAnalytics = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* TALK TIME HEATMAP */}
-        <div className="lg:col-span-2 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="crm-card">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">Talk Time Heatmap</h3>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Accumulated talk time (minutes) per day of week</p>
+              <h3 className="crm-h3">Talk Time Heatmap</h3>
+              <p className="crm-caption">Accumulated talk time (minutes) per day of week</p>
             </div>
             <Clock size={20} className="text-slate-300" />
           </div>
@@ -329,10 +329,10 @@ const TeamAnalytics = () => {
         </div>
 
         {/* COMPARATIVE ATTRIBUTION */}
-        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="crm-card">
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">Conversion Comparison</h3>
+              <h3 className="crm-h3">Conversion Comparison</h3>
               <TrendingUp size={20} className="text-slate-300" />
             </div>
             <p className="text-slate-500 font-medium text-xs mb-8">Comparison of current active conversions versus the previous performance period.</p>

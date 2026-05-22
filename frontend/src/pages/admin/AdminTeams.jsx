@@ -119,7 +119,7 @@ const AdminTeams = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Teams & Departments</h1>
-           <p className="text-slate-500 font-medium text-sm mt-1">Manage your organization's team structure and performance targets.</p>
+           <p className="crm-body mt-1 mt-1">Manage your organization's team structure and performance targets.</p>
         </div>
         <button 
           onClick={() => {
@@ -155,9 +155,9 @@ const AdminTeams = () => {
       </div>
 
       {/* TEAMS LIST */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="crm-card">
          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="crm-table">
                <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
                      <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Team Details</th>
@@ -266,7 +266,7 @@ const AdminTeams = () => {
               >
                  <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
                     <h2 className="text-xl font-bold text-slate-900">{editTeamId ? 'Edit Team Details' : 'Create New Team'}</h2>
-                    <p className="text-sm text-slate-500 mt-1">Define team objectives and assign a manager.</p>
+                    <p className="crm-body mt-1">Define team objectives and assign a manager.</p>
                  </div>
                  
                  <form onSubmit={(e) => {

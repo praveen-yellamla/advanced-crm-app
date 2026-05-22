@@ -29,8 +29,12 @@ router.post('/qa/:callId/score', managerController.submitQAScore);
 router.get('/qa/reports', managerController.getQAReports);
 
 // 5. Agent Feedback
+router.get('/my-performance', managerController.getMyPerformance);
+router.post('/my-performance/:feedbackId/acknowledge', managerController.acknowledgeAdminFeedback);
+
 router.get('/feedback/:agentId', managerController.getAgentFeedback);
 router.post('/feedback', managerController.submitAgentFeedback);
+router.post('/feedback/:feedbackId/reply', managerController.replyToFeedback);
 
 // 6. Lead Management
 router.get('/leads', managerController.getTeamLeads);

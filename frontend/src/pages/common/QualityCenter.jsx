@@ -115,7 +115,7 @@ const QualityCenter = ({ role = 'ADMIN' }) => {
       {/* CORE REPOSITORY GRID */}
       <div className="bg-white rounded-[56px] border border-[#E2E8F0] shadow-sm overflow-hidden">
          <div className="overflow-x-auto overflow-y-hidden">
-            <table className="w-full text-left border-collapse">
+            <table className="crm-table">
                <thead>
                   <tr className="bg-slate-50/50">
                      <th className="px-10 py-10 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Call ID</th>

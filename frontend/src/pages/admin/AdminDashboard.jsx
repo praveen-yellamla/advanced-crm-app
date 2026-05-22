@@ -128,7 +128,7 @@ const AdminDashboard = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
            <h1 className="text-4xl font-black text-[#0F172A] tracking-tight">Overview</h1>
-           <p className="text-slate-500 font-medium text-sm mt-1">Real-time performance and sales metrics for your company.</p>
+           <p className="crm-body mt-1 mt-1">Real-time performance and sales metrics for your company.</p>
         </div>
         <div className="flex gap-4">
            <button 
@@ -330,7 +330,7 @@ const AdminDashboard = () => {
                </div>
                <div>
                   <h3 className="text-2xl font-black text-[#0F172A] tracking-tight">API Integration</h3>
-                  <p className="text-slate-500 font-medium text-sm mt-1">Connect your website or external tools to automatically capture leads.</p>
+                  <p className="crm-body mt-1 mt-1">Connect your website or external tools to automatically capture leads.</p>
                </div>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-2xl text-emerald-600 text-[11px] font-black uppercase tracking-widest border border-emerald-100">

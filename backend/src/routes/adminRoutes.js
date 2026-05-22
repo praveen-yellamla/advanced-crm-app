@@ -14,7 +14,9 @@ const {
   deleteAgent,
   getAuditLogs,
   getManagers,
-  assignAgentTeam
+  assignAgentTeam,
+  getManagerPerformance,
+  submitManagerFeedback
 } = require('../controllers/adminController');
 const { 
   getInvoices, 
@@ -90,6 +92,8 @@ router.get('/audit-logs', getAuditLogs);
 router.get('/email-audit', getEmailAudit);
 
 router.get('/managers', getManagers);
+router.get('/manager-performance', getManagerPerformance);
+router.post('/manager-feedback', submitManagerFeedback);
 
 
 router.get('/invite-stats', getInviteStats);

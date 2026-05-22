@@ -110,13 +110,24 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const refreshProfile = async () => {
+    try {
+      const res = await api.get('/auth/me');
+      setUser(res.data.user);
+      return res.data.user;
+    } catch (err) {
+      console.error("Failed to refresh profile", err);
+    }
+  };
+
   const value = React.useMemo(() => ({ 
     user, 
     login, 
     logout, 
     loading, 
     setImpersonationToken, 
-    stopImpersonation 
+    stopImpersonation,
+    refreshProfile
   }), [user, loading]);
 
   return (

@@ -74,7 +74,7 @@ const PlatformHelp = () => {
                        <cat.icon size={28} />
                     </div>
                     <h4 className="text-xl font-black text-[#0F172A] uppercase italic mb-3">{cat.title}</h4>
-                    <p className="text-sm text-slate-500 font-medium leading-relaxed">{cat.desc}</p>
+                    <p className="crm-body font-medium leading-relaxed">{cat.desc}</p>
                     <div className="mt-8 flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">
                        Explore Module <ChevronRight size={14} />
                     </div>
@@ -188,7 +188,7 @@ const FAQItem = ({ q, a }) => (
      </div>
      <div className="flex items-start gap-4">
         <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 shrink-0 font-black text-xs">A</div>
-        <p className="text-sm text-slate-500 font-medium leading-relaxed">{a}</p>
+        <p className="crm-body font-medium leading-relaxed">{a}</p>
      </div>
   </div>
 );

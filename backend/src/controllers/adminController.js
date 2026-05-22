@@ -999,6 +999,103 @@ const assignAgentTeam = async (req, res) => {
   }
 };
 
+// ==================================================
+// 6. MANAGER PERFORMANCE & FEEDBACK
+// ==================================================
+const getManagerPerformance = async (req, res) => {
+  try {
+    const orgId = req.user.organizationId;
+    const managers = await prisma.user.findMany({
+      where: { role: 'MANAGER', isActive: true, organizationId: orgId },
+      include: {
+        managedTeam: {
+          include: {
+            agents: {
+              include: { calls: true }
+            }
+          }
+        }
+      }
+    });
+
+    // Compute basic stats
+    const enrichedManagers = managers.map(m => {
+      let totalCalls = 0;
+      let totalDuration = 0;
+      m.managedTeam?.agents?.forEach(agent => {
+        agent.calls?.forEach(call => {
+          totalCalls++;
+          totalDuration += (call.duration || 0);
+        });
+      });
+      return {
+        id: m.id,
+        name: m.name,
+        email: m.email,
+        profileImage: m.profileImage,
+        teamName: m.managedTeam?.teamName || 'No Team',
+        teamSize: m.managedTeam?.agents?.length || 0,
+        totalCalls,
+        avgTalkTime: totalCalls ? Math.round((totalDuration / totalCalls) / 60) : 0,
+        leadershipScore: 88, // Mock score
+        status: m.status
+      };
+    });
+
+    res.json({ success: true, data: enrichedManagers });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const submitManagerFeedback = async (req, res) => {
+  try {
+    const { managerId, content, category, sentiment } = req.body;
+    const adminId = req.user.id;
+    const orgId = req.user.organizationId;
+
+    const feedback = await prisma.feedback.create({
+      data: {
+        organizationId: orgId,
+        agentId: parseInt(managerId), // The recipient (Manager)
+        managerId: adminId,         // The sender (Admin)
+        content,
+        type: 'EVALUATION',
+        priority: 'NORMAL',
+        category: category || 'Leadership',
+        sentiment: sentiment || 'POSITIVE'
+      }
+    });
+
+    const { sendNotification, triggerRealtimeEvent, logActivity } = require('../utils/realtimeHelper');
+
+    await sendNotification({
+      organizationId: orgId,
+      userId: parseInt(managerId),
+      title: 'Executive Review Posted',
+      message: `Admin has posted performance feedback: "${content.substring(0, 35)}..."`,
+      type: 'INFO',
+      priority: 'HIGH',
+      metadata: { feedbackId: feedback.id }
+    });
+
+    triggerRealtimeEvent(`user_${managerId}`, 'admin_feedback:posted', feedback);
+
+    await logActivity({
+      actorId: adminId,
+      actorRole: req.user.role,
+      action: 'admin_feedback.posted',
+      entityType: 'FEEDBACK',
+      entityId: feedback.id,
+      newValue: { content },
+    });
+
+    res.json({ success: true, data: feedback });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getTeams,
@@ -1013,5 +1110,7 @@ module.exports = {
   deleteAgent,
   getAuditLogs,
   getManagers,
-  assignAgentTeam
+  assignAgentTeam,
+  getManagerPerformance,
+  submitManagerFeedback
 };

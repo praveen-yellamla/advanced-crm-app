@@ -375,7 +375,8 @@ const getEmailThreads = async (req, res) => {
       include: {
         lead: true,
         labels: true,
-        events: { orderBy: { createdAt: 'desc' }, take: 1 }
+        events: { orderBy: { createdAt: 'desc' }, take: 1 },
+        messages: { orderBy: { createdAt: 'desc' }, take: 1, select: { from: true, to: true } }
       },
       orderBy: { lastMessageAt: 'desc' },
       take: parseInt(limit),

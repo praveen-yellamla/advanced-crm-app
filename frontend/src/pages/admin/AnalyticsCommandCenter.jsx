@@ -242,7 +242,7 @@ const AnalyticsCommandCenter = () => {
               </span>
            </div>
            <h1 className="text-4xl font-black text-[#0F172A] tracking-tighter">Business Overview</h1>
-           <p className="text-slate-500 font-medium text-sm mt-2">Comprehensive analytics and enterprise health monitoring.</p>
+           <p className="crm-body mt-1 mt-2">Comprehensive analytics and enterprise health monitoring.</p>
         </div>
 
         <div className="flex items-center gap-4">

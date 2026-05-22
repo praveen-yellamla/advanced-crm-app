@@ -33,6 +33,7 @@ import TeamAnalytics from '../pages/manager/TeamAnalytics';
 import CallRecordings from '../pages/manager/CallRecordings';
 import QAScoring from '../pages/manager/QAScoring';
 import ManagerFeedback from '../pages/manager/AgentFeedback';
+import ManagerMyPerformance from '../pages/manager/ManagerMyPerformance';
 import ManagerLeadManagement from '../pages/manager/LeadManagement';
 import TaskManager from '../pages/manager/TaskManager';
 import EmailMonitoring from '../pages/manager/EmailMonitoring';
@@ -61,8 +62,14 @@ import PlatformSecurity from '../pages/platform/PlatformSecurity';
 import PlatformAPIKeys from '../pages/platform/PlatformAPIKeys';
 import PlatformHelp from '../pages/platform/PlatformHelp';
 
+// Shared Pages
+import ProfilePage from '../pages/common/ProfilePage';
+
 // Admin Billing
 import AdminBilling from '../pages/admin/AdminBilling';
+
+// Admin Manager Feedback
+import AdminManagerFeedback from '../pages/admin/AdminManagerFeedback';
 
 // Client Pages (Legacy)
 import ClientReports from '../pages/client/ClientReports';
@@ -103,6 +110,7 @@ const AppRoutes = () => {
             <Route path="teams" element={<AdminTeams />} />
             <Route path="agents" element={<AdminAgents />} />
             <Route path="agents/invite" element={<AdminInviteAgents />} />
+            <Route path="manager-feedback" element={<AdminManagerFeedback />} />
             <Route path="leads" element={<LeadManagement />} />
             <Route path="pipeline" element={<LeadPipeline />} />
             <Route path="integrations" element={<SystemIntegrations />} />
@@ -125,6 +133,7 @@ const AppRoutes = () => {
             <Route path="recordings" element={<CallRecordings />} />
             <Route path="qa-scoring" element={<QAScoring />} />
             <Route path="feedback" element={<ManagerFeedback />} />
+            <Route path="my-performance" element={<ManagerMyPerformance />} />
             <Route path="leads" element={<ManagerLeadManagement />} />
             <Route path="tasks" element={<TaskManager />} />
             <Route path="emails" element={<EmailMonitoring />} />
@@ -151,7 +160,7 @@ const AppRoutes = () => {
         
         {/* 5. SHARED ACCOUNT LAYER (ALL ROLES) */}
         <Route element={<DashboardLayout />}>
-          <Route path="/profile" element={<PlatformProfile />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/security" element={<PlatformSecurity />} />
           <Route path="/help" element={<PlatformHelp />} />
         </Route>

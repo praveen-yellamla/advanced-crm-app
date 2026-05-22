@@ -292,6 +292,11 @@ model User {
   phone        String? @unique
   profileImage String?
   
+  // Profile Preferences
+  timezone               String? @default("UTC")
+  themePreference        String? @default("system")
+  notificationPreference Json?
+  
   // Role & Scope
   role         Role    @default(AGENT)
   
@@ -869,10 +874,17 @@ model Feedback {
   manager        User         @relation("ManagerFeedback", fields: [managerId], references: [id])
   content        String       @db.Text
   type           String       @default("COACHING") // COACHING, PRAISE, CORRECTION, ESCALATION
-  callId         Int?         @map("call_id")
-  acknowledgedAt DateTime?    @map("acknowledged_at")
-  response       String?      @db.Text
-  createdAt      DateTime     @default(now()) @map("created_at")
+  priority       String?      @default("NORMAL")
+  category       String?
+  qaScore          Float?       @map("qa_score")
+  sentiment        String?
+  dueDate          DateTime?    @map("due_date")
+  metadata         Json?
+  callId           Int?         @map("call_id")
+  acknowledgedAt   DateTime?    @map("acknowledged_at")
+  improvementStatus String?     @default("PENDING") @map("improvement_status")
+  response         String?      @db.Text
+  createdAt        DateTime     @default(now()) @map("created_at")
 
   @@map("feedbacks")
 }

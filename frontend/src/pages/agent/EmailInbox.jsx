@@ -164,11 +164,11 @@ const EmailInbox = () => {
                   <div className="flex justify-between items-start mb-3">
                      <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-[10px] shadow-sm transition-all ${selectedThreadId === thread.id ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}>
-                           {(thread.lead?.customerName || '?').slice(0, 1).toUpperCase()}
+                           {(thread.lead?.customerName || (activeFolder === 'SENT' ? thread.messages?.[0]?.to : thread.messages?.[0]?.from) || '?').slice(0, 1).toUpperCase()}
                         </div>
                         <div>
                            <p className={`text-xs uppercase tracking-tight truncate w-40 ${!thread.isRead ? 'font-black text-slate-900' : 'font-bold text-slate-700'}`}>
-                              {thread.lead?.customerName || 'Unknown'}
+                              {thread.lead?.customerName || (activeFolder === 'SENT' ? thread.messages?.[0]?.to : thread.messages?.[0]?.from) || 'Unknown'}
                            </p>
                            <p className="text-[9px] font-bold text-slate-400 mt-0.5 uppercase tracking-widest">
                               {new Date(thread.lastMessageAt).toLocaleDateString()}
@@ -366,7 +366,7 @@ const EmailInbox = () => {
                      <Inbox size={48} className="text-slate-200" />
                   </div>
                   <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">No Thread Selected</h2>
-                  <p className="text-slate-500 font-medium text-sm">Select a thread from the feed to view its intelligence.</p>
+                  <p className="crm-body mt-1">Select a thread from the feed to view its intelligence.</p>
                </div>
             )}
          </AnimatePresence>

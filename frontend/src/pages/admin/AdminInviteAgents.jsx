@@ -282,7 +282,7 @@ const AdminInviteAgents = () => {
         {[
           { id: 'single', label: 'Single Invite', icon: UserPlus },
           { id: 'bulk', label: 'Bulk Import', icon: FileUp },
-          { id: 'pending', label: 'Pending Queue', icon: Clock }
+          { id: 'pending', label: 'Pending Invites', icon: Clock }
         ].map(t => {
           const Icon = t.icon;
           const isActive = activeTab === t.id;
@@ -319,7 +319,7 @@ const AdminInviteAgents = () => {
             className="grid grid-cols-1 lg:grid-cols-3 gap-8"
           >
             <div className="lg:col-span-2 bg-white border border-slate-100 rounded-[32px] p-8 space-y-6 shadow-sm">
-              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">{selectedRole === 'manager' ? 'Invite Manager' : 'Invite Agent'}</h3>
+              <h3 className="crm-h2">{selectedRole === 'manager' ? 'Invite Manager' : 'Invite Agent'}</h3>
               
               {/* Role Selection cards */}
               <div className="space-y-4 border-b border-slate-100 pb-6">
@@ -567,7 +567,7 @@ const AdminInviteAgents = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 bg-white border border-slate-100 rounded-[32px] p-8 space-y-6 shadow-sm">
                   <div className="space-y-2">
-                    <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Enter Emails Manually</h3>
+                    <h3 className="crm-h2">Enter Emails Manually</h3>
                     <p className="text-xs text-slate-400 font-semibold leading-relaxed">Enter recipient emails, one per line or separated by commas. Format: <code>email@domain.com</code> or <code>Name &lt;email@domain.com&gt;</code>.</p>
                   </div>
 
@@ -662,7 +662,7 @@ const AdminInviteAgents = () => {
                 <div className="lg:col-span-2 bg-white border border-slate-100 rounded-[32px] p-8 space-y-6 shadow-sm">
                   <div className="flex justify-between items-center">
                     <div className="space-y-1">
-                      <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                      <h3 className="crm-h2">
                         {bulkRole === 'manager' ? 'Add Multiple Managers from File' : 'Add Multiple Agents from File'}
                       </h3>
                       <p className="text-xs text-slate-400 font-semibold">
@@ -868,7 +868,7 @@ const AdminInviteAgents = () => {
 
             {/* List Table */}
             <div className="overflow-x-auto border border-slate-100 rounded-2xl">
-              <table className="w-full text-left border-collapse">
+              <table className="crm-table">
                 <thead>
                   <tr className="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
                     <th className="p-4 pl-6">Invitee</th>

@@ -54,7 +54,7 @@ const EmailManagement = () => {
             <Shield className="text-blue-600" size={28} />
             Email Audit & Delivery Log
           </h1>
-          <p className="text-slate-500 font-medium text-sm mt-1">Global oversight of all SMTP communications and delivery events across the organization.</p>
+          <p className="crm-body mt-1 mt-1">Global oversight of all SMTP communications and delivery events across the organization.</p>
         </div>
         
         <button 
@@ -74,7 +74,7 @@ const EmailManagement = () => {
       </div>
 
       {/* DYNAMIC FILTERS */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      <div className="crm-card">
         <div className="relative">
           <Search className="absolute left-3 top-3 text-slate-400" size={18} />
           <input
@@ -91,14 +91,14 @@ const EmailManagement = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* EMAIL LOG TABLE */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[600px]">
+        <div className="crm-card">
           <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
             <h3 className="text-sm font-semibold text-slate-800">System Audit Trail</h3>
             <span className="text-xs font-bold text-slate-600 bg-white border border-slate-200 shadow-sm px-2.5 py-1 rounded-md">{filteredLogs.length} Events</span>
           </div>
 
           <div className="overflow-y-auto flex-1">
-            <table className="w-full text-left border-collapse">
+            <table className="crm-table">
               <thead className="sticky top-0 bg-white shadow-sm z-10">
                 <tr className="border-b border-slate-200 text-xs font-semibold text-slate-500 bg-slate-50">
                   <th className="p-3">Timestamp</th>
@@ -140,7 +140,7 @@ const EmailManagement = () => {
         </div>
 
         {/* THREAD CONVERSATION DRAWER */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-[600px]">
+        <div className="crm-card">
           <div className="p-4 border-b border-slate-200 bg-slate-50 shrink-0">
             <h3 className="text-sm font-semibold text-slate-800">Audit Inspector</h3>
           </div>
@@ -219,7 +219,7 @@ const StatCard = ({ title, value, subText, icon, color }) => {
   };
 
   return (
-    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+    <div className="crm-card">
       <div className={`w-12 h-12 rounded-lg flex items-center justify-center border ${colors[color]}`}>
         {React.cloneElement(icon, { size: 24 })}
       </div>

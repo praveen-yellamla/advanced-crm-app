@@ -116,7 +116,7 @@ const FiscalLedger = () => {
       {/* TABLE */}
       <div className="bg-white rounded-[56px] border border-slate-100 shadow-sm overflow-hidden p-10">
          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="crm-table">
                <thead>
                   <tr className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 border-b border-slate-50">
                      <th className="px-10 py-10">Invoice Number</th>

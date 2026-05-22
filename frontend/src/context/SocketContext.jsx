@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 
@@ -8,11 +8,20 @@ export const SocketProvider = ({ children }) => {
   const { user, logout } = useAuth();
   const [socket, setSocket] = useState(null);
   const [connected, setConnected] = useState(false);
+  
+  // Keep track of the current socket instance in a ref to prevent unnecessary re-connections
+  const socketRef = useRef(null);
+
+  const userId = user?.id;
+  const teamId = user?.teamId;
+  const userRole = user?.role;
 
   useEffect(() => {
-    if (!user) {
-      if (socket) {
-        socket.disconnect();
+    // If user logs out or is null, disconnect
+    if (!userId) {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
         setSocket(null);
         setConnected(false);
       }
@@ -22,7 +31,7 @@ export const SocketProvider = ({ children }) => {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     const socketUrl = apiUrl.replace(/\/api$/, '');
 
-    console.log(`[SOCKET] Connecting to ${socketUrl} for user: ${user.id} (${user.role})`);
+    console.log(`[SOCKET] Connecting to ${socketUrl} for user: ${userId} (${userRole})`);
     
     const socketInstance = io(socketUrl, {
       transports: ['websocket', 'polling'],
@@ -33,14 +42,16 @@ export const SocketProvider = ({ children }) => {
       }
     });
 
+    socketRef.current = socketInstance;
+
     socketInstance.on('connect', () => {
       console.log('[SOCKET] Connected to realtime gateway');
       setConnected(true);
       
       // Join user and team rooms
       socketInstance.emit('join_room', { 
-        userId: user.id, 
-        teamId: user.teamId 
+        userId: userId, 
+        teamId: teamId 
       });
     });
 
@@ -59,9 +70,11 @@ export const SocketProvider = ({ children }) => {
     setSocket(socketInstance);
 
     return () => {
-      socketInstance.disconnect();
+      if (socketInstance) {
+        socketInstance.disconnect();
+      }
     };
-  }, [user]);
+  }, [userId, teamId, userRole]); // Only reconnect if the actual user ID or Team ID changes!
 
   return (
     <SocketContext.Provider value={{ socket, connected }}>

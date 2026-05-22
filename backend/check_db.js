@@ -1,13 +1,14 @@
+require('dotenv').config();
 const prisma = require('./src/config/prisma');
 
 async function check() {
-  const orgs = await prisma.organization.findMany({
-    select: { id: true, name: true, subscriptionTier: true }
-  });
-  console.log('Orgs:', JSON.stringify(orgs, null, 2));
-  
-  const plans = await prisma.plan.findMany();
-  console.log('Plans:', JSON.stringify(plans, null, 2));
+  const users = await prisma.user.findMany({ select: { id: true, name: true, role: true, teamId: true } });
+  const teams = await prisma.team.findMany({ select: { id: true, teamName: true, managerId: true } });
+  console.log('--- USERS ---');
+  console.log(users);
+  console.log('--- TEAMS ---');
+  console.log(teams);
+  process.exit(0);
 }
 
-check().catch(console.error).finally(() => prisma.$disconnect());
+check();

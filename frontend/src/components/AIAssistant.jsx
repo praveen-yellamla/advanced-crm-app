@@ -17,7 +17,7 @@ const GREETING_RESPONSES = [
 ];
 
 const THINKING_MESSAGES = [
-  "Consulting Intelligence Core...",
+  "Consulting AI Assistant...",
   "Aggregating Tenant Data...",
   "Analyzing Pipeline Metrics...",
   "Synthesizing Response...",
@@ -112,10 +112,10 @@ const AIAssistant = ({ embedded = false }) => {
       if (res.data.success) {
         addMessage('assistant', res.data.results);
       } else {
-        throw new Error(res.data.message || 'Intelligence Core Timeout');
+        throw new Error(res.data.message || 'AI Assistant Timeout');
       }
     } catch (err) {
-      const errMsg = err.response?.data?.message || err.message || "Connection to Intelligence Core failed.";
+      const errMsg = err.response?.data?.message || err.message || "Connection to AI Assistant failed.";
       setError({ message: errMsg, lastQuery: userQuery });
       addMessage('assistant', `⚠️ ${errMsg}`);
     } finally {

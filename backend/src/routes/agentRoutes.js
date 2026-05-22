@@ -34,7 +34,7 @@ router.post('/invoices/:id/send', agentController.sendInvoiceEmail);
 // Feedback & Monitoring
 router.get('/feedback', agentController.getFeedback);
 router.post('/feedback/:feedbackId/acknowledge', agentController.acknowledgeFeedback);
-router.post('/feedback/:feedbackId/reply', agentController.replyFeedback);
+router.post('/feedback/:feedbackId/reply', agentController.replyToFeedback);
 
 // Emails
 router.get('/emails', agentController.getMyEmails);

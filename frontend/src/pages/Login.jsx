@@ -1,30 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  Loader2, 
-  ShieldCheck, 
-  ArrowRight, 
-  Zap, 
-  Monitor,
-  Phone,
-  BarChart,
-  Headphones,
-  Briefcase,
-  Globe,
-  ChevronLeft,
-  Activity,
-  Layers,
-  CheckCircle2,
-  ShieldAlert,
-  Fingerprint,
-  Cpu
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Eye, EyeOff, Layers, AlertTriangle } from 'lucide-react';
+import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 const Login = () => {
@@ -33,28 +11,25 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [notActivated, setNotActivated] = useState(false); // specific banner for pending invite agents
+  
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [isShake, setIsShake] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const current = {
-    label: 'ENTERPRISE SAAS PLATFORM',
-    title: 'Advanced',
-    titleHighlight: 'CRM',
-    sub: 'Secure access to your professional workspace and organization data.',
-    color: '#0F172A',
-    gradient: 'from-[#0F172A] to-[#1E293B]',
-    icon: <ShieldCheck size={32} />,
-    metric: { label: 'Platform Status', val: 'Operational', trend: 'Live' }
-  };
+  // FIX 1: Ensure fields are empty on load/return
+  useEffect(() => {
+    setEmail('');
+    setPassword('');
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (!email || !password) return toast.error('Required fields missing');
+    if (!email || !password) return;
 
     setIsSubmitting(true);
-    setNotActivated(false);
+    setErrorMsg(null);
     try {
       const user = await login(email, password, rememberMe);
       toast.success(`Welcome back, ${user.name}`);
@@ -68,241 +43,334 @@ const Login = () => {
       
       navigate(rolePath[user.role] || '/unauthorized');
     } catch (err) {
+      triggerShake();
       const code = err.response?.data?.code;
       if (code === 'ACCOUNT_NOT_ACTIVATED') {
-        setNotActivated(true);
+        setErrorMsg("Your account isn't active yet. Check your email for your invitation link.");
+      } else if (code === 'TOO_MANY_ATTEMPTS' || err.response?.status === 429) {
+        setErrorMsg("Too many failed attempts. Try again in 15 minutes or reset your password.");
       } else {
-        toast.error(err.response?.data?.message || 'Verification failed');
+        setErrorMsg("Incorrect email or password. Please try again.");
       }
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const triggerShake = () => {
+    setIsShake(true);
+    setTimeout(() => setIsShake(false), 400);
+  };
+
   return (
-    <div className="min-h-screen bg-[#F4F7FB] flex font-sans overflow-hidden bg-grid-light">
+    <div className="min-h-screen flex flex-col md:flex-row bg-white" style={{ fontFamily: 'Inter, sans-serif' }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        .crm-input {
+          height: 48px;
+          border: 1.5px solid #e5e7eb;
+          border-radius: 10px;
+          padding: 0 14px;
+          font-size: 15px;
+          color: #111827;
+          background: #ffffff;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+          width: 100%;
+          outline: none;
+        }
+        .crm-input:focus {
+          border-color: #6366f1;
+          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+          outline: none;
+        }
+        .crm-input.error {
+          border-color: #ef4444;
+        }
+        
+        .crm-btn {
+          background-color: #6366f1 !important;
+          color: #ffffff !important;
+          font-weight: 600;
+          font-size: 15px;
+          letter-spacing: 0.3px;
+          border: none;
+          border-radius: 10px;
+          height: 52px;
+          width: 100%;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .crm-btn:hover:not(:disabled) {
+          background-color: #4f46e5 !important;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4) !important;
+        }
+        .crm-btn:active:not(:disabled) {
+          transform: scale(0.98);
+          background-color: #4338ca !important;
+        }
+        .crm-btn:disabled {
+          background-color: #6366f1 !important;
+          opacity: 0.8;
+          cursor: not-allowed;
+          transform: none;
+          box-shadow: none !important;
+        }
+        
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        .spinner {
+          border: 2px solid rgba(255,255,255,0.3);
+          border-radius: 50%;
+          border-top-color: #fff;
+          width: 20px;
+          height: 20px;
+          animation: spin 0.8s linear infinite;
+        }
+      `}</style>
       
-      {/* LEFT: SOFT GRADIENT BRAND PANEL (60% LIGHT) */}
-      <div className="hidden lg:flex lg:w-[60%] relative flex-col p-20 justify-between overflow-hidden border-r border-[#E2E8F0]">
-         
-         {/* SOFT GRADIENT BG */}
-         <div className="absolute inset-0 z-0">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#EEF4FF] via-white to-[#EEF4FF]" />
-            <motion.div 
-               animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1], x: [0, 50, 0] }}
-               transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-               className="absolute top-[20%] right-[10%] w-[600px] h-[600px] blur-[120px] rounded-full" 
-               style={{ backgroundColor: `${current.color}11` }} 
-            />
-         </div>
-
-         {/* TOP BRANDING */}
-         <div className="relative z-10 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-               <Layers size={22} className="text-blue-600" />
-               <span className="text-[14px] font-black text-[#0F172A] tracking-tighter">ADV<span className="text-blue-600">.CRM</span></span>
-            </div>
-            <div className="flex items-center gap-3 opacity-40">
-               <span className="text-[10px] font-black text-[#0F172A] uppercase tracking-[0.5em]">Enterprise Edition</span>
-            </div>
-         </div>
-
-         {/* MAIN CONTENT */}
-         <div className="relative z-10 max-w-xl space-y-12">
-            <div className="space-y-6">
-               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-4 px-4 py-2 rounded-2xl bg-white border border-[#E2E8F0] w-fit shadow-xl shadow-blue-500/5">
-                  <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse shadow-[0_0_15px_rgba(37,99,235,0.4)]" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">{current.label} READY</span>
-               </motion.div>
-               
-               <motion.h1 
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} 
-                  className="text-8xl font-black text-[#0F172A] leading-[0.95] tracking-tighter"
-               >
-                  {current.title} <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600 drop-shadow-sm">
-                    {current.titleHighlight}.
-                  </span>
-               </motion.h1>
-               
-               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-[#64748B] text-xl font-medium leading-relaxed max-w-md">
-                  {current.sub}
-               </motion.p>
-            </div>
-
-            {/* WHITE GLASS METRIC */}
-            <motion.div 
-               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4 }}
-               className="p-10 bg-white/80 backdrop-blur-xl rounded-[40px] border border-white flex items-center justify-between shadow-2xl shadow-blue-500/5 group overflow-hidden"
-            >
-               <div className="space-y-4 flex-1 relative z-10">
-                  <div className="flex items-center justify-between pr-8">
-                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">{current.metric.label}</span>
-                     <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">{current.metric.trend}</span>
-                  </div>
-                  <div className="text-6xl font-black text-[#0F172A] tracking-tighter group-hover:scale-105 transition-transform duration-700 origin-left">
-                    {current.metric.val}
-                  </div>
-               </div>
-               <div className="w-20 h-20 rounded-3xl bg-slate-50 border border-slate-100 flex items-center justify-center relative z-10">
-                  <Activity size={32} className="text-slate-200 group-hover:text-blue-600 transition-all duration-700" />
-               </div>
-            </motion.div>
-         </div>
-
-         {/* FOOTER */}
-         <div className="relative z-10 flex items-center justify-between opacity-30 cursor-default">
-            <div className="flex gap-10">
-               <div className="flex items-center gap-3">
-                  <ShieldCheck size={18} /> <span className="text-[10px] font-black uppercase tracking-widest">ISO 27001</span>
-               </div>
-               <div className="flex items-center gap-3">
-                  <Cpu size={18} /> <span className="text-[10px] font-black uppercase tracking-widest">E2E ENCRYPTED</span>
-               </div>
-            </div>
-            <Globe size={20} className="text-slate-900" />
-         </div>
+      {/* MOBILE TOP BAR (<768px) */}
+      <div 
+        className="md:hidden flex items-center justify-center w-full h-[80px] shrink-0"
+        style={{ backgroundColor: '#0f1629' }}
+      >
+        <div className="flex items-center gap-2">
+          <Layers size={24} color="#ffffff" />
+          <span className="text-[24px] font-[800] text-white tracking-tight">
+            CRM<span style={{ color: '#6366f1' }}>.PRO</span>
+          </span>
+        </div>
       </div>
 
-      {/* RIGHT: WHITE AUTH CANVAS (40% CLEAN) */}
-      <div className="w-full lg:w-[40%] flex items-center justify-center p-8 lg:p-24 bg-white relative">
-         <div className="w-full max-w-sm space-y-12 relative z-10">
+      {/* LEFT PANEL (Desktop >1024px: 55%, Tablet 768-1024px: 45%) */}
+      <div 
+        className="hidden md:flex flex-col md:w-[45%] lg:w-[55%] relative overflow-hidden p-8 lg:p-[80px]"
+        style={{
+          background: 'linear-gradient(135deg, #0f1629 0%, #1a2744 100%)'
+        }}
+      >
+        {/* Subtle grid pattern overlay */}
+        <div 
+          className="absolute inset-0 z-0 pointer-events-none" 
+          style={{
+            backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px)',
+            backgroundSize: '40px 40px'
+          }}
+        />
+
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          className="relative z-10 flex flex-col h-full"
+        >
+          {/* TOP: Logo */}
+          <div className="flex items-center gap-2">
+            <Layers size={28} color="#ffffff" />
+            <span className="text-[28px] font-[800] text-white tracking-tight">
+              CRM<span style={{ color: '#6366f1' }}>.PRO</span>
+            </span>
+          </div>
+
+          {/* MIDDLE: Content */}
+          <div className="flex-1 flex flex-col justify-center">
+            <h1 
+              style={{
+                fontSize: '48px',
+                fontWeight: 800,
+                color: '#ffffff',
+                lineHeight: 1.1,
+                letterSpacing: '-1px'
+              }}
+            >
+              The CRM built for<br/>
+              <span style={{ color: '#6366f1' }}>high-performance</span><br/>
+              sales teams.
+            </h1>
             
-            <div className="space-y-4">
-               <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-white shadow-2xl relative mb-10 overflow-hidden" style={{ backgroundColor: current.color, boxShadow: `0 30px 60px ${current.color}33` }}>
-                  <div className="absolute inset-0 bg-white/10 opacity-20" />
-                  <div className="relative z-10">{current.icon}</div>
-               </div>
-               <h2 className="text-5xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">Login</h2>
-               <p className="text-[#64748B] font-medium leading-relaxed">
-                  Sign in to your professional workspace. <br />
-                  <span className="text-[9px] uppercase font-black tracking-[0.2em] opacity-40">Enterprise Security Active</span>
-               </p>
+            <p 
+              style={{
+                fontSize: '16px',
+                color: 'rgba(255, 255, 255, 0.65)',
+                lineHeight: 1.6,
+                maxWidth: '360px',
+                marginTop: '20px'
+              }}
+            >
+              Manage leads, track calls, coach your team,
+              and close more deals — all in one place.
+            </p>
+
+            {/* FEATURES (Hidden on tablet, visible on desktop) */}
+            <div className="hidden lg:flex flex-col mt-[48px]" style={{ gap: '14px' }}>
+              <div className="flex items-center" style={{ gap: '12px' }}>
+                <div className="shrink-0" style={{ width: '6px', height: '6px', backgroundColor: '#6366f1', borderRadius: '50%' }} />
+                <span style={{ fontSize: '15px', color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>Real-time call monitoring</span>
+              </div>
+              <div className="flex items-center" style={{ gap: '12px' }}>
+                <div className="shrink-0" style={{ width: '6px', height: '6px', backgroundColor: '#6366f1', borderRadius: '50%' }} />
+                <span style={{ fontSize: '15px', color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>AI-powered lead scoring</span>
+              </div>
+              <div className="flex items-center" style={{ gap: '12px' }}>
+                <div className="shrink-0" style={{ width: '6px', height: '6px', backgroundColor: '#6366f1', borderRadius: '50%' }} />
+                <span style={{ fontSize: '15px', color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>Full team performance analytics</span>
+              </div>
+            </div>
+          </div>
+
+          {/* BOTTOM: Status */}
+          <div className="flex items-center gap-2 mt-8">
+            <motion.div 
+              animate={{ opacity: [1, 0.5, 1] }} 
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              className="w-2 h-2 rounded-full"
+              style={{ backgroundColor: '#22c55e' }}
+            />
+            <span className="text-[12px] font-[600] uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              LIVE &nbsp;Platform Operational
+            </span>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* RIGHT PANEL - LOGIN FORM */}
+      <div className="w-full md:w-[55%] lg:w-[45%] flex flex-col items-center justify-center relative p-8 md:p-12 lg:p-0 bg-white min-h-[calc(100vh-80px)] md:min-h-screen">
+        
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="w-full max-w-[380px] flex flex-col"
+        >
+          {/* TOP LABELS */}
+          <div style={{ fontSize: '11px', letterSpacing: '2.5px', color: '#6366f1', fontWeight: 600, textTransform: 'uppercase' }}>
+            WELCOME BACK
+          </div>
+          <h2 style={{ fontSize: '26px', fontWeight: 700, color: '#111827', marginTop: '8px' }}>
+            Sign in to your workspace
+          </h2>
+          <p style={{ fontSize: '14px', color: '#9ca3af', marginTop: '6px', marginBottom: '32px' }}>
+            Enter your credentials to continue
+          </p>
+
+          {/* FORM */}
+          <motion.form 
+            onSubmit={handleLogin}
+            animate={isShake ? { x: [-10, 10, -10, 10, -5, 5, 0] } : {}}
+            transition={{ duration: 0.4 }}
+            className="flex flex-col"
+          >
+            {/* EMAIL */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '20px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>
+                Email address
+              </label>
+              <input 
+                type="email"
+                required
+                autoComplete="off"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                className={`crm-input ${errorMsg ? 'error' : ''}`}
+              />
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-8" autoComplete="off">
-
-               {/* Account Not Activated Banner */}
-               {notActivated && (
-                 <div className="p-5 bg-amber-50 border border-amber-200 rounded-[20px] flex gap-4 items-start">
-                   <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
-                     <ShieldAlert size={16} className="text-amber-600" />
-                   </div>
-                   <div>
-                     <p className="text-xs font-black text-amber-800 uppercase tracking-widest">⚠️ Account not activated yet</p>
-                     <p className="text-[11px] text-amber-700 font-bold mt-1 leading-relaxed">
-                       Check your email for the invitation link and complete your account setup to log in.
-                     </p>
-                   </div>
-                 </div>
-               )}
-
-               {/* Email Field */}
-               <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#64748B] ml-1">Email Address</label>
-                  <div className="relative group">
-                     <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-600 transition-colors">
-                        <Mail size={18} />
-                     </div>
-                     <input 
-                       type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                       autoComplete="off"
-                       className="w-full pl-16 pr-6 h-[72px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-[24px] focus:ring-[12px] focus:ring-blue-600/5 focus:border-blue-600 focus:bg-white outline-none transition-all font-bold text-[#0F172A] placeholder:text-slate-300"
-                       placeholder="name@company.com"
-                     />
-                  </div>
-               </div>
-
-               {/* Password Field */}
-               <div className="space-y-3">
-                  <div className="flex items-center justify-between ml-1">
-                     <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#64748B]">Password</label>
-                     <button type="button" className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline transition-all">Forgot Password?</button>
-                  </div>
-                  <div className="relative group">
-                     <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-600 transition-colors">
-                        <Lock size={18} />
-                     </div>
-                     <input 
-                       type={showPassword ? 'text' : 'password'} required value={password} onChange={(e) => setPassword(e.target.value)}
-                       autoComplete="new-password"
-                       className="w-full pl-16 pr-14 h-[72px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-[24px] focus:ring-[12px] focus:ring-blue-600/5 focus:border-blue-600 focus:bg-white outline-none transition-all font-bold text-[#0F172A] placeholder:text-slate-300"
-                       placeholder="••••••••••••"
-                     />
-                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-6 flex items-center text-slate-300 hover:text-[#0F172A] transition-colors">
-                        {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
-                     </button>
-                  </div>
-               </div>
-
-               {/* Remember Me */}
-               <div className="flex items-center gap-3 ml-1">
-                  <div 
-                    onClick={() => setRememberMe(!rememberMe)}
-                    className={`w-6 h-6 rounded-lg border-2 transition-all cursor-pointer flex items-center justify-center ${rememberMe ? 'bg-blue-600 border-blue-600' : 'border-slate-200 bg-white'}`}
-                  >
-                     {rememberMe && <CheckCircle2 size={16} className="text-white" />}
-                  </div>
-                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => setRememberMe(!rememberMe)}>
-                    Keep me signed in
-                  </span>
-               </div>
-
-               {/* Authorization Button */}
-               <div className="space-y-8 pt-4">
-                  <button 
-                    type="submit" disabled={isSubmitting}
-                    className={`
-                      w-full h-[72px] text-white font-bold rounded-[24px] shadow-2xl transition-all 
-                      flex items-center justify-center gap-5 relative overflow-hidden group 
-                      disabled:opacity-70 hover:-translate-y-2 hover:brightness-110 active:scale-[0.98]
-                    `}
-                    style={{ 
-                       background: `linear-gradient(135deg, ${current.color}, ${current.color}CC)`,
-                       boxShadow: `0 30px 60px ${current.color}4d`
-                    }}
-                  >
-                     {isSubmitting ? <Loader2 className="animate-spin" size={28} /> : (
-                       <>
-                         <span className="relative z-10 text-[11px] uppercase tracking-[0.4em] font-black">Sign In</span>
-                         <ArrowRight size={22} className="relative z-10 group-hover:translate-x-3 transition-transform duration-700" />
-                       </>
-                     )}
-                     <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
-                  </button>
-
-                  {/* TRUST ROW */}
-                  <div className="flex items-center justify-between px-2 pt-2 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-1000">
-                     {[
-                        { icon: <ShieldAlert size={14} />, label: 'SOC2' },
-                        { icon: <Fingerprint size={14} />, label: 'SSO' },
-                        { icon: <Cpu size={14} />, label: 'E2EE' },
-                        { icon: <Globe size={14} />, label: 'GRID' }
-                     ].map((trust, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                           <div className="text-slate-400">{trust.icon}</div>
-                           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{trust.label}</span>
-                        </div>
-                     ))}
-                  </div>
-               </div>
-            </form>
-
-            <div className="pt-12 text-center space-y-8">
-               <div className="flex items-center gap-6">
-                  <div className="h-px flex-1 bg-slate-100" />
-                  <div className="flex items-center gap-2">
-                     <ShieldCheck size={16} className="text-emerald-500" />
-                     <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Secure Verification</span>
-                  </div>
-                  <div className="h-px flex-1 bg-slate-100" />
-               </div>
-               <p className="text-[10px] text-[#64748B] leading-[2] uppercase tracking-[0.3em] font-bold max-w-[280px] mx-auto opacity-60">
-                  Authorized Users Only
-               </p>
+            {/* PASSWORD */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '16px' }}>
+              <div className="flex items-center justify-between" style={{ marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 500, color: '#374151' }}>
+                  Password
+                </label>
+                <a href="#" style={{ fontSize: '13px', color: '#6366f1', textDecoration: 'none', fontWeight: 500 }} className="hover:underline">
+                  Forgot password?
+                </a>
+              </div>
+              <div className="relative">
+                <input 
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className={`crm-input ${errorMsg ? 'error' : ''}`}
+                  style={{ paddingRight: '48px' }}
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors hover:text-[#374151]"
+                  style={{ color: '#94a3b8' }}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
-         </div>
+            {/* ERROR TEXT */}
+            {errorMsg && (
+              <div className="flex items-start gap-2 mb-[16px] mt-[-8px]">
+                <AlertTriangle size={14} color="#ef4444" className="mt-[2px] shrink-0" />
+                <span className="text-[13px]" style={{ color: '#ef4444' }}>
+                  {errorMsg}
+                </span>
+              </div>
+            )}
+
+            {/* REMEMBER ME */}
+            <div style={{ fontSize: '13px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0 20px 0' }}>
+              <div 
+                onClick={() => setRememberMe(!rememberMe)}
+                className="w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-colors"
+                style={{
+                  borderColor: rememberMe ? '#6366f1' : '#e5e7eb',
+                  backgroundColor: rememberMe ? '#6366f1' : 'transparent'
+                }}
+              >
+                {rememberMe && (
+                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </div>
+              <span 
+                onClick={() => setRememberMe(!rememberMe)}
+                className="cursor-pointer select-none" 
+              >
+                Keep me signed in
+              </span>
+            </div>
+
+            {/* SIGN IN BTN */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="crm-btn"
+            >
+              {isSubmitting ? (
+                <div className="spinner" />
+              ) : (
+                "Sign In"
+              )}
+            </button>
+          </motion.form>
+
+
+
+        </motion.div>
+
+        {/* BOTTOM RIGHT SECURITY TEXT */}
+        <div style={{ position: 'absolute', bottom: '24px', left: '0', right: '0', textAlign: 'center' }}>
+          <span style={{ fontSize: '12px', color: '#cbd5e1', letterSpacing: '0.5px' }}>
+            🔒  256-bit encrypted  ·  ISO 27001 certified
+          </span>
+        </div>
+
       </div>
 
     </div>

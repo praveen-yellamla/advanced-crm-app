@@ -70,7 +70,7 @@ const PlatformSecurity = () => {
                      </div>
                      <div>
                         <h4 className="text-lg font-black text-[#0F172A] uppercase italic">Two-Factor Authentication</h4>
-                        <p className="text-sm text-slate-500 font-medium mt-1">Add an extra layer of security to your operator account using TOTP verification.</p>
+                        <p className="crm-body font-medium mt-1">Add an extra layer of security to your operator account using TOTP verification.</p>
                      </div>
                   </div>
                   <button 
@@ -183,7 +183,7 @@ const SecurityAction = ({ icon: Icon, title, desc, action, disabled }) => (
         </div>
         <div>
            <h4 className="text-lg font-black text-[#0F172A] uppercase italic">{title}</h4>
-           <p className="text-sm text-slate-500 font-medium mt-1">{desc}</p>
+           <p className="crm-body font-medium mt-1">{desc}</p>
         </div>
      </div>
      <button 
