@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "kill-port 5000 && nodemon src/server.js",
     "build": "npx prisma generate && npx prisma db push --accept-data-loss",
-    "start": "npx prisma generate && npx prisma db push --accept-data-loss && node src/server.js",
+    "start": "npx prisma generate && node src/server.js",
     "test": "jest"
   },
   "keywords": [],
