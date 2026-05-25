@@ -70,7 +70,19 @@ const getDashboardStats = async (req, res) => {
       prisma.team.count({ where: { organizationId: orgId } }),
       prisma.task.count({ where: { organizationId: orgId, status: 'PENDING' } }),
       prisma.user.findMany({
-        where: { organizationId: orgId, role: 'AGENT' },
+        where: { 
+          organizationId: orgId, 
+          role: 'AGENT',
+          isActive: true,
+          OR: [
+            { agentType: 'MANUAL' },
+            { agentType: null },
+            { 
+              agentType: 'INVITED',
+              inviteStatus: 'ACCEPTED'
+            }
+          ]
+        },
         select: {
           id: true,
           name: true,
