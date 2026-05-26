@@ -56,19 +56,25 @@ const AdminManagerFeedback = () => {
     });
   };
 
-  const handleGenerateAiCoaching = () => {
+  const handleGenerateAiCoaching = async () => {
+    if (!selectedManagerId) {
+      toast.error('Please select a manager first');
+      return;
+    }
+    
     setIsGeneratingAi(true);
-    setTimeout(() => {
-      if (category === 'Leadership') {
-        setContent('Executive Review: Excellent leadership shown this quarter. Team conversion rates are up 15%. Keep pushing the team towards the new KPIs.');
-      } else if (category === 'Team Performance') {
-        setContent('Executive Review: The team is struggling with the new product rollout. Please schedule 1-on-1 coaching sessions with bottom quartile agents.');
-      } else {
-        setContent('Executive Review: Great job maintaining high team morale. Suggest focusing on cross-selling techniques next month.');
-      }
-      setIsGeneratingAi(false);
+    try {
+      const res = await api.post('/admin/manager-performance/generate-ai-feedback', {
+        managerId: selectedManagerId,
+        category
+      });
+      setContent(res.data.data);
       toast.success('AI Executive Suggestions applied');
-    }, 1500);
+    } catch (error) {
+      toast.error('Failed to generate AI coaching');
+    } finally {
+      setIsGeneratingAi(false);
+    }
   };
 
   return (
@@ -132,7 +138,7 @@ const AdminManagerFeedback = () => {
           {selectedManagerId ? (
             <>
               {/* SUBMIT FEEDBACK FORM */}
-              <div className="bg-white rounded-[24px] p-8 shadow-xl shadow-slate-200/40 border border-slate-100 relative overflow-hidden">
+              <div className="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/40 border border-slate-100 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-indigo-50 to-transparent rounded-bl-full opacity-50 pointer-events-none" />
                 
                 <div className="flex items-center justify-between mb-8 relative z-10">
@@ -204,7 +210,7 @@ const AdminManagerFeedback = () => {
               </div>
             </>
           ) : (
-            <div className="bg-white rounded-[24px] p-12 shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center h-[600px] relative overflow-hidden">
+            <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center h-[600px] relative overflow-hidden">
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-50 rounded-full blur-3xl opacity-50" />
               <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-indigo-50 rounded-full flex items-center justify-center mb-6 shadow-inner relative z-10">
                 <Target size={40} className="text-indigo-600" />

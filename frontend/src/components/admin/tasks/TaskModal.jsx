@@ -106,7 +106,7 @@ const TaskModal = ({ task, isOpen, onClose, onSave, onDelete, onDuplicate, onArc
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="relative w-full max-w-2xl bg-white rounded-[40px] shadow-2xl overflow-hidden"
+          className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden"
         >
           {/* HEADER */}
           <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -118,7 +118,7 @@ const TaskModal = ({ task, isOpen, onClose, onSave, onDelete, onDuplicate, onArc
                 Enterprise Task Management System
               </p>
             </div>
-            <button onClick={onClose} className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors shadow-sm">
+            <button onClick={onClose} className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors shadow-sm">
               <X size={20} />
             </button>
           </div>
@@ -136,7 +136,7 @@ const TaskModal = ({ task, isOpen, onClose, onSave, onDelete, onDuplicate, onArc
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
                     placeholder="Enter task title..."
-                    className="w-full h-16 px-6 bg-white border border-slate-200 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900"
+                    className="w-full h-10 px-4 bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-600 transition-all font-medium text-slate-900 text-sm"
                   />
                 </div>
                 <div className="space-y-2">
@@ -147,7 +147,7 @@ const TaskModal = ({ task, isOpen, onClose, onSave, onDelete, onDuplicate, onArc
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
                     placeholder="Provide detailed instructions for this task..."
-                    className="w-full h-32 p-6 bg-white border border-slate-200 rounded-3xl outline-none focus:border-blue-600 transition-all font-medium text-slate-600 resize-none"
+                    className="w-full h-32 p-4 bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-600 transition-all font-medium text-slate-900 text-sm resize-none"
                   />
                 </div>
               </div>
@@ -196,7 +196,7 @@ const TaskModal = ({ task, isOpen, onClose, onSave, onDelete, onDuplicate, onArc
                   type="date"
                   value={formData.dueDate}
                   onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
-                  className="w-full h-14 px-6 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-blue-600 font-bold text-slate-700 cursor-pointer"
+                  className="w-full h-10 px-4 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-600 font-medium text-slate-900 text-sm cursor-pointer"
                 />
               </div>
 
@@ -208,7 +208,7 @@ const TaskModal = ({ task, isOpen, onClose, onSave, onDelete, onDuplicate, onArc
                   type="date"
                   value={formData.reminderTime}
                   onChange={(e) => setFormData({...formData, reminderTime: e.target.value})}
-                  className="w-full h-14 px-6 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-blue-600 font-bold text-slate-700 cursor-pointer"
+                  className="w-full h-10 px-4 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-600 font-medium text-slate-900 text-sm cursor-pointer"
                 />
               </div>
 
@@ -240,9 +240,9 @@ const TaskModal = ({ task, isOpen, onClose, onSave, onDelete, onDuplicate, onArc
               </div>
 
               {/* RECURRING */}
-              <div className="md:col-span-2 p-6 bg-blue-50/50 rounded-3xl border border-blue-100 flex items-center justify-between">
+              <div className="md:col-span-2 p-6 bg-blue-50/50 rounded-xl border border-blue-100 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white border border-blue-200 flex items-center justify-center text-blue-600 shadow-sm">
+                  <div className="w-10 h-10 rounded-lg bg-white border border-blue-200 flex items-center justify-center text-blue-600 shadow-sm">
                     <Repeat size={20} />
                   </div>
                   <div>
@@ -266,23 +266,23 @@ const TaskModal = ({ task, isOpen, onClose, onSave, onDelete, onDuplicate, onArc
             <div className="flex gap-4">
               {task && (
                 <>
-                  <button type="button" onClick={() => onDelete(task.id)} className="w-14 h-14 rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-200 transition-all shadow-sm flex items-center justify-center" title="Delete Task">
-                    <Trash2 size={20} />
+                  <button type="button" onClick={() => onDelete(task.id)} className="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-rose-600 hover:border-rose-200 transition-all shadow-sm flex items-center justify-center" title="Delete Task">
+                    <Trash2 size={16} />
                   </button>
-                  <button type="button" onClick={() => onDuplicate(task)} className="w-14 h-14 rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-blue-500 hover:border-blue-200 transition-all shadow-sm flex items-center justify-center" title="Duplicate Task">
-                    <Copy size={20} />
+                  <button type="button" onClick={() => onDuplicate(task)} className="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm flex items-center justify-center" title="Duplicate Task">
+                    <Copy size={16} />
                   </button>
-                  <button type="button" onClick={() => onArchive(task.id)} className="w-14 h-14 rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-200 transition-all shadow-sm flex items-center justify-center" title="Archive Task">
-                    <Archive size={20} />
+                  <button type="button" onClick={() => onArchive(task.id)} className="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-amber-600 hover:border-amber-200 transition-all shadow-sm flex items-center justify-center" title="Archive Task">
+                    <Archive size={16} />
                   </button>
                 </>
               )}
             </div>
             <div className="flex gap-4">
-              <button type="button" onClick={onClose} className="h-14 px-8 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-100 transition-all">
+              <button type="button" onClick={onClose} className="h-10 px-4 bg-white border border-slate-200 text-slate-700 rounded-lg font-semibold text-sm hover:bg-slate-50 transition-all">
                 Cancel
               </button>
-              <button onClick={handleSubmit} className="h-14 px-10 bg-[#0F172A] text-white rounded-2xl font-bold text-sm shadow-xl hover:brightness-125 transition-all">
+              <button onClick={handleSubmit} className="h-10 px-6 bg-slate-900 text-white rounded-lg font-semibold text-sm shadow-sm hover:bg-slate-800 transition-colors">
                 {task ? 'Save Changes' : 'Create Task'}
               </button>
             </div>

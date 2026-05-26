@@ -166,7 +166,7 @@ const AgentFeedback = () => {
                         <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-2">
                            <div className="flex gap-2">
                               {task.callId && (
-                                <button className="h-9 px-4 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors flex items-center gap-2">
+                                <button onClick={() => toast('Call review functionality coming soon.', { icon: '📞' })} className="h-9 px-4 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors flex items-center gap-2">
                                    <Activity size={14} /> Review Linked Call #{task.callId}
                                 </button>
                               )}

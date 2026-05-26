@@ -72,8 +72,8 @@ const TaskKanban = ({ tasks, onTaskUpdate, onTaskClick }) => {
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
                           onClick={() => onTaskClick(task)}
-                          className={`bg-white p-5 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer ${
-                            snapshot.isDragging ? 'shadow-2xl rotate-2 scale-105 z-50' : ''
+                          className={`bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group cursor-pointer ${
+                            snapshot.isDragging ? 'shadow-lg rotate-2 scale-105 z-50' : ''
                           }`}
                         >
                           <div className="space-y-4">

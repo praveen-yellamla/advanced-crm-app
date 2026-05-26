@@ -57,40 +57,76 @@ const PlatformUsage = () => {
     requests: Math.floor(Math.random() * 500) + 100
   }));
 
+  const handleExportLogs = () => {
+    if (!healthData?.auditLogs?.length) return;
+    
+    const headers = ['Time', 'Module', 'Action', 'User', 'Status'];
+    const csvContent = [
+      headers.join(','),
+      ...healthData.auditLogs.map(log => [
+        new Date(log.createdAt).toLocaleString().replace(/,/g, ''),
+        log.module,
+        log.action,
+        log.user?.email || 'system',
+        log.status || 'SUCCESS'
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `system_audit_logs_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
-    <div className="space-y-12 pb-24">
+    <div className="space-y-12 pb-24 relative">
+      {/* AMBIENT BACKGROUND */}
+      <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none -z-10" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-400/5 rounded-full blur-[120px] pointer-events-none -z-10" />
+
       {/* HEADER */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-10">
         <div>
            <div className="flex items-center gap-2 mb-4">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Platform Ops</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Platform</span>
               <div className="h-px w-8 bg-slate-200" />
-              <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">System Status</span>
+              <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Usage</span>
            </div>
-           <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">System Status</h1>
+           <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#0F172A] to-blue-800 tracking-tighter uppercase italic leading-none drop-shadow-sm">Usage Analytics</h1>
            <p className="text-sm font-medium text-slate-500 mt-4 max-w-2xl">Real-time telemetry and resource monitoring across the global platform cluster.</p>
         </div>
         
         <div className="flex items-center gap-4">
-           <button className="h-16 px-8 bg-white border border-slate-200 rounded-3xl text-[11px] font-black uppercase tracking-widest shadow-sm flex items-center gap-4 hover:border-blue-600 transition-all">
+           <button onClick={handleExportLogs} className="h-16 px-8 bg-white/80 backdrop-blur-md border border-white/50 rounded-3xl text-[11px] font-black uppercase tracking-widest shadow-sm flex items-center gap-4 hover:border-blue-600 transition-all">
               <Download size={20} /> Export Logs
            </button>
-           <div className="h-16 w-16 bg-emerald-500 text-white rounded-3xl flex items-center justify-center shadow-xl shadow-emerald-500/20 animate-pulse">
+           <div className="h-16 w-16 bg-gradient-to-br from-emerald-400 to-emerald-600 text-white rounded-3xl flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.4)] animate-pulse">
               <ShieldCheck size={24} />
            </div>
         </div>
       </div>
 
       {/* CORE RESOURCES */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-10"
+      >
          <ResourceCard label="CPU Load" value={healthData?.infrastructure?.cpu} trend="Optimal" icon={Cpu} color="blue" />
          <ResourceCard label="Memory Usage" value={healthData?.infrastructure?.memory} trend="Healthy" icon={Monitor} color="emerald" />
          <ResourceCard label="Storage" value={healthData?.infrastructure?.storage} trend="Expanding" icon={HardDrive} color="violet" />
-      </div>
+      </motion.div>
 
       {/* TRAFFIC ANALYSIS */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
-         <div className="xl:col-span-2 bg-white p-12 rounded-[64px] border border-slate-100 shadow-sm space-y-10">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
+        className="grid grid-cols-1 xl:grid-cols-3 gap-12"
+      >
+         <div className="xl:col-span-2 bg-white/80 backdrop-blur-xl p-12 rounded-[64px] border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] space-y-10 hover:shadow-[0_40px_100px_rgba(0,0,0,0.08)] transition-all duration-700">
             <div className="flex items-center justify-between">
                <div>
                   <h3 className="text-2xl font-black text-[#0F172A] uppercase italic">Traffic Analysis</h3>
@@ -127,40 +163,44 @@ const PlatformUsage = () => {
             </div>
          </div>
 
-         <div className="bg-[#0F172A] p-12 rounded-[64px] shadow-2xl text-white flex flex-col justify-between">
-            <div className="space-y-2">
-               <h3 className="text-2xl font-black uppercase italic">System Resources</h3>
+         <div className="bg-gradient-to-br from-[#0F172A] to-slate-900 p-12 rounded-[64px] shadow-[0_40px_100px_rgba(0,0,0,0.15)] text-white flex flex-col justify-between relative overflow-hidden group">
+            <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-1000" />
+            <div className="space-y-2 relative z-10">
+               <h3 className="text-2xl font-black uppercase italic text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-200">System Resources</h3>
                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-1">Live Service Distribution</p>
             </div>
             
-            <div className="space-y-8">
+            <div className="space-y-8 relative z-10">
                {healthData?.services?.map((s, i) => (
-                 <div key={i} className="flex items-center justify-between group">
+                 <div key={i} className="flex items-center justify-between group/service">
                     <div className="flex items-center gap-4">
-                       <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-blue-600/20 transition-all">
+                       <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center group-hover/service:bg-blue-600/20 transition-all border border-white/5 group-hover/service:border-blue-500/30">
                           {s.name.includes('DB') ? <Database size={20} /> : s.name.includes('AI') ? <Zap size={20} /> : <Server size={20} />}
                        </div>
                        <div>
-                          <p className="text-[13px] font-black italic uppercase tracking-tight">{s.name}</p>
+                          <p className="text-[13px] font-black italic uppercase tracking-tight group-hover/service:text-blue-200 transition-colors">{s.name}</p>
                           <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">{s.provider || 'Core Engine'}</p>
                        </div>
                     </div>
-                    <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${s.status === 'ONLINE' || s.status === 'ACTIVE' || s.status === 'READY' ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white'}`}>
+                    <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${s.status === 'ONLINE' || s.status === 'ACTIVE' || s.status === 'READY' ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)]'}`}>
                        {s.status}
                     </div>
                  </div>
                ))}
             </div>
 
-            <button className="w-full h-18 bg-white/5 hover:bg-white/10 rounded-3xl border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-4">
+            <button className="w-full h-18 bg-white/5 hover:bg-white/10 rounded-3xl border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-4 relative z-10">
                <Activity size={18} /> Global Service Map
             </button>
          </div>
-      </div>
+      </motion.div>
 
       {/* SYSTEM ACTIVITY LOG */}
-      <div className="bg-white rounded-[64px] border border-slate-100 shadow-sm overflow-hidden">
-         <div className="px-12 py-10 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
+        className="bg-white/80 backdrop-blur-xl rounded-[64px] border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden hover:shadow-[0_40px_100px_rgba(0,0,0,0.08)] transition-all duration-700"
+      >
+         <div className="px-12 py-10 border-b border-white/50 flex items-center justify-between bg-slate-50/50 backdrop-blur-md">
             <div>
                <h3 className="text-2xl font-black text-[#0F172A] uppercase italic">System Audit</h3>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Live Platform Performance Metrics</p>
@@ -173,13 +213,21 @@ const PlatformUsage = () => {
             </div>
          </div>
          <div className="p-8 space-y-4">
-            {/* Realistically fetch from auditLogs */}
-            <AuditRow time="14:32:10" module="SECURITY" action="LOGIN_ATTEMPT" user="sys.admin" status="SUCCESS" />
-            <AuditRow time="14:28:45" module="BILLING" action="PLAN_UPGRADE" user="user.882" status="COMPLETED" />
-            <AuditRow time="14:15:22" module="TENANT" action="PROVISIONING" user="system" status="SUCCESS" />
-            <AuditRow time="14:02:11" module="AI_ENGINE" action="TOKEN_RESET" user="system" status="SUCCESS" />
+            {healthData?.auditLogs?.map((log) => (
+               <AuditRow 
+                  key={log.id}
+                  time={new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} 
+                  module={log.module} 
+                  action={log.action} 
+                  user={log.user?.email || 'system'} 
+                  status={log.status || 'SUCCESS'} 
+               />
+            ))}
+            {!healthData?.auditLogs?.length && (
+               <div className="p-10 text-center text-slate-400 font-bold text-sm">No recent audit logs available.</div>
+            )}
          </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
@@ -192,7 +240,7 @@ const ResourceCard = ({ label, value, trend, icon: Icon, color }) => {
   };
 
   return (
-    <div className="bg-white p-10 rounded-[48px] border border-slate-100 shadow-sm space-y-10 group hover:shadow-2xl transition-all duration-500">
+    <div className="bg-white/80 backdrop-blur-xl p-10 rounded-[48px] border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] space-y-10 group hover:shadow-[0_40px_100px_rgba(0,0,0,0.1)] hover:-translate-y-2 transition-all duration-700">
        <div className="flex items-center justify-between">
           <div className={`w-16 h-16 rounded-3xl flex items-center justify-center ${colors[color]}`}>
              <Icon size={28} />

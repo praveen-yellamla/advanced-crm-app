@@ -42,6 +42,7 @@ router.patch('/leads/:leadId/reassign', managerController.reassignLead);
 
 // 7. Tasks & Activities
 router.get('/tasks', managerController.getTeamTasks);
+router.post('/tasks', managerController.createTask);
 router.patch('/tasks/:taskId/reassign', managerController.reassignTask);
 
 // 8. Email Monitoring

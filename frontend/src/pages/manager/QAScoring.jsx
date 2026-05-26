@@ -13,11 +13,11 @@ const QAScoring = () => {
   
   // Score state
   const [scores, setScores] = useState({
-    greeting: 0,
-    discovery: 0,
-    pitch: 0,
-    objection: 0,
-    closing: 0
+    greeting: null,
+    discovery: null,
+    pitch: null,
+    objection: null,
+    closing: null
   });
   
   const [notes, setNotes] = useState('');
@@ -50,14 +50,14 @@ const QAScoring = () => {
     onSuccess: () => {
       toast.success('Enterprise QA Report submitted successfully');
       setSelectedCallId('');
-      setScores({ greeting: 0, discovery: 0, pitch: 0, objection: 0, closing: 0 });
+      setScores({ greeting: null, discovery: null, pitch: null, objection: null, closing: null });
       setNotes('');
       refetchPending();
       refetchHistory();
     }
   });
 
-  const totalScore = Object.values(scores).reduce((a, b) => a + b, 0);
+  const totalScore = Object.values(scores).reduce((a, b) => a + (b || 0), 0);
   const complianceStatus = totalScore >= 70 ? 'PASS' : 'NEEDS_COACHING';
 
   const handleScoreChange = (category, value) => {
@@ -69,6 +69,13 @@ const QAScoring = () => {
       toast.error('Please select a call from the queue first');
       return;
     }
+    
+    // Validate that all score categories are filled
+    if (Object.values(scores).some(val => val === null)) {
+      toast.error('Please complete all evaluation sections before submitting');
+      return;
+    }
+
     submitQAMutation.mutate({
       callId: selectedCallId,
       ...scores,
@@ -151,33 +158,33 @@ const QAScoring = () => {
 
           {/* KPI METRICS (Only show in score mode if a call is selected) */}
           {activeTab === 'score' && selectedCall && insights && (
-            <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar">
-               <div className="px-4 py-2 bg-neutral-hover border border-neutral-border-default rounded-lg flex flex-col min-w-[120px]">
-                 <span className="text-[10px] font-[700] text-neutral-muted uppercase tracking-wider mb-0.5">Talk:Listen</span>
+            <div className="flex items-center gap-4 overflow-x-auto hide-scrollbar">
+               <div className="px-4 py-2 bg-white border border-slate-200 shadow-sm rounded-xl flex flex-col min-w-[120px]">
+                 <span className="text-[10px] font-[800] text-slate-400 uppercase tracking-wider mb-0.5">Talk:Listen</span>
                  <div className="flex items-center gap-2">
-                   <Activity size={14} className="text-blue-500" />
-                   <span className="text-[14px] font-[800] text-neutral-primary">{insights.talkRatio}</span>
+                   <Activity size={16} className="text-blue-500" />
+                   <span className="text-[15px] font-[900] text-slate-900">{insights.talkRatio}</span>
                  </div>
                </div>
-               <div className="px-4 py-2 bg-neutral-hover border border-neutral-border-default rounded-lg flex flex-col min-w-[120px]">
-                 <span className="text-[10px] font-[700] text-neutral-muted uppercase tracking-wider mb-0.5">Silence</span>
+               <div className="px-4 py-2 bg-white border border-slate-200 shadow-sm rounded-xl flex flex-col min-w-[120px]">
+                 <span className="text-[10px] font-[800] text-slate-400 uppercase tracking-wider mb-0.5">Silence</span>
                  <div className="flex items-center gap-2">
-                   <Clock size={14} className="text-amber-500" />
-                   <span className="text-[14px] font-[800] text-neutral-primary">{insights.silence}%</span>
+                   <Clock size={16} className="text-amber-500" />
+                   <span className="text-[15px] font-[900] text-slate-900">{insights.silence}%</span>
                  </div>
                </div>
-               <div className="px-4 py-2 bg-neutral-hover border border-neutral-border-default rounded-lg flex flex-col min-w-[120px]">
-                 <span className="text-[10px] font-[700] text-neutral-muted uppercase tracking-wider mb-0.5">Win Prob.</span>
+               <div className="px-4 py-2 bg-white border border-slate-200 shadow-sm rounded-xl flex flex-col min-w-[120px]">
+                 <span className="text-[10px] font-[800] text-slate-400 uppercase tracking-wider mb-0.5">Win Prob.</span>
                  <div className="flex items-center gap-2">
-                   <Target size={14} className="text-emerald-500" />
-                   <span className="text-[14px] font-[800] text-neutral-primary">{insights.probability}%</span>
+                   <Target size={16} className="text-emerald-500" />
+                   <span className="text-[15px] font-[900] text-slate-900">{insights.probability}%</span>
                  </div>
                </div>
-               <div className="px-4 py-2 bg-neutral-hover border border-neutral-border-default rounded-lg flex flex-col min-w-[120px]">
-                 <span className="text-[10px] font-[700] text-neutral-muted uppercase tracking-wider mb-0.5">Sentiment</span>
+               <div className="px-4 py-2 bg-white border border-slate-200 shadow-sm rounded-xl flex flex-col min-w-[120px]">
+                 <span className="text-[10px] font-[800] text-slate-400 uppercase tracking-wider mb-0.5">Sentiment</span>
                  <div className="flex items-center gap-2">
-                   <Sparkles size={14} className={insights.sentiment === 'POSITIVE' ? 'text-emerald-500' : insights.sentiment === 'NEGATIVE' ? 'text-status-danger' : 'text-slate-500'} />
-                   <span className="text-[14px] font-[800] text-neutral-primary capitalize">{insights.sentiment?.toLowerCase() || 'Neutral'}</span>
+                   <Sparkles size={16} className={insights.sentiment === 'POSITIVE' ? 'text-emerald-500' : insights.sentiment === 'NEGATIVE' ? 'text-status-danger' : 'text-slate-500'} />
+                   <span className="text-[15px] font-[900] text-slate-900 capitalize">{insights.sentiment?.toLowerCase() || 'Neutral'}</span>
                  </div>
                </div>
             </div>
@@ -279,8 +286,8 @@ const QAScoring = () => {
                         className="w-full px-5 py-3.5 flex items-center justify-between bg-white hover:bg-neutral-hover transition-colors"
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-[800] transition-colors ${scores[section.id] > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-neutral-200 text-neutral-500'}`}>
-                            {scores[section.id]}
+                          <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-[800] transition-colors ${scores[section.id] !== null ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
+                            {scores[section.id] !== null ? scores[section.id] : '-'}
                           </div>
                           <span className="text-[14px] font-[700] text-neutral-primary">{section.label}</span>
                         </div>

@@ -23,6 +23,7 @@ const upload = require('../middleware/upload');
 
 // Lead Engine
 router.get('/leads', leadController.getLeads);
+router.get('/leads/analytics', leadController.getLeadAnalytics);
 router.get('/leads/:id', leadController.getLeadDetails);
 router.post('/leads', upload.single('image'), leadController.createLead);
 router.put('/leads/:id', leadController.updateLead);

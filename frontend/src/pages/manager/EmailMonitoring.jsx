@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 const EmailMonitoring = () => {
   const [selectedAgentId, setSelectedAgentId] = useState('');
   const [search, setSearch] = useState('');
+  const [agentSearch, setAgentSearch] = useState('');
   const [activeEmail, setActiveEmail] = useState(null);
 
   // Fetch team emails
@@ -56,6 +57,17 @@ const EmailMonitoring = () => {
     );
   }) || [];
 
+  // Display Agents Logic (Scalability for 1000+ agents)
+  const selectedAgent = agents?.find(a => a.id.toString() === selectedAgentId);
+  const searchResults = agents?.filter(a => {
+    if (a.id.toString() === selectedAgentId) return false;
+    return a.name.toLowerCase().includes(agentSearch.toLowerCase());
+  }) || [];
+  
+  const displayAgents = selectedAgent ? [selectedAgent, ...searchResults] : searchResults;
+  const slicedAgents = displayAgents.slice(0, 10);
+  const remainingCount = Math.max(0, searchResults.length - (slicedAgents.length - (selectedAgent ? 1 : 0)));
+
   return (
     <div className="space-y-6 pb-16 px-4 md:px-0">
       {/* HEADER */}
@@ -85,83 +97,129 @@ const EmailMonitoring = () => {
       </div>
 
       {/* DYNAMIC FILTERS */}
-      <div className="crm-card">
-        <div className="relative col-span-2">
-          <Search className="absolute left-3 top-3 text-slate-400" size={18} />
+      <div className="space-y-4">
+        {/* EMAIL SEARCH */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search email subject, customer, or recipient..."
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+            className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm transition-all"
           />
         </div>
 
-        <div>
-          <select
-            value={selectedAgentId}
-            onChange={(e) => setSelectedAgentId(e.target.value)}
-            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all cursor-pointer"
+        {/* AGENT AVATAR CHIPS FILTER */}
+        <div className="flex items-center gap-3 overflow-x-auto pb-2 px-1" style={{ scrollbarWidth: 'none' }}>
+          <button
+            onClick={() => setSelectedAgentId('')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all whitespace-nowrap ${
+              selectedAgentId === '' 
+                ? 'bg-slate-900 border-slate-900 text-white shadow-md' 
+                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 shadow-sm'
+            }`}
           >
-            <option value="">All Team Members</option>
-            {agents?.map(a => (
-              <option key={a.id} value={a.id}>{a.name}</option>
-            ))}
-          </select>
+            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+              <Users size={12} className={selectedAgentId === '' ? 'text-white' : 'text-slate-500'} />
+            </div>
+            <span className="text-xs font-bold">All Team</span>
+          </button>
+
+          <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block"></div>
+
+          {/* SEARCH INPUT CHIP */}
+          <div className="relative flex-shrink-0">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Search advisors..." 
+              value={agentSearch}
+              onChange={(e) => setAgentSearch(e.target.value)}
+              className="pl-8 pr-4 py-2 w-48 rounded-full border border-slate-200 text-xs font-bold focus:outline-none focus:border-indigo-500 bg-white shadow-sm transition-all focus:w-64"
+            />
+          </div>
+
+          {slicedAgents.map(a => (
+            <button
+              key={a.id}
+              onClick={() => setSelectedAgentId(selectedAgentId === a.id.toString() ? '' : a.id.toString())}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all whitespace-nowrap ${
+                selectedAgentId === a.id.toString()
+                  ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' 
+                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 shadow-sm'
+              }`}
+            >
+              {a.avatar_url ? (
+                <img src={a.avatar_url} alt={a.name} className="w-6 h-6 rounded-full object-cover border border-white/20" />
+              ) : (
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${
+                  selectedAgentId === a.id.toString() ? 'bg-indigo-500 text-white' : 'bg-indigo-50 text-indigo-700'
+                }`}>
+                  {a.name.charAt(0)}
+                </div>
+              )}
+              <span className="text-xs font-bold">{a.name}</span>
+            </button>
+          ))}
+
+          {remainingCount > 0 && (
+            <span className="text-[10px] font-black text-slate-400 whitespace-nowrap ml-2 uppercase tracking-wider">
+              + {remainingCount} MORE
+            </span>
+          )}
         </div>
       </div>
 
       {/* TWO PANEL LIST-DETAIL */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* EMAIL LOG TABLE */}
-        <div className="crm-card">
+        {/* EMAIL LOG INBOX LIST */}
+        <div className="crm-card lg:col-span-1 flex flex-col h-[600px] border-slate-200">
           <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
             <h3 className="text-sm font-semibold text-slate-800">Agent Communications</h3>
             <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-2.5 py-1 rounded-md">{filteredEmails.length} Outgoing</span>
           </div>
 
-          <div className="overflow-y-auto flex-1">
-            <table className="crm-table">
-              <thead className="sticky top-0 bg-white shadow-sm z-10">
-                <tr className="border-b border-slate-200 text-xs font-semibold text-slate-500 bg-slate-50">
-                  <th className="p-3">Customer Lead</th>
-                  <th className="p-3">Subject</th>
-                  <th className="p-3">Agent</th>
-                  <th className="p-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredEmails.length === 0 ? (
-                  <tr>
-                    <td colSpan="4" className="p-8 text-center text-slate-500 text-sm">No emails found matching your filters.</td>
-                  </tr>
-                ) : filteredEmails.map(email => (
-                  <tr 
-                    key={email.id} 
-                    onClick={() => setActiveEmail(email)}
-                    className={`text-sm hover:bg-slate-50 cursor-pointer transition-colors ${activeEmail?.id === email.id ? 'bg-indigo-50/50' : ''}`}
-                  >
-                    <td className="p-3 font-medium text-slate-900">{email.lead?.customerName || email.to}</td>
-                    <td className="p-3 text-slate-600 max-w-[200px] truncate">{email.subject}</td>
-                    <td className="p-3 text-slate-600">{email.agent?.name}</td>
-                    <td className="p-3">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        email.status === 'DELIVERED' || email.status === 'SENT' ? 'bg-green-100 text-green-700' 
-                        : email.status === 'FAILED' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'
-                      }`}>
-                        {email.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="overflow-y-auto flex-1 p-2 space-y-1 bg-slate-50/50">
+            {filteredEmails.length === 0 ? (
+              <div className="p-8 text-center text-slate-500 text-sm">No emails found matching your filters.</div>
+            ) : filteredEmails.map(email => (
+              <div 
+                key={email.id} 
+                onClick={() => setActiveEmail(email)}
+                className={`p-3 rounded-xl cursor-pointer transition-all border ${
+                  activeEmail?.id === email.id 
+                    ? 'bg-white border-indigo-200 shadow-sm ring-1 ring-indigo-500/10' 
+                    : 'bg-transparent border-transparent hover:bg-white hover:border-slate-200'
+                }`}
+              >
+                <div className="flex justify-between items-start mb-1">
+                  <div className="font-bold text-sm text-slate-900 truncate pr-2">
+                    {email.lead?.customerName || email.to}
+                  </div>
+                  <span className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-bold ${
+                    email.status === 'DELIVERED' || email.status === 'SENT' ? 'bg-emerald-100 text-emerald-700' 
+                    : email.status === 'FAILED' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {email.status}
+                  </span>
+                </div>
+                <div className="text-xs text-slate-600 font-medium truncate mb-2">
+                  {email.subject || '(No Subject)'}
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 mt-1">
+                  <span className="flex items-center gap-1"><Users size={12} className="text-slate-400" /> {email.agent?.name}</span>
+                  <span className="text-slate-300">•</span>
+                  <span className="flex items-center gap-1"><Clock size={12} className="text-slate-400" /> {new Date(email.sentAt || email.createdAt).toLocaleDateString()}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* THREAD CONVERSATION DRAWER */}
-        <div className="crm-card">
+        <div className="crm-card lg:col-span-2 flex flex-col h-[600px]">
           <div className="p-4 border-b border-slate-200 bg-slate-50 shrink-0">
             <h3 className="text-sm font-semibold text-slate-800">Email Insight</h3>
           </div>

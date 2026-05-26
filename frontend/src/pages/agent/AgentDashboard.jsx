@@ -222,11 +222,7 @@ const AgentDashboard = () => {
                </button>
             </div>
             <div className="space-y-4">
-               {[
-                 { title: 'Follow-up Call: Praveen Yadav', time: '14:30', priority: 'High', color: 'rose' },
-                 { title: 'Send Quote: Global Logistics', time: '16:00', priority: 'Medium', color: 'blue' },
-                 { title: 'Review Pipeline', time: '17:30', priority: 'Low', color: 'emerald' },
-               ].map((task, i) => (
+               {(statsData?.tasks || []).length > 0 ? (statsData.tasks).map((task, i) => (
                  <div key={i} className="flex items-center justify-between p-6 bg-slate-50 rounded-[32px] border border-slate-100 group hover:bg-white hover:border-blue-200 transition-all hover:shadow-xl hover:shadow-slate-200/40">
                     <div className="flex items-center gap-6">
                        <div className={`w-12 h-12 rounded-2xl bg-${task.color}-50 text-${task.color}-600 flex items-center justify-center border border-${task.color}-100`}>
@@ -237,11 +233,13 @@ const AgentDashboard = () => {
                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{task.time} • {task.priority} Priority</p>
                        </div>
                     </div>
-                    <button className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-300 group-hover:text-blue-600 group-hover:border-blue-200 transition-all shadow-sm">
+                    <button onClick={() => navigate('/agent/tasks')} className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-300 group-hover:text-blue-600 group-hover:border-blue-200 transition-all shadow-sm">
                        <ChevronRight size={18} />
                     </button>
                  </div>
-               ))}
+               )) : (
+                 <div className="py-12 text-center text-slate-300 italic text-xs font-bold uppercase tracking-widest">No upcoming tasks.</div>
+               )}
             </div>
          </div>
       </div>

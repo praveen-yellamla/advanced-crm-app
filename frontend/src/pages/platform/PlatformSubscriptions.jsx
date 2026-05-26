@@ -62,7 +62,11 @@ const PlatformSubscriptions = () => {
   );
 
   return (
-    <div className="space-y-16 pb-24">
+    <div className="space-y-16 pb-24 relative">
+      {/* AMBIENT BACKGROUND */}
+      <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none -z-10" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-400/5 rounded-full blur-[120px] pointer-events-none -z-10" />
+
       {/* HEADER SECTION */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-10">
         <div className="space-y-4">
@@ -73,12 +77,12 @@ const PlatformSubscriptions = () => {
               </div>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Standard Billing Systems</span>
            </div>
-           <h1 className="text-6xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">Subscription Plans</h1>
+           <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#0F172A] to-blue-800 tracking-tighter uppercase italic leading-none drop-shadow-sm">Subscription Plans</h1>
            <p className="text-sm font-medium text-slate-500 max-w-2xl leading-relaxed italic">Architect global subscription tiers with precision-engineered resource limits and modular feature gating.</p>
         </div>
         <button 
           onClick={() => { setEditingPlan(null); setIsModalOpen(true); }}
-          className="h-18 px-12 bg-[#0F172A] text-white rounded-[32px] text-[11px] font-black uppercase tracking-[0.2em] italic flex items-center gap-4 shadow-2xl shadow-slate-900/20 hover:scale-105 transition-all active:scale-95 group"
+          className="h-18 px-12 bg-gradient-to-r from-[#0F172A] to-slate-800 text-white rounded-[32px] text-[11px] font-black uppercase tracking-[0.2em] italic flex items-center gap-4 shadow-[0_8px_20px_rgb(15,23,42,0.3)] hover:shadow-[0_12px_25px_rgb(15,23,42,0.5)] hover:scale-105 transition-all active:scale-95 group border border-slate-700/50"
         >
            <Plus size={20} className="group-hover:rotate-180 transition-transform duration-500" /> 
            Create New Plan
@@ -87,17 +91,25 @@ const PlatformSubscriptions = () => {
 
       {/* PLAN GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-         {plans?.map((plan) => (
-           <PlanCard 
-              key={plan.id} 
-              plan={plan} 
-              onEdit={() => { setEditingPlan(plan); setIsModalOpen(true); }}
-           />
+         <AnimatePresence>
+         {plans?.map((plan, index) => (
+           <motion.div
+             key={plan.id}
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ delay: index * 0.1, duration: 0.4 }}
+           >
+             <PlanCard 
+                plan={plan} 
+                onEdit={() => { setEditingPlan(plan); setIsModalOpen(true); }}
+             />
+           </motion.div>
          ))}
          
-         <button 
+         <motion.button 
+           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (plans?.length || 0) * 0.1, duration: 0.4 }}
            onClick={() => { setEditingPlan(null); setIsModalOpen(true); }}
-           className="h-full min-h-[550px] bg-slate-50 border-4 border-dashed border-slate-200 rounded-[64px] flex flex-col items-center justify-center p-12 text-slate-300 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/30 transition-all group"
+           className="h-full min-h-[550px] bg-slate-50/50 backdrop-blur-sm border-4 border-dashed border-slate-200 rounded-[64px] flex flex-col items-center justify-center p-12 text-slate-300 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/30 hover:shadow-[0_0_40px_rgba(59,130,246,0.15)] transition-all group duration-500"
          >
             <div className="w-24 h-24 rounded-[32px] border-4 border-dashed border-current flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-90 transition-all duration-700">
                <Plus size={40} />
@@ -106,7 +118,8 @@ const PlatformSubscriptions = () => {
                <p className="text-[12px] font-black uppercase tracking-[0.3em] italic">Add New Plan</p>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Initialize Plan Configuration</p>
             </div>
-         </button>
+         </motion.button>
+         </AnimatePresence>
       </div>
 
       <PlanBuilderModal 
@@ -121,17 +134,17 @@ const PlatformSubscriptions = () => {
 };
 
 const PlanCard = ({ plan, onEdit }) => (
-  <div className="bg-white rounded-[64px] border border-slate-100 shadow-sm p-12 space-y-12 relative overflow-hidden group hover:shadow-[0_40px_100px_rgba(0,0,0,0.1)] hover:-translate-y-4 transition-all duration-700">
-     <div className="absolute -top-24 -right-24 w-64 h-64 bg-slate-50 rounded-full group-hover:scale-150 transition-transform duration-1000" />
+  <div className="bg-white/80 backdrop-blur-xl rounded-[64px] border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] p-12 space-y-12 relative overflow-hidden group hover:shadow-[0_40px_100px_rgba(0,0,0,0.1)] hover:-translate-y-4 transition-all duration-700">
+     <div className="absolute -top-24 -right-24 w-64 h-64 bg-slate-50/80 rounded-full group-hover:scale-150 transition-transform duration-1000" />
      
      <div className="flex items-center justify-between relative z-10">
-        <div className={`px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] italic ${
-           plan.tier === 'ENTERPRISE' ? 'bg-[#0F172A] text-white' : 
-           plan.tier === 'PROFESSIONAL' ? 'bg-violet-100 text-violet-600 border border-violet-200' : 'bg-blue-50 text-blue-600 border border-blue-100'
+        <div className={`px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] italic shadow-sm ${
+           plan.tier === 'ENTERPRISE' ? 'bg-gradient-to-r from-slate-900 to-slate-800 text-amber-400' : 
+           plan.tier === 'PROFESSIONAL' ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white' : 'bg-gradient-to-r from-blue-100 to-white border border-blue-200 text-blue-700'
         }`}>
            {plan.tier} PLAN
         </div>
-        <button onClick={onEdit} className="w-12 h-12 rounded-2xl bg-white border border-slate-100 text-slate-400 hover:bg-[#0F172A] hover:text-white hover:rotate-12 transition-all flex items-center justify-center shadow-sm">
+        <button onClick={onEdit} className="w-12 h-12 rounded-2xl bg-white border border-slate-200 text-slate-400 hover:bg-blue-50 hover:text-blue-600 hover:rotate-12 transition-all flex items-center justify-center shadow-sm">
            <Edit3 size={18} />
         </button>
      </div>
@@ -140,7 +153,7 @@ const PlanCard = ({ plan, onEdit }) => (
         <div>
            <h3 className="text-3xl font-black text-[#0F172A] uppercase italic tracking-tighter leading-none">{plan.name}</h3>
            <div className="flex items-baseline gap-2 mt-4">
-              <span className="text-5xl font-black text-[#0F172A] italic tracking-tighter">₹{plan.priceMonthly.toLocaleString()}</span>
+              <span className="text-5xl font-black text-[#0F172A] italic tracking-tighter">${plan.priceMonthly.toLocaleString()}</span>
               <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">/ MONTHLY</span>
            </div>
         </div>
@@ -191,9 +204,9 @@ const MetricSmall = ({ label, value, icon: Icon, color }) => {
 };
 
 const FeatureItem = ({ label, active }) => (
-  <div className={`flex items-center gap-4 text-[11px] font-black uppercase italic transition-all ${active ? 'text-slate-900' : 'text-slate-300 line-through opacity-50'}`}>
+  <div className={`flex items-center gap-4 text-[11px] font-black uppercase italic transition-all ${active ? 'text-slate-900' : 'text-slate-300 opacity-60'}`}>
      <div className={`w-2 h-2 rounded-full ${active ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-200'}`} />
-     {label}
+     <span className={active ? '' : 'line-through decoration-slate-300'}>{label}</span>
   </div>
 );
 
@@ -311,8 +324,8 @@ const PlanBuilderModal = ({ isOpen, onClose, onSubmit, initialData, isSubmitting
                           <div className="md:col-span-2">
                              <Input label="Plan Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Detailed description of the plan capabilities..." />
                           </div>
-                          <Input label="Monthly MRR (₹)" type="number" value={formData.priceMonthly} onChange={e => setFormData({...formData, priceMonthly: parseFloat(e.target.value)})} />
-                          <Input label="Yearly ARR (₹)" type="number" value={formData.priceYearly} onChange={e => setFormData({...formData, priceYearly: parseFloat(e.target.value)})} />
+                          <Input label="Monthly MRR ($)" type="number" value={formData.priceMonthly} onChange={e => setFormData({...formData, priceMonthly: parseFloat(e.target.value)})} />
+                          <Input label="Yearly ARR ($)" type="number" value={formData.priceYearly} onChange={e => setFormData({...formData, priceYearly: parseFloat(e.target.value)})} />
                        </div>
 
                        <div className="space-y-10">

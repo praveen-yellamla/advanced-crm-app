@@ -61,6 +61,8 @@ import PlatformSettings from '../pages/platform/PlatformSettings';
 import PlatformSecurity from '../pages/platform/PlatformSecurity';
 import PlatformAPIKeys from '../pages/platform/PlatformAPIKeys';
 import PlatformHelp from '../pages/platform/PlatformHelp';
+import PlatformAnalytics from '../pages/platform/PlatformAnalytics';
+import PlatformUsage from '../pages/platform/PlatformUsage';
 
 // Shared Pages
 import ProfilePage from '../pages/common/ProfilePage';
@@ -93,8 +95,8 @@ const AppRoutes = () => {
             <Route path="organizations" element={<PlatformCompanies />} />
             <Route path="organizations/:id" element={<CompanyDetails />} />
             <Route path="subscriptions" element={<PlatformSubscriptions />} />
-            <Route path="analytics" element={<ClientReports />} />
-            <Route path="usage" element={<div className="font-bold text-2xl">Platform Usage Analytics</div>} />
+            <Route path="analytics" element={<PlatformAnalytics />} />
+            <Route path="usage" element={<PlatformUsage />} />
             <Route path="api-keys" element={<PlatformAPIKeys />} />
             <Route path="settings" element={<PlatformSettings />} />
           </Route>

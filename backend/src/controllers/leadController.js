@@ -77,6 +77,53 @@ const getLeads = async (req, res) => {
   }
 };
 
+const getLeadAnalytics = async (req, res) => {
+  try {
+    const organizationId = req.user.organizationId;
+    
+    // Today's leads
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todaysLeads = await prisma.lead.count({
+      where: { organizationId, createdAt: { gte: today } }
+    });
+    
+    // Unassigned leads
+    const unassignedCount = await prisma.lead.count({
+      where: { organizationId, assignedToId: null }
+    });
+    
+    // Conversion Rate
+    const totalLeads = await prisma.lead.count({ where: { organizationId } });
+    const convertedLeads = await prisma.lead.count({ 
+      where: { organizationId, status: { in: ['QUALIFIED', 'WON'] } } 
+    });
+    const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100).toFixed(1) : 0;
+    
+    // Top Source
+    const sources = await prisma.lead.groupBy({
+      by: ['source'],
+      where: { organizationId },
+      _count: { source: true },
+      orderBy: { _count: { source: 'desc' } },
+      take: 1
+    });
+    const topSource = sources.length > 0 ? sources[0].source : 'N/A';
+
+    res.json({
+      success: true,
+      data: {
+        todaysLeads,
+        unassignedCount,
+        conversionRate,
+        topSource
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const createLead = async (req, res) => {
   try {
     const { phone, email, customerName, source, assignedToId: manualAssignedId } = req.body;
@@ -400,6 +447,7 @@ const assignLead = async (req, res) => {
 
 module.exports = {
   getLeads,
+  getLeadAnalytics,
   createLead,
   mergeLeads,
   updateLead,

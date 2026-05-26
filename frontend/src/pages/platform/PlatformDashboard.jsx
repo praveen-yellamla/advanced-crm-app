@@ -122,8 +122,8 @@ const PlatformDashboard = () => {
       {/* PRIMARY METRICS GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
          <SaaSKPICard label="Active Companies" value={metrics?.totalOrganizations || 0} trend="+12%" icon={Building2} color="blue" />
-         <SaaSKPICard label="Monthly Revenue" value={`₹${(metrics?.mrr || 0).toLocaleString()}`} trend="+₹45k" icon={DollarSign} color="emerald" />
-         <SaaSKPICard label="Annual Revenue" value={`₹${(metrics?.arr || 0).toLocaleString()}`} trend="Stable" icon={TrendingUp} color="violet" />
+         <SaaSKPICard label="Monthly Revenue" value={`$${(metrics?.mrr || 0).toLocaleString()}`} trend="+$4.5k" icon={DollarSign} color="emerald" />
+         <SaaSKPICard label="Annual Revenue" value={`$${(metrics?.arr || 0).toLocaleString()}`} trend="Stable" icon={TrendingUp} color="violet" />
          <SaaSKPICard label="AI Usage" value={`${(metrics?.usage?.aiTokens / 1000).toFixed(1)}k`} trend="High" icon={Zap} color="amber" />
       </div>
 

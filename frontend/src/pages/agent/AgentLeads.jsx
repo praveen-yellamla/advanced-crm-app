@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import toast from 'react-hot-toast';
 import { exportToCSV } from '../../utils/exportUtils';
+import { useNavigate } from 'react-router-dom';
 
 const AgentLeads = () => {
   const [viewMode, setViewMode] = useState('PIPELINE'); // PIPELINE or LIST
@@ -20,6 +21,7 @@ const AgentLeads = () => {
   const [activeStage, setActiveStage] = useState('ALL');
   const [sortBy, setSortBy] = useState('DATE_DESC'); // NAME_ASC, SCORE_DESC, DATE_DESC
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { socket } = useSocket();
 
   useEffect(() => {
@@ -131,7 +133,10 @@ const AgentLeads = () => {
            >
               <Download size={18} /> Export
            </button>
-           <button className="h-14 px-8 bg-blue-600 text-white rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
+           <button 
+             onClick={() => toast.error('Leads must be assigned by a Manager or System.')}
+             className="h-14 px-8 bg-blue-600 text-white rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
+           >
               <Plus size={20} /> Add Lead
            </button>
         </div>
@@ -291,10 +296,10 @@ const AgentLeads = () => {
                             </td>
                             <td className="px-10 py-8 text-right">
                                <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
-                                  <button className="h-12 px-6 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:scale-105 active:scale-95 transition-all">
+                                  <button onClick={() => navigate(`/agent/calling?leadId=${lead.id}`)} className="h-12 px-6 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:scale-105 active:scale-95 transition-all">
                                      Call Lead
                                   </button>
-                                  <button className="w-12 h-12 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-600 transition-all flex items-center justify-center">
+                                  <button onClick={() => navigate(`/agent/emails?leadId=${lead.id}`)} className="w-12 h-12 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-600 transition-all flex items-center justify-center">
                                      <MessageSquare size={18} />
                                   </button>
                                </div>
@@ -313,6 +318,7 @@ const AgentLeads = () => {
 
 const LeadKanbanCard = ({ lead, onStatusChange, stages }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const navigate = useNavigate();
 
   const handleNextStage = (e) => {
     e.stopPropagation();
@@ -348,11 +354,11 @@ const LeadKanbanCard = ({ lead, onStatusChange, stages }) => {
 
        <div className="mt-6 pt-6 border-t border-slate-50 flex items-center justify-between">
           <div className="flex items-center gap-3">
-             <div className="flex items-center gap-1.5 text-slate-300 hover:text-blue-600 transition-colors cursor-pointer">
+             <div onClick={(e) => { e.stopPropagation(); navigate(`/agent/calling?leadId=${lead.id}`); }} className="flex items-center gap-1.5 text-slate-300 hover:text-blue-600 transition-colors cursor-pointer">
                 <Phone size={12} />
                 <span className="text-[10px] font-black text-slate-900">{lead.calls?.length || 0}</span>
              </div>
-             <div className="flex items-center gap-1.5 text-slate-300 hover:text-violet-600 transition-colors cursor-pointer">
+             <div onClick={(e) => { e.stopPropagation(); navigate(`/agent/emails?leadId=${lead.id}`); }} className="flex items-center gap-1.5 text-slate-300 hover:text-violet-600 transition-colors cursor-pointer">
                 <Mail size={12} />
                 <span className="text-[10px] font-black text-slate-900">{lead.emails?.length || 0}</span>
              </div>

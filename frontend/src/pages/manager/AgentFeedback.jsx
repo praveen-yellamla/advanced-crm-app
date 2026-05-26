@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { 
   MessageSquare, User, CheckCircle, Clock, Link as LinkIcon, Send, ShieldAlert, Award, Star, RefreshCw,
-  TrendingUp, TrendingDown, AlertTriangle, ShieldCheck, Target, Zap, Activity, Filter, Search, ChevronRight, FileText, CheckCircle2, Bot, Calendar, Download
+  TrendingUp, TrendingDown, AlertTriangle, ShieldCheck, Target, Zap, Activity, Filter, Search, ChevronRight, FileText, CheckCircle2, Bot, Calendar, Download, Heart
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,6 +20,8 @@ const AgentFeedback = () => {
   const [aiSummary, setAiSummary] = useState('');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [replyContent, setReplyContent] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('ALL');
 
   // 1. Fetch Agents
   const { data: agents } = useQuery({
@@ -42,6 +44,7 @@ const AgentFeedback = () => {
   });
 
   const feedbackFeed = feedbackData?.feedback || [];
+  const filteredFeed = filterType === 'ALL' ? feedbackFeed : feedbackFeed.filter(f => f.type === filterType);
   const snapshot = feedbackData?.snapshot || null;
 
   // 3. Fetch Calls for link dropdown
@@ -132,6 +135,7 @@ const AgentFeedback = () => {
 
   const exportPDF = () => {
      toast.success('Exporting QA Performance Report to PDF...');
+     setTimeout(() => window.print(), 500);
   };
 
   return (
@@ -176,10 +180,16 @@ const AgentFeedback = () => {
             </div>
             <div className="relative mb-6">
                <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
-               <input type="text" placeholder="Search agents..." className="w-full bg-slate-100/50 border-none rounded-xl pl-9 pr-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all" />
+               <input 
+                 type="text" 
+                 placeholder="Search agents..." 
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
+                 className="w-full bg-slate-100/50 border-none rounded-xl pl-9 pr-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all" 
+               />
             </div>
             <div className="space-y-1.5 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-              {agents?.map(agent => (
+              {agents?.filter(a => a.name.toLowerCase().includes(searchQuery.toLowerCase())).map(agent => (
                 <button
                   key={agent.id}
                   onClick={() => setSelectedAgentId(agent.id)}
@@ -339,7 +349,17 @@ const AgentFeedback = () => {
                 <div className="flex items-center justify-between">
                    <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">Delivery Logs</h3>
                    <div className="flex gap-2">
-                      <button className="h-8 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 shadow-sm flex items-center gap-2 hover:bg-slate-50"><Filter size={12}/> Filter</button>
+                      <select 
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value)}
+                        className="h-8 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 shadow-sm outline-none cursor-pointer hover:bg-slate-50 transition-colors"
+                      >
+                        <option value="ALL">All Feedback</option>
+                        <option value="EVALUATION">Evaluations</option>
+                        <option value="PRAISE">Praise</option>
+                        <option value="CORRECTION">Corrections</option>
+                        <option value="ESCALATION">Escalations</option>
+                      </select>
                    </div>
                 </div>
                 
@@ -348,8 +368,8 @@ const AgentFeedback = () => {
                      <div className="space-y-4">
                        {[1,2,3].map(i => <div key={i} className="h-32 bg-slate-100 rounded-2xl animate-pulse" />)}
                      </div>
-                   ) : feedbackFeed && feedbackFeed.length > 0 ? (
-                     feedbackFeed.map(feed => {
+                   ) : filteredFeed && filteredFeed.length > 0 ? (
+                     filteredFeed.map(feed => {
                        const icons = {
                          EVALUATION: <Clock className="text-indigo-600" size={20} />,
                          PRAISE: <Award className="text-emerald-600" size={20} />,

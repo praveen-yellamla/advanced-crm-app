@@ -236,26 +236,26 @@ const TeamAnalytics = () => {
 
                 <div className="grid grid-cols-2 gap-4 my-4 pt-4 border-t border-slate-50">
                   <div>
-                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Calls Made</span>
+                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Calls</span>
                     <p className="text-sm font-extrabold text-slate-800 mt-0.5">{agent.callsMade}</p>
                   </div>
                   <div>
-                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Conversion %</span>
+                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Conv %</span>
                     <p className="text-sm font-extrabold text-slate-800 mt-0.5">{agent.conversionRate}%</p>
                   </div>
                   <div>
-                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Talk Time (Min)</span>
+                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Talk Time</span>
                     <p className="text-sm font-extrabold text-slate-800 mt-0.5">{agent.talkTime}m</p>
                   </div>
                   <div>
-                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Avg Handle Time</span>
+                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Avg Handle</span>
                     <p className="text-sm font-extrabold text-slate-800 mt-0.5">{agent.avgHandleTime}m</p>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-slate-50">
-                  <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Revenue MTD</span>
-                  <p className="text-base font-black text-slate-900 mt-0.5">₹{agent.revenue.toLocaleString()}</p>
+                <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Revenue MTD</span>
+                  <p className="text-base font-black text-slate-900">₹{agent.revenue.toLocaleString()}</p>
                 </div>
 
                 <button
@@ -281,13 +281,13 @@ const TeamAnalytics = () => {
                   >
                     <div className="p-6 h-[200px]">
                       <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4">Daily Revenue (Weekly Spread)</h4>
-                      <ResponsiveContainer width="100%" height="80%">
+                      <ResponsiveContainer width="100%" height="100%" minHeight={150}>
                         <AreaChart data={mockDailyData}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                           <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 9}} />
                           <YAxis hide />
                           <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
-                          <Area type="monotone" dataKey="revenue" stroke="#6366F1" fill="#EEF2FF" strokeWidth={2} />
+                          <Area type="monotone" dataKey="revenue" stroke="#6366F1" fill="#EEF2FF" strokeWidth={2} isAnimationActive={false} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
@@ -313,13 +313,13 @@ const TeamAnalytics = () => {
           </div>
           <div className="h-[250px]">
             {talkTimeHeatmap && talkTimeHeatmap.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={200}>
                 <BarChart data={talkTimeHeatmap}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                   <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 10, fontWeight: 700}} />
                   <YAxis axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 10, fontWeight: 700}} />
                   <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.08)'}} />
-                  <Bar dataKey="talkTime" fill="#6366F1" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="talkTime" fill="#6366F1" radius={[4, 4, 0, 0]} isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -337,9 +337,9 @@ const TeamAnalytics = () => {
             </div>
             <p className="text-slate-500 font-medium text-xs mb-8">Comparison of current active conversions versus the previous performance period.</p>
             
-            <div className="flex flex-col items-center justify-center my-6 py-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <div className="flex flex-col items-center justify-center my-6 py-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Team Conversion Rate</span>
-              <span className="text-4xl font-black text-slate-950 mt-1">{conversionComparison?.current?.rate ?? 0}%</span>
+              <span className="text-3xl font-black text-slate-900 mt-2">{conversionComparison?.current?.rate ?? 0}%</span>
               <div className="flex items-center gap-1.5 mt-2">
                 <span className={`text-xs font-bold ${conversionComparison?.change_percent >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                   {conversionComparison?.change_percent >= 0 ? '+' : ''}{conversionComparison?.change_percent ?? 0}%

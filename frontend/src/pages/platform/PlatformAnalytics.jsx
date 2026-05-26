@@ -57,8 +57,32 @@ const PlatformAnalytics = () => {
     color: s.subscriptionTier === 'ENTERPRISE' ? '#0F172A' : s.subscriptionTier === 'PROFESSIONAL' ? '#7C3AED' : '#2563EB'
   })) || [];
 
+  const handleGenerateReport = () => {
+    const csvContent = [
+      'Platform Revenue Report',
+      `Generated on,${new Date().toLocaleString().replace(/,/g, '')}`,
+      '',
+      'Month,Revenue (USD)',
+      ...revenueTimeline.map(r => `${r.month},${r.revenue}`)
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `revenue_report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
-    <div className="space-y-12 pb-24">
+    <div className="space-y-12 pb-24 relative">
+      {/* AMBIENT BACKGROUND */}
+      <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none -z-10" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-400/5 rounded-full blur-[120px] pointer-events-none -z-10" />
+
       {/* HEADER */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-10">
         <div>
@@ -67,37 +91,43 @@ const PlatformAnalytics = () => {
               <div className="h-px w-8 bg-slate-200" />
               <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Revenue Reporting</span>
            </div>
-           <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">Revenue</h1>
+           <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#0F172A] to-blue-800 tracking-tighter uppercase italic leading-none drop-shadow-sm">Revenue</h1>
            <p className="text-sm font-medium text-slate-500 mt-4 max-w-2xl">Forecasting, churn analysis, and subscription growth metrics.</p>
         </div>
         
         <div className="flex items-center gap-4">
-           <button className="h-16 px-8 bg-white border border-slate-200 rounded-3xl text-[11px] font-black uppercase tracking-widest shadow-sm flex items-center gap-4 hover:border-emerald-600 transition-all">
+           <button className="h-16 px-8 bg-white/80 backdrop-blur-md border border-white/40 rounded-3xl text-[11px] font-black uppercase tracking-widest shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex items-center gap-4 hover:border-emerald-600 transition-all">
               <Calendar size={20} /> Last 12 Months
            </button>
-           <button className="h-16 px-10 bg-[#0F172A] text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] italic flex items-center gap-4 shadow-2xl shadow-slate-900/40 hover:scale-105 transition-all">
+           <button onClick={handleGenerateReport} className="h-16 px-10 bg-gradient-to-r from-[#0F172A] to-slate-800 text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] italic flex items-center gap-4 shadow-[0_8px_20px_rgb(15,23,42,0.3)] hover:shadow-[0_12px_25px_rgb(15,23,42,0.5)] hover:scale-105 transition-all active:scale-95 border border-slate-700/50">
               <Download size={20} /> Generate Report
            </button>
         </div>
       </div>
 
       {/* REVENUE KPIS */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-         <KPICard label="Annual Recurring (ARR)" value={`₹${(metrics?.arr || 0).toLocaleString()}`} trend="+15%" icon={DollarSign} color="emerald" />
-         <KPICard label="Monthly Recurring (MRR)" value={`₹${(metrics?.mrr || 0).toLocaleString()}`} trend="+12%" icon={TrendingUp} color="blue" />
-         <KPICard label="Net Expansion" value="₹1.2M" trend="+₹120k" icon={Zap} color="amber" />
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+        className="grid grid-cols-1 md:grid-cols-4 gap-8"
+      >
+         <KPICard label="Annual Recurring (ARR)" value={`$${(metrics?.arr || 0).toLocaleString()}`} trend="+15%" icon={DollarSign} color="emerald" />
+         <KPICard label="Monthly Recurring (MRR)" value={`$${(metrics?.mrr || 0).toLocaleString()}`} trend="+12%" icon={TrendingUp} color="blue" />
+         <KPICard label="Net Expansion" value="$1.2M" trend="+$120k" icon={Zap} color="amber" />
          <KPICard label="Active Subscriptions" value={metrics?.totalOrganizations || 0} trend="+8" icon={Briefcase} color="violet" />
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
+        className="grid grid-cols-1 xl:grid-cols-3 gap-12"
+      >
          {/* GROWTH CHART */}
-         <div className="xl:col-span-2 bg-white p-12 rounded-[64px] border border-slate-100 shadow-sm space-y-10">
+         <div className="xl:col-span-2 bg-white/80 backdrop-blur-xl p-12 rounded-[64px] border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] space-y-10">
             <div className="flex items-center justify-between">
                <div>
                   <h3 className="text-2xl font-black text-[#0F172A] uppercase italic">Growth Projection</h3>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Monthly Recurring Revenue Velocity</p>
                </div>
-               <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
+               <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 shadow-sm">
                   <TrendingUp size={14} />
                   <span className="text-[10px] font-black uppercase">On Track</span>
                </div>
@@ -113,10 +143,10 @@ const PlatformAnalytics = () => {
                      </defs>
                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 700, fill: '#94A3B8'}} />
-                     <YAxis axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 700, fill: '#94A3B8'}} tickFormatter={(v) => `₹${v/1000}k`} />
+                     <YAxis axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 700, fill: '#94A3B8'}} tickFormatter={(v) => `$${v/1000}k`} />
                      <Tooltip 
                         contentStyle={{borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15)', fontWeight: 800, padding: '20px'}}
-                        formatter={(v) => [`₹${v.toLocaleString()}`, 'Revenue']}
+                        formatter={(v) => [`$${v.toLocaleString()}`, 'Revenue']}
                      />
                      <Area type="monotone" dataKey="revenue" stroke="#10B981" strokeWidth={5} fillOpacity={1} fill="url(#colorRev)" />
                   </AreaChart>
@@ -125,7 +155,7 @@ const PlatformAnalytics = () => {
          </div>
 
          {/* SUB MIX */}
-         <div className="bg-white p-12 rounded-[64px] border border-slate-100 shadow-sm flex flex-col justify-between">
+         <div className="bg-white/80 backdrop-blur-xl p-12 rounded-[64px] border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col justify-between hover:shadow-[0_40px_100px_rgba(0,0,0,0.08)] transition-all duration-700">
             <div className="space-y-2">
                <h3 className="text-2xl font-black text-[#0F172A] uppercase italic">Revenue Mix</h3>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Subscription Tier Contribution</p>
@@ -160,9 +190,9 @@ const PlatformAnalytics = () => {
 
             <div className="space-y-4">
                {subMix.map((s, i) => (
-                 <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-3xl border border-slate-100 hover:border-blue-200 transition-all cursor-pointer">
+                 <div key={i} className="flex items-center justify-between p-4 bg-white/50 backdrop-blur-md rounded-3xl border border-white/60 shadow-sm hover:border-blue-200 hover:-translate-y-1 transition-all cursor-pointer">
                     <div className="flex items-center gap-4">
-                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
+                       <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: s.color }} />
                        <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">{s.name}</span>
                     </div>
                     <span className="text-sm font-black text-[#0F172A] italic">{s.value} Accounts</span>
@@ -170,25 +200,30 @@ const PlatformAnalytics = () => {
                ))}
             </div>
          </div>
-      </div>
+      </motion.div>
 
       {/* TOP PERFORMING COMPANIES */}
-      <div className="bg-[#0F172A] rounded-[64px] p-12 text-white">
-         <div className="flex items-center justify-between mb-12">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
+        className="bg-gradient-to-br from-[#0F172A] to-slate-900 rounded-[64px] p-12 text-white relative overflow-hidden shadow-2xl"
+      >
+         <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+         
+         <div className="flex items-center justify-between mb-12 relative z-10">
             <div>
-               <h3 className="text-3xl font-black uppercase italic leading-none">Top Revenue Companies</h3>
-               <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-3">Expansion and Loyalty Metrics</p>
+               <h3 className="text-3xl font-black uppercase italic leading-none text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-200">Top Revenue Companies</h3>
+               <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-3">Expansion and Loyalty Metrics</p>
             </div>
-            <button className="text-[11px] font-black text-blue-400 uppercase tracking-widest hover:underline">Full Leaderboard</button>
+            <button className="text-[11px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors">Full Leaderboard</button>
          </div>
          
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
             {/* Realistically fetch from topOrgs */}
-            <TopOrgCard name="Global Tech Inc" revenue="₹12.5M" growth="+24%" logo={<Briefcase />} />
-            <TopOrgCard name="Stellar Labs" revenue="₹8.2M" growth="+18%" logo={<Zap />} />
-            <TopOrgCard name="Core Dynamics" revenue="₹6.4M" growth="+32%" logo={<Target />} />
+            <TopOrgCard name="Global Tech Inc" revenue="$12.5M" growth="+24%" logo={<Briefcase />} />
+            <TopOrgCard name="Stellar Labs" revenue="$8.2M" growth="+18%" logo={<Zap />} />
+            <TopOrgCard name="Core Dynamics" revenue="$6.4M" growth="+32%" logo={<Target />} />
          </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
@@ -202,7 +237,7 @@ const KPICard = ({ label, value, trend, icon: Icon, color }) => {
   };
 
   return (
-    <div className="bg-white p-10 rounded-[48px] border border-slate-100 shadow-sm space-y-12 group hover:shadow-2xl transition-all duration-500">
+    <div className="bg-white/80 backdrop-blur-xl p-10 rounded-[48px] border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] space-y-12 group hover:shadow-[0_40px_100px_rgba(0,0,0,0.1)] hover:-translate-y-2 transition-all duration-700">
        <div className="flex items-center justify-between">
           <div className={`w-16 h-16 rounded-3xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110 ${colors[color]}`}>
              <Icon size={28} />

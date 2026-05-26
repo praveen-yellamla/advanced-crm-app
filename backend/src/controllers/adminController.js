@@ -185,7 +185,23 @@ const getTeams = async (req, res) => {
         _count: { select: { agents: true } }
       }
     });
-    res.json({ success: true, data: teams });
+
+    const teamsWithRevenue = await Promise.all(teams.map(async (team) => {
+      const revenue = await prisma.invoice.aggregate({
+        where: {
+          organizationId: req.user.organizationId,
+          raisedBy: { teamId: team.id },
+          status: 'PAID'
+        },
+        _sum: { amount: true }
+      });
+      return {
+        ...team,
+        currentRevenue: revenue._sum.amount || 0
+      };
+    }));
+
+    res.json({ success: true, data: teamsWithRevenue });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -1020,7 +1036,7 @@ const getManagerPerformance = async (req, res) => {
     const managers = await prisma.user.findMany({
       where: { role: 'MANAGER', isActive: true, organizationId: orgId },
       include: {
-        managedTeam: {
+        managedTeams: {
           include: {
             agents: {
               include: { calls: true }
@@ -1034,10 +1050,12 @@ const getManagerPerformance = async (req, res) => {
     const enrichedManagers = managers.map(m => {
       let totalCalls = 0;
       let totalDuration = 0;
-      m.managedTeam?.agents?.forEach(agent => {
-        agent.calls?.forEach(call => {
-          totalCalls++;
-          totalDuration += (call.duration || 0);
+      m.managedTeams?.forEach(team => {
+        team.agents?.forEach(agent => {
+          agent.calls?.forEach(call => {
+            totalCalls++;
+            totalDuration += (call.duration || 0);
+          });
         });
       });
       return {
@@ -1045,8 +1063,8 @@ const getManagerPerformance = async (req, res) => {
         name: m.name,
         email: m.email,
         profileImage: m.profileImage,
-        teamName: m.managedTeam?.teamName || 'No Team',
-        teamSize: m.managedTeam?.agents?.length || 0,
+        teamName: m.managedTeams?.[0]?.teamName || 'No Team',
+        teamSize: m.managedTeams?.reduce((acc, t) => acc + (t.agents?.length || 0), 0) || 0,
         totalCalls,
         avgTalkTime: totalCalls ? Math.round((totalDuration / totalCalls) / 60) : 0,
         leadershipScore: 88, // Mock score
@@ -1108,6 +1126,44 @@ const submitManagerFeedback = async (req, res) => {
   }
 };
 
+const generateManagerCoaching = async (req, res) => {
+  try {
+    const { managerId, category } = req.body;
+
+    const manager = await prisma.user.findUnique({
+      where: { id: parseInt(managerId) },
+      include: {
+        managedTeams: {
+          include: {
+            agents: true
+          }
+        }
+      }
+    });
+
+    if (!manager) {
+      return res.status(404).json({ success: false, message: 'Manager not found' });
+    }
+
+    let teamSize = manager.managedTeams?.reduce((acc, t) => acc + (t.agents?.length || 0), 0) || 0;
+    
+    let coachingText = '';
+    if (category === 'Leadership') {
+      coachingText = `Executive Review: ${manager.name} is showing solid leadership capabilities managing a team of ${teamSize} agents. Strategic focus should remain on scaling the team's output. Team conversion rate is steady. Keep pushing the team towards the new KPIs for this quarter.`;
+    } else if (category === 'Team Performance') {
+      coachingText = `Executive Review: Regarding team performance, please closely monitor the ${teamSize} agents under your purview. Schedule 1-on-1 coaching sessions with the bottom quartile to ensure we meet the current quarter's target. Identify blockers in the sales pipeline and address them immediately.`;
+    } else if (category === 'Compliance') {
+      coachingText = `Executive Review: Ensure that all ${teamSize} agents are strictly following QA protocols on calls. Review random call recordings weekly and enforce the compliance scorecard. Any deviation from the script should be corrected immediately in your next team huddle.`;
+    } else {
+      coachingText = `Executive Review: Great job maintaining team morale and operations. Please focus on identifying skill gaps among your ${teamSize} agents and organize a targeted training workshop next month.`;
+    }
+
+    res.json({ success: true, data: coachingText });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getTeams,
@@ -1124,5 +1180,6 @@ module.exports = {
   getManagers,
   assignAgentTeam,
   getManagerPerformance,
-  submitManagerFeedback
+  submitManagerFeedback,
+  generateManagerCoaching
 };

@@ -84,11 +84,11 @@ const LeadPipeline = () => {
   return (
     <div className="space-y-8 pb-16 h-[calc(100vh-120px)] flex flex-col">
       {/* GLOBAL HEADER & FILTERS */}
-      <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm space-y-8 shrink-0">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6 shrink-0">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
            <div>
-              <h1 className="text-3xl font-black text-[#0F172A] tracking-tight">Sales Pipeline</h1>
-              <p className="crm-body mt-1 mt-1">Track and manage your leads through different stages of the sales process.</p>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Sales Pipeline</h1>
+              <p className="text-sm font-medium text-slate-500 mt-1">Track and manage your leads through different stages of the sales process.</p>
            </div>
            <div className="flex gap-3">
               <button 
@@ -200,13 +200,13 @@ const PipelineColumn = ({ column, filters, onLeadClick, updateStatus }) => {
   }, [filters]);
 
   return (
-    <div className="min-w-[340px] w-[340px] flex flex-col bg-slate-50/50 rounded-[40px] border border-slate-100 overflow-hidden">
+    <div className="min-w-[340px] w-[340px] flex flex-col bg-slate-50/50 rounded-2xl border border-slate-200 overflow-hidden">
        {/* COLUMN HEADER */}
-       <div className="p-6 bg-white border-b border-slate-100 flex items-center justify-between sticky top-0 z-10">
+       <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-3">
              <div className={`w-2 h-2 rounded-full ${column.color}`} />
-             <h3 className="text-[11px] font-black uppercase tracking-widest text-[#0F172A]">{column.label}</h3>
-             <span className="px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-black text-slate-400">{totalCount}</span>
+             <h3 className="text-sm font-bold text-slate-700">{column.label}</h3>
+             <span className="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded-md text-xs font-semibold text-slate-500">{totalCount}</span>
           </div>
           {isFetching && <Loader2 size={14} className="animate-spin text-blue-600" />}
        </div>
@@ -215,43 +215,43 @@ const PipelineColumn = ({ column, filters, onLeadClick, updateStatus }) => {
        <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
           <AnimatePresence mode="popLayout">
              {leads.map(lead => (
-               <motion.div 
+                 <motion.div 
                  key={lead.id}
                  layout
                  initial={{ opacity: 0, y: 10 }}
                  animate={{ opacity: 1, y: 0 }}
                  exit={{ opacity: 0, scale: 0.95 }}
                  onClick={() => onLeadClick(lead.id)}
-                 className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-200 transition-all cursor-pointer group relative"
+                 className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group relative"
                >
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex justify-between items-start mb-3">
                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden shadow-inner">
+                        <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 overflow-hidden shadow-inner shrink-0">
                            <img src={lead.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(lead.customerName)}&background=random&color=fff&bold=true`} alt="" className="w-full h-full object-cover" />
                         </div>
                         <div>
-                           <h4 className="text-[13px] font-black text-[#0F172A] tracking-tight group-hover:text-blue-600 transition-colors uppercase">{lead.customerName}</h4>
+                           <h4 className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{lead.customerName}</h4>
                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{lead.source}</span>
-                              <span className="w-1 h-1 bg-slate-200 rounded-full" />
-                              <span className="text-[9px] font-bold text-slate-400">#{lead.id}</span>
+                              <span className="text-xs font-medium text-slate-500">{lead.source.replace('_', ' ')}</span>
+                              <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                              <span className="text-xs font-medium text-slate-400">#{lead.id}</span>
                            </div>
                         </div>
                      </div>
                   </div>
 
-                  <div className="space-y-2 mb-4">
-                     <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
-                        <Phone size={12} className="text-slate-300" /> {lead.phone}
+                  <div className="space-y-2 mb-3">
+                     <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                        <Phone size={14} className="text-slate-400" /> {lead.phone}
                      </div>
                   </div>
 
-                  <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-[8px] font-black text-blue-600">
+                        <div className="w-6 h-6 rounded-md bg-blue-50 border border-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-600">
                            {lead.assignedTo?.name?.charAt(0) || '?'}
                         </div>
-                        <span className="text-[9px] font-bold text-slate-400">{lead.assignedTo?.name || 'Unassigned'}</span>
+                        <span className="text-xs font-medium text-slate-600">{lead.assignedTo?.name || 'Unassigned'}</span>
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleAssignClick(lead); }}
                           title="Reassign Agent"
@@ -264,7 +264,7 @@ const PipelineColumn = ({ column, filters, onLeadClick, updateStatus }) => {
                        onClick={(e) => e.stopPropagation()}
                        value={lead.status}
                        onChange={(e) => { e.stopPropagation(); updateStatus({ id: lead.id, status: e.target.value }); }}
-                       className="text-[9px] font-black uppercase tracking-widest bg-slate-50 border-none rounded-lg px-2 py-1.5 outline-none text-slate-400 hover:text-blue-600 transition-colors cursor-pointer appearance-none"
+                       className="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-md px-2 py-1 outline-none text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
                      >
                         {STATUS_COLUMNS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
                      </select>
@@ -278,7 +278,7 @@ const PipelineColumn = ({ column, filters, onLeadClick, updateStatus }) => {
               onClick={() => setPage(p => p + 1)}
               disabled={isFetching}
               title="Fetch the next page of leads for this stage"
-              className="w-full h-12 rounded-2xl bg-white border border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 hover:text-blue-600 transition-all flex items-center justify-center gap-2 shadow-sm"
+              className="w-full h-10 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all flex items-center justify-center gap-2 shadow-sm mt-2"
             >
                {isFetching ? <Loader2 size={14} className="animate-spin" /> : 'Load Next 10 Leads'}
             </button>
@@ -286,8 +286,8 @@ const PipelineColumn = ({ column, filters, onLeadClick, updateStatus }) => {
 
           {!isLoading && leads.length === 0 && (
             <div className="py-10 text-center space-y-2">
-               <TrendingUp size={24} className="mx-auto text-slate-200" />
-               <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest italic">No Leads in Pipeline Stage</p>
+               <TrendingUp size={24} className="mx-auto text-slate-300" />
+               <p className="text-xs font-medium text-slate-400 italic">No Leads in Pipeline Stage</p>
             </div>
           )}
        </div>
@@ -297,13 +297,13 @@ const PipelineColumn = ({ column, filters, onLeadClick, updateStatus }) => {
 
 const FilterSelect = ({ label, value, onChange, options, agents }) => (
   <div className="relative group">
-     <div className="absolute -top-5 left-1 text-[9px] font-black text-slate-400 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+     <div className="absolute -top-5 left-1 text-[10px] font-semibold text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">
         Filter By {label}
      </div>
      <select 
        value={value}
        onChange={e => onChange(e.target.value)}
-       className="h-12 pl-4 pr-10 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 transition-all text-[10px] font-black uppercase tracking-widest text-[#0F172A] appearance-none cursor-pointer"
+       className="h-10 pl-4 pr-10 bg-white border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all text-sm font-medium text-slate-700 appearance-none cursor-pointer shadow-sm"
      >
         {options.map(o => {
           let name = o === 'ALL' ? `All ${label}s` : o;

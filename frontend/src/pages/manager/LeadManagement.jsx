@@ -125,7 +125,7 @@ const LeadManagement = () => {
       </div>
 
       {/* FILTER CONTROLS */}
-      <div className="crm-card">
+      <div className="crm-card grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
         <div className="relative">
           <Search className="absolute left-3.5 top-3.5 text-slate-400" size={16} />
           <input
@@ -141,7 +141,7 @@ const LeadManagement = () => {
           <select
             value={agentId}
             onChange={(e) => setAgentId(e.target.value)}
-            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500"
+            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500 h-[42px]"
           >
             <option value="">All Team Members</option>
             {agents?.map(a => (
@@ -154,7 +154,7 @@ const LeadManagement = () => {
           <select
             value={stage}
             onChange={(e) => setStage(e.target.value)}
-            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none"
+            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none h-[42px]"
           >
             <option value="">All Stages</option>
             <option value="NEW">New Leads</option>
@@ -167,7 +167,7 @@ const LeadManagement = () => {
 
         <button 
           onClick={refetch}
-          className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+          className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors p-3 h-[42px]"
         >
           <Filter size={16} /> Apply Filters
         </button>

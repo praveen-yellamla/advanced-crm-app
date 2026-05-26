@@ -43,7 +43,8 @@ const AgentActivity = () => {
     return logs.filter(c => {
       const matchSearch = 
         (c.lead?.customerName || 'Manual Call').toLowerCase().includes(search.toLowerCase()) ||
-        (c.phone || '').includes(search);
+        (c.phone || '').includes(search) ||
+        (c.status || '').toLowerCase().includes(search.toLowerCase());
       
       const matchSentiment = 
         sentimentFilter === 'ALL' || 
@@ -226,17 +227,22 @@ const AgentActivity = () => {
                        </td>
                        <td className="px-8 py-6">
                           <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{call.lead?.customerName || 'Direct Manual Dial'}</p>
-                          <p className="text-[9px] font-semibold text-slate-400 mt-0.5">{call.phone}</p>
+                          <p className="text-[9px] font-semibold text-slate-400 mt-0.5">{call.phone || 'Unknown'}</p>
                        </td>
                        <td className="px-8 py-6">
-                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                             call.status === 'Completed' || call.status === 'Connected' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                             call.status === 'Failed' || call.status === 'Canceled' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                             call.status === 'Busy' || call.status === 'No Answer' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                             'bg-blue-50 text-blue-600 border-blue-100'
-                          }`}>
-                             {call.status || 'UNTAGGED'}
-                          </span>
+                          {(() => {
+                             const st = (call.status || '').toLowerCase();
+                             let colorClass = 'bg-blue-50 text-blue-600 border-blue-100';
+                             if (st === 'completed' || st === 'connected') colorClass = 'bg-emerald-50 text-emerald-600 border-emerald-100';
+                             else if (st === 'failed' || st === 'canceled') colorClass = 'bg-rose-50 text-rose-600 border-rose-100';
+                             else if (st === 'busy' || st === 'no answer') colorClass = 'bg-amber-50 text-amber-600 border-amber-100';
+                             
+                             return (
+                               <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${colorClass}`}>
+                                  {call.status || 'UNTAGGED'}
+                               </span>
+                             );
+                          })()}
                        </td>
                        <td className="px-8 py-6">
                           <div className="flex items-center gap-2">
@@ -356,9 +362,8 @@ const AgentActivity = () => {
                          {selectedCall?.transcript ? (
                             <p className="text-sm font-bold text-slate-600 leading-loose italic">{selectedCall.transcript}</p>
                          ) : (
-                            <div className="space-y-6">
-                               <TranscriptLine role="AGENT" time="00:01" text="Good afternoon! This is Advanced CRM outbound connection line. Are you looking to scale up your sales metrics?" />
-                               <TranscriptLine role="CONTACT" time="00:08" text="Yes, actually we are searching for automated SaaS integrations." />
+                            <div className="p-8 text-center text-slate-400 font-bold uppercase tracking-widest text-xs border-2 border-dashed border-slate-100 rounded-2xl">
+                               Transcript unavailable or pending generation.
                             </div>
                          )}
                       </div>

@@ -69,6 +69,30 @@ const EmailInbox = () => {
     }
   };
 
+  const handleArchive = async () => {
+    if (!selectedThreadId) return;
+    try {
+      await api.put('/email/archive', { threadId: selectedThreadId });
+      toast.success('Thread archived');
+      setSelectedThreadId(null);
+      refetch();
+    } catch (error) {
+      toast.error('Failed to archive thread');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedThreadId) return;
+    try {
+      await api.delete(`/email/${selectedThreadId}?isThread=true`);
+      toast.success('Thread moved to trash');
+      setSelectedThreadId(null);
+      refetch();
+    } catch (error) {
+      toast.error('Failed to delete thread');
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-140px)] gap-6">
       {/* COLUMN 1: FOLDER SYSTEM */}
@@ -230,8 +254,8 @@ const EmailInbox = () => {
                               </div>
                               <div className="flex gap-2">
                                  <ActionBtn icon={Reply} onClick={() => { setComposerReplyThread(selectedThreadDetail); setIsComposerOpen(true); }} />
-                                 <ActionBtn icon={Archive} />
-                                 <ActionBtn icon={Trash2} color="rose" />
+                                 <ActionBtn icon={Archive} onClick={handleArchive} />
+                                 <ActionBtn icon={Trash2} color="rose" onClick={handleDelete} />
                               </div>
                            </div>
 

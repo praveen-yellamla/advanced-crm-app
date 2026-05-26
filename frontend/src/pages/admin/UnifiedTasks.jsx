@@ -127,60 +127,58 @@ const UnifiedTasks = () => {
   return (
     <div className="space-y-10 pb-20">
       {/* HEADER SECTION */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 bg-white p-10 rounded-[50px] border border-slate-100 shadow-xl relative overflow-hidden">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500" />
         
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 animate-pulse">
-              <Zap size={20} />
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm">
+              <Zap size={16} />
             </div>
-            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">Task Management</span>
+            <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Task Management</span>
           </div>
-          <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter leading-none mb-3">
-             Operational <span className="text-slate-300">Hub</span>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-none mb-2">
+             Operational Hub
           </h1>
-          <p className="text-[#64748B] font-bold text-sm tracking-tight flex items-center gap-2">
-             Orchestrating <span className="text-blue-600">{tasksData?.pagination?.total || 0}</span> global activities with AI-driven prioritization
+          <p className="text-slate-500 font-medium text-sm flex items-center gap-2">
+             Orchestrating <span className="text-blue-600 font-semibold">{tasksData?.pagination?.total || 0}</span> global activities with AI-driven prioritization
           </p>
         </div>
 
         <div className="flex flex-wrap gap-4 relative z-10">
-          <div className="bg-slate-50 p-2 rounded-3xl border border-slate-200 flex gap-1">
+          <div className="bg-slate-50 p-1.5 rounded-lg border border-slate-200 flex gap-1">
              <button 
                onClick={() => setView('kanban')}
-               className={`h-14 px-8 rounded-2xl font-bold text-xs flex items-center gap-3 transition-all ${
-                 view === 'kanban' ? 'bg-white text-blue-600 shadow-xl' : 'text-slate-400 hover:text-slate-600'
+               className={`h-10 px-4 rounded-md font-semibold text-sm flex items-center gap-2 transition-all ${
+                 view === 'kanban' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                }`}
              >
-               <Layout size={18} /> Kanban
+               <Layout size={16} /> Kanban
              </button>
              <button 
                onClick={() => setView('calendar')}
-               className={`h-14 px-8 rounded-2xl font-bold text-xs flex items-center gap-3 transition-all ${
-                 view === 'calendar' ? 'bg-white text-blue-600 shadow-xl' : 'text-slate-400 hover:text-slate-600'
+               className={`h-10 px-4 rounded-md font-semibold text-sm flex items-center gap-2 transition-all ${
+                 view === 'calendar' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                }`}
              >
-               <Calendar size={18} /> Timeline
+               <Calendar size={16} /> Timeline
              </button>
              <button 
                onClick={() => setView('analytics')}
-               className={`h-14 px-8 rounded-2xl font-bold text-xs flex items-center gap-3 transition-all ${
-                 view === 'analytics' ? 'bg-white text-blue-600 shadow-xl' : 'text-slate-400 hover:text-slate-600'
+               className={`h-10 px-4 rounded-md font-semibold text-sm flex items-center gap-2 transition-all ${
+                 view === 'analytics' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                }`}
              >
-               <BarChart3 size={18} /> Analytics
+               <BarChart3 size={16} /> Analytics
              </button>
           </div>
           
           <button 
             onClick={handleCreateClick}
-            className="h-18 px-10 bg-[#0F172A] text-white rounded-3xl font-black text-xs shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-4 group"
+            className="h-10 px-6 bg-slate-900 text-white rounded-lg font-semibold text-sm shadow-sm hover:bg-slate-800 transition-colors flex items-center gap-2"
           >
-            <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center group-hover:rotate-90 transition-transform">
-              <Plus size={20} />
-            </div>
-            CREATE TASK
+            <Plus size={16} />
+            Create Task
           </button>
         </div>
       </div>

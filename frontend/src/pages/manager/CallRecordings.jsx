@@ -177,41 +177,41 @@ const CallRecordings = () => {
         </div>
         
         {/* KPI METRICS */}
-        <div className="flex items-center gap-3 overflow-x-auto pb-1 xl:pb-0 hide-scrollbar">
-          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-neutral-border-default bg-neutral-hover min-w-[150px]">
-            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100">
-              <Headphones size={14} className="text-blue-600" />
+        <div className="flex items-center gap-4 overflow-x-auto pb-1 xl:pb-0 hide-scrollbar">
+          <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white border border-slate-200 shadow-sm min-w-[160px]">
+            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100">
+              <Headphones size={18} className="text-blue-600" />
             </div>
             <div>
-              <p className="text-[11px] font-[600] text-neutral-muted uppercase tracking-wider">Queue Total</p>
-              <p className="text-[16px] font-[800] text-neutral-primary">{kpis.total}</p>
+              <p className="text-[10px] font-[800] text-slate-400 uppercase tracking-wider">Queue Total</p>
+              <p className="text-[18px] font-[900] text-slate-900 leading-tight">{kpis.total}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-neutral-border-default bg-neutral-hover min-w-[150px]">
-            <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center border border-purple-100">
-              <TrendingUp size={14} className="text-purple-600" />
+          <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white border border-slate-200 shadow-sm min-w-[160px]">
+            <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center border border-purple-100">
+              <TrendingUp size={18} className="text-purple-600" />
             </div>
             <div>
-              <p className="text-[11px] font-[600] text-neutral-muted uppercase tracking-wider">Avg QA Score</p>
-              <p className="text-[16px] font-[800] text-neutral-primary">{kpis.avgQa}/100</p>
+              <p className="text-[10px] font-[800] text-slate-400 uppercase tracking-wider">Avg QA Score</p>
+              <p className="text-[18px] font-[900] text-slate-900 leading-tight">{kpis.avgQa}/100</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-neutral-border-default bg-neutral-hover min-w-[150px]">
-            <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100">
-              <ShieldCheck size={14} className="text-emerald-600" />
+          <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white border border-slate-200 shadow-sm min-w-[160px]">
+            <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100">
+              <ShieldCheck size={18} className="text-emerald-600" />
             </div>
             <div>
-              <p className="text-[11px] font-[600] text-neutral-muted uppercase tracking-wider">Compliance</p>
-              <p className="text-[16px] font-[800] text-neutral-primary">{kpis.compliance}%</p>
+              <p className="text-[10px] font-[800] text-slate-400 uppercase tracking-wider">Compliance</p>
+              <p className="text-[18px] font-[900] text-slate-900 leading-tight">{kpis.compliance}%</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-status-danger-light bg-status-danger-light/10 min-w-[150px]">
-            <div className="w-8 h-8 rounded-full bg-status-danger text-white flex items-center justify-center shadow-sm">
-              <AlertTriangle size={14} />
+          <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white border border-rose-200 shadow-sm min-w-[160px]">
+            <div className="w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-md">
+              <AlertTriangle size={18} />
             </div>
             <div>
-              <p className="text-[11px] font-[600] text-status-danger uppercase tracking-wider">Risk Alerts</p>
-              <p className="text-[16px] font-[800] text-status-danger">{kpis.risk}</p>
+              <p className="text-[10px] font-[800] text-rose-500 uppercase tracking-wider">Risk Alerts</p>
+              <p className="text-[18px] font-[900] text-rose-600 leading-tight">{kpis.risk}</p>
             </div>
           </div>
         </div>
@@ -312,13 +312,13 @@ const CallRecordings = () => {
                   <td className="px-6 py-3.5">
                     <div className="flex items-center gap-2">
                       {call.agent?.profileImage ? (
-                        <img src={call.agent.profileImage} className="w-6 h-6 rounded-full object-cover shadow-sm" alt="" />
+                        <img src={call.agent.profileImage} className="w-8 h-8 rounded-full object-cover shadow-sm border border-slate-200" alt="" />
                       ) : (
-                        <div className="w-6 h-6 rounded-full bg-brand-accent/10 flex items-center justify-center text-brand-accent font-[700] text-[10px]">
+                        <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-[800] text-[12px] border border-indigo-100">
                           {call.agent?.name?.charAt(0)}
                         </div>
                       )}
-                      <span className="text-[13px] font-[600] text-neutral-secondary">{call.agent?.name}</span>
+                      <span className="text-[13px] font-[700] text-slate-700">{call.agent?.name}</span>
                     </div>
                   </td>
                   <td className="px-6 py-3.5">
@@ -368,13 +368,18 @@ const CallRecordings = () => {
                       {call.recordingUrl && (
                         <button 
                           onClick={(e) => handlePlayCall(call, e)}
-                          className="w-8 h-8 rounded-lg bg-neutral-hover hover:bg-brand-focus text-neutral-secondary hover:text-white flex items-center justify-center transition-colors shadow-sm border border-neutral-border-default"
+                          title="Play Recording"
+                          className="w-8 h-8 rounded-lg bg-white hover:bg-indigo-600 text-slate-500 hover:text-white flex items-center justify-center transition-colors shadow-sm border border-slate-200"
                         >
                           <Play size={14} className="ml-0.5" />
                         </button>
                       )}
-                      <button className="w-8 h-8 rounded-lg bg-neutral-hover hover:bg-neutral-border-default/60 text-neutral-secondary flex items-center justify-center transition-colors shadow-sm border border-neutral-border-default">
-                        <MessageSquare size={14} />
+                      <button 
+                        title="QA Score Call"
+                        onClick={(e) => { e.stopPropagation(); toast('QA Scoring module opening...'); }}
+                        className="w-8 h-8 rounded-lg bg-white hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 flex items-center justify-center transition-colors shadow-sm border border-slate-200"
+                      >
+                        <ShieldCheck size={14} />
                       </button>
                     </div>
                   </td>

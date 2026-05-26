@@ -39,6 +39,7 @@ const ManagerMyPerformance = () => {
 
   const exportPDF = () => {
      toast.success('Exporting Performance Report to PDF...');
+     setTimeout(() => window.print(), 500);
   };
 
   return (

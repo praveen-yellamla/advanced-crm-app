@@ -121,7 +121,16 @@ const LeadManagement = () => {
     }
   });
 
+  const { data: analyticsResponse } = useQuery({
+    queryKey: ['globalLeadAnalytics'],
+    queryFn: async () => {
+      const res = await api.get('/core/leads/analytics');
+      return res.data;
+    }
+  });
+
   const leads = leadResponse?.data || [];
+  const analytics = analyticsResponse?.data || { todaysLeads: 0, unassignedCount: 0, conversionRate: 0, topSource: 'N/A' };
 
   const handleExport = () => {
     if (leads.length === 0) return;
@@ -169,10 +178,10 @@ const LeadManagement = () => {
 
       {/* METRIC OVERVIEW */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-         <MetricBox label="Today's Leads" value="142" sub="+12% from yesterday" icon={<Zap className="text-blue-600" />} />
-         <MetricBox label="Unassigned" value="28" sub="Needs Attention" icon={<Target className="text-rose-600" />} />
-         <MetricBox label="Conversion" value="84%" sub="Active deals" icon={<TrendingUp className="text-emerald-600" />} />
-         <MetricBox label="Top Source" value="Meta" sub="High quality" icon={<Globe className="text-violet-600" />} />
+         <MetricBox label="Today's Leads" value={analytics.todaysLeads} sub="New inbound" icon={<Zap className="text-blue-600" />} />
+         <MetricBox label="Unassigned" value={analytics.unassignedCount} sub="Needs Attention" icon={<Target className="text-rose-600" />} />
+         <MetricBox label="Conversion" value={`${analytics.conversionRate}%`} sub="Active deals" icon={<TrendingUp className="text-emerald-600" />} />
+         <MetricBox label="Top Source" value={analytics.topSource.replace('_', ' ')} sub="Highest volume" icon={<Globe className="text-violet-600" />} />
       </div>
 
       {/* SEARCH/FILTERS */}
@@ -201,38 +210,38 @@ const LeadManagement = () => {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-[40px] border border-[#E2E8F0] shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
          <div className="overflow-x-auto">
-            <table className="crm-table">
+            <table className="w-full text-left text-sm">
                <thead>
-                  <tr className="bg-slate-50 text-[11px] font-black uppercase tracking-widest text-slate-400">
-                     <th className="px-10 py-6">Lead Name</th>
-                     <th className="px-10 py-6">Source</th>
-                     <th className="px-10 py-6">Marketing</th>
-                     <th className="px-10 py-6">Assigned To</th>
-                     <th className="px-10 py-6 text-right">Actions</th>
+                  <tr className="bg-slate-50/50 border-b border-slate-200 font-semibold text-slate-500">
+                     <th className="px-6 py-4">Lead Name</th>
+                     <th className="px-6 py-4">Source</th>
+                     <th className="px-6 py-4">Marketing</th>
+                     <th className="px-6 py-4">Assigned To</th>
+                     <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
                </thead>
                <tbody>
                   {isLoading ? (
-                    <tr><td colSpan="5" className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest">Loading leads...</td></tr>
+                    <tr><td colSpan="5" className="p-12 text-center text-slate-400 font-semibold">Loading leads...</td></tr>
                   ) : leads.length === 0 ? (
-                    <tr><td colSpan="5" className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest">No leads found</td></tr>
+                    <tr><td colSpan="5" className="p-12 text-center text-slate-400 font-semibold">No leads found</td></tr>
                   ) : leads.map((lead) => (
                     <tr key={lead.id} className="border-b last:border-none border-slate-50 hover:bg-slate-50/50 transition-all group">
-                       <td className="px-10 py-6">
-                          <div className="flex items-center gap-5">
-                             <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 group-hover:scale-105 transition-all shadow-sm overflow-hidden">
+                       <td className="px-6 py-4">
+                          <div className="flex items-center gap-4">
+                             <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 group-hover:scale-105 transition-all shadow-sm overflow-hidden">
                                 <img src={lead.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(lead.customerName)}&background=random&color=fff&bold=true`} alt="" className="w-full h-full object-cover" />
                              </div>
                              <div>
-                                <p className="text-lg font-bold text-[#0F172A] tracking-tight">{lead.customerName}</p>
-                                <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{lead.phone}</p>
+                                <p className="font-semibold text-slate-900 tracking-tight">{lead.customerName}</p>
+                                <p className="text-xs text-slate-500 mt-0.5">{lead.phone}</p>
                              </div>
                           </div>
                        </td>
-                       <td className="px-10 py-6">
-                          <div className={`px-4 py-1.5 rounded-lg w-fit border text-[10px] font-black uppercase tracking-widest ${
+                       <td className="px-6 py-4">
+                          <div className={`px-2.5 py-1 rounded-md w-fit border text-[11px] font-semibold ${
                              lead.source === 'GOOGLE_ADS' ? 'bg-amber-50 text-amber-600 border-amber-100' : 
                              lead.source === 'META' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
                              'bg-emerald-50 text-emerald-600 border-emerald-100'
@@ -240,21 +249,21 @@ const LeadManagement = () => {
                              {lead.source.replace('_',' ')}
                           </div>
                        </td>
-                       <td className="px-10 py-6">
-                          <div className="space-y-1">
-                             <p className="text-xs font-bold text-[#0F172A]">{lead.utmCampaign || 'Organic Direct'}</p>
-                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{lead.utmSource || 'Direct'} / {lead.utmMedium || 'N/A'}</p>
+                       <td className="px-6 py-4">
+                          <div className="space-y-0.5">
+                             <p className="text-sm font-medium text-slate-900">{lead.utmCampaign || 'Organic Direct'}</p>
+                             <p className="text-xs text-slate-500">{lead.utmSource || 'Direct'} / {lead.utmMedium || 'N/A'}</p>
                           </div>
                        </td>
-                       <td className="px-10 py-6">
+                       <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                             <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-[10px] font-black">
+                             <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-bold">
                                 {lead.assignedTo?.name?.charAt(0) || '?'}
                              </div>
-                             <span className="text-sm font-bold text-slate-900">{lead.assignedTo?.name || 'Unassigned'}</span>
+                             <span className="text-sm font-medium text-slate-900">{lead.assignedTo?.name || 'Unassigned'}</span>
                           </div>
                        </td>
-                       <td className="px-10 py-6">
+                       <td className="px-6 py-4">
                           <div className="flex justify-end">
                              <TableActionMenu
                                 id={lead.id}
@@ -319,14 +328,14 @@ const LeadManagement = () => {
 };
 
 const MetricBox = ({ label, value, sub, icon }) => (
-  <div className="bg-white p-8 rounded-[40px] border border-[#E2E8F0] shadow-sm flex flex-col justify-between h-[180px] group transition-all hover:shadow-xl hover:-translate-y-1">
-     <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-        {React.cloneElement(icon, { size: 28 })}
-     </div>
+  <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-start justify-between">
      <div>
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
-        <h4 className="text-3xl font-black text-[#0F172A] tracking-tighter mt-1">{value}</h4>
-        <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1">{sub}</p>
+        <p className="text-sm font-semibold text-slate-500 mb-2">{label}</p>
+        <h4 className="text-3xl font-bold text-slate-900">{value}</h4>
+        <p className="text-xs font-medium text-slate-500 mt-2">{sub}</p>
+     </div>
+     <div className="w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center">
+        {React.cloneElement(icon, { size: 20 })}
      </div>
   </div>
 );

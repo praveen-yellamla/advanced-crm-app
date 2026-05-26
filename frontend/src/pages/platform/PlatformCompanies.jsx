@@ -105,7 +105,11 @@ const PlatformCompanies = () => {
   );
 
   return (
-    <div className="space-y-12 pb-24">
+    <div className="space-y-12 pb-24 relative">
+      {/* AMBIENT BACKGROUND */}
+      <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none -z-10" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-400/5 rounded-full blur-[120px] pointer-events-none -z-10" />
+
       {/* HEADER SECTION */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-10">
         <div>
@@ -114,24 +118,24 @@ const PlatformCompanies = () => {
               <div className="h-px w-8 bg-slate-200" />
               <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Company Management</span>
            </div>
-           <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">Companies</h1>
+           <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#0F172A] to-blue-800 tracking-tighter uppercase italic leading-none drop-shadow-sm">Companies</h1>
            <p className="text-sm font-medium text-slate-500 mt-4 max-w-2xl">Manage and monitor enterprise CRM companies and their workspaces.</p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-4">
-           <div className="relative group">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+           <div className="relative group w-full sm:w-auto">
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors z-10" size={20} />
               <input 
                 type="text" 
                 placeholder="Search Company Name or Slug..." 
-                className="h-16 w-full md:w-80 pl-16 pr-8 bg-white border border-slate-200 rounded-3xl outline-none focus:border-blue-600 focus:shadow-xl transition-all font-bold text-sm"
+                className="h-16 w-full sm:w-[350px] pl-16 pr-8 bg-white/70 backdrop-blur-xl border border-white/40 rounded-3xl outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-600/10 focus:bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all font-bold text-sm text-[#0F172A] placeholder:text-slate-400"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
            </div>
            <button 
              onClick={() => setIsModalOpen(true)}
-             className="h-16 px-10 bg-[#0F172A] text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] italic flex items-center gap-4 shadow-2xl shadow-slate-900/40 hover:scale-105 transition-all active:scale-95"
+             className="h-16 px-10 w-full sm:w-auto bg-gradient-to-r from-[#0F172A] to-slate-800 text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] italic flex items-center justify-center gap-4 shadow-[0_8px_20px_rgb(15,23,42,0.3)] hover:shadow-[0_12px_25px_rgb(15,23,42,0.5)] hover:scale-105 transition-all active:scale-95 border border-slate-700/50 shrink-0"
            >
               <Plus size={20} /> Create Company
            </button>
@@ -139,11 +143,11 @@ const PlatformCompanies = () => {
       </div>
 
       {/* COMPANY TABLE */}
-      <div className="bg-white rounded-[64px] border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white/80 backdrop-blur-xl rounded-[48px] border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden">
          <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full border-collapse">
                <thead>
-                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                  <tr className="bg-slate-50/50 border-b border-slate-100/80">
                      <th className="px-10 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Company Name</th>
                      <th className="px-10 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan</th>
                      <th className="px-10 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
@@ -152,63 +156,75 @@ const PlatformCompanies = () => {
                      <th className="px-10 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                   </tr>
                </thead>
-               <tbody className="divide-y divide-slate-100">
-                  {filteredOrgs?.map((org, index) => (
-                    <tr key={org.id} className="hover:bg-slate-50/80 transition-all group">
-                       <td className="px-10 py-10">
-                          <div className="flex items-center gap-6">
-                             <div className="w-14 h-14 rounded-[28px] bg-[#0F172A] flex items-center justify-center text-white shadow-xl group-hover:rotate-12 transition-transform">
-                                <Building2 size={24} />
-                             </div>
-                             <div>
-                                <p className="text-lg font-black text-[#0F172A] uppercase italic tracking-tight leading-none">{org.name}</p>
-                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-2">{org.slug}</p>
-                             </div>
-                          </div>
-                       </td>
-                       <td className="px-10 py-10">
-                          <div className="flex flex-col">
-                             <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest inline-flex items-center gap-2 ${
-                                org.subscriptionTier === 'ENTERPRISE' ? 'bg-[#0F172A] text-white' : 
-                                org.subscriptionTier === 'PROFESSIONAL' ? 'bg-violet-100 text-violet-600' : 'bg-blue-100 text-blue-600'
-                             }`}>
-                                {org.subscriptionTier}
-                             </span>
-                          </div>
-                       </td>
-                       <td className="px-10 py-10">
-                          <div className="flex items-center gap-3">
-                             <div className={`w-2 h-2 rounded-full ${org.status === 'ACTIVE' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'}`} />
-                             <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest italic">{org.status}</span>
-                          </div>
-                       </td>
-                       <td className="px-10 py-10">
-                          <div className="flex items-center gap-6">
-                             <div className="space-y-1">
-                                <p className="text-[9px] font-black text-slate-400 uppercase">Agents</p>
-                                <p className="text-xs font-black text-[#0F172A]">{org._count?.users || 0} / {org.agentLimit}</p>
-                             </div>
-                             <div className="w-px h-8 bg-slate-100" />
-                             <div className="space-y-1">
-                                <p className="text-[9px] font-black text-slate-400 uppercase">Leads</p>
-                                <p className="text-xs font-black text-[#0F172A]">{(org._count?.leads || 0).toLocaleString()} / {(org.leadLimit / 1000).toFixed(0)}k</p>
-                             </div>
-                          </div>
-                       </td>
-                       <td className="px-10 py-10">
-                          <div className="flex items-center gap-3">
-                             <Calendar size={14} className="text-slate-300" />
-                             <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{new Date(org.createdAt).toLocaleDateString()}</span>
-                          </div>
-                       </td>
-                       <td className="px-10 py-10 text-right relative">
-                          <div className="flex items-center justify-end gap-3">
-                             <button 
-                               onClick={() => navigate(`/platform/organizations/${org.id}`)}
-                               className="h-12 px-6 rounded-2xl bg-white border border-slate-200 text-[#0F172A] text-[10px] font-black uppercase tracking-widest hover:border-blue-600 hover:text-blue-600 transition-all shadow-sm flex items-center gap-2"
-                             >
-                                Details
-                             </button>
+               <tbody className="divide-y divide-slate-100/60">
+                  <AnimatePresence>
+                    {filteredOrgs?.map((org, index) => (
+                      <motion.tr 
+                        key={org.id} 
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05, duration: 0.3 }}
+                        className="hover:bg-blue-50/40 transition-colors duration-300 group relative border-l-4 border-transparent hover:border-blue-600"
+                      >
+                         <td className="px-10 py-8">
+                            <div className="flex items-center gap-6">
+                               <div className="w-14 h-14 rounded-[20px] bg-gradient-to-br from-[#0F172A] to-slate-800 flex items-center justify-center text-white shadow-lg group-hover:-translate-y-1 group-hover:shadow-xl group-hover:shadow-blue-900/20 transition-all duration-300">
+                                  <Building2 size={24} className="group-hover:scale-110 transition-transform duration-300" />
+                               </div>
+                               <div>
+                                  <p className="text-lg font-black text-[#0F172A] uppercase italic tracking-tight leading-none group-hover:text-blue-600 transition-colors">{org.name}</p>
+                                  <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mt-2">{org.slug}</p>
+                               </div>
+                            </div>
+                         </td>
+                         <td className="px-10 py-8">
+                            <div className="flex flex-col">
+                               <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest inline-flex items-center gap-2 shadow-sm ${
+                                  org.subscriptionTier === 'ENTERPRISE' ? 'bg-gradient-to-r from-slate-900 to-slate-800 text-amber-400' : 
+                                  org.subscriptionTier === 'PROFESSIONAL' ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white' : 'bg-gradient-to-r from-blue-100 to-white border border-blue-200 text-blue-700'
+                               }`}>
+                                  {org.subscriptionTier}
+                               </span>
+                            </div>
+                         </td>
+                         <td className="px-10 py-8">
+                            <div className="flex items-center gap-3">
+                               <div className="relative flex h-2.5 w-2.5">
+                                  {org.status === 'ACTIVE' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
+                                  <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${org.status === 'ACTIVE' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'}`}></span>
+                               </div>
+                               <span className={`text-[11px] font-black uppercase tracking-widest italic ${org.status === 'ACTIVE' ? 'text-slate-700' : 'text-rose-600'}`}>{org.status}</span>
+                            </div>
+                         </td>
+                         <td className="px-10 py-8">
+                            <div className="flex items-center gap-6">
+                               <div className="space-y-1">
+                                  <p className="text-[9px] font-black text-slate-400 uppercase">Agents</p>
+                                  <p className="text-xs font-black text-[#0F172A] font-mono tracking-tight">{org._count?.users || 0} <span className="text-slate-300 font-sans font-bold">/</span> {org.agentLimit}</p>
+                               </div>
+                               <div className="w-px h-8 bg-slate-200" />
+                               <div className="space-y-1">
+                                  <p className="text-[9px] font-black text-slate-400 uppercase">Leads</p>
+                                  <p className="text-xs font-black text-[#0F172A] font-mono tracking-tight">{(org._count?.leads || 0).toLocaleString()} <span className="text-slate-300 font-sans font-bold">/</span> {(org.leadLimit / 1000).toFixed(0)}k</p>
+                               </div>
+                            </div>
+                         </td>
+                         <td className="px-10 py-8">
+                            <div className="flex items-center gap-3">
+                               <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                                  <Calendar size={14} className="text-slate-400" />
+                               </div>
+                               <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">{new Date(org.createdAt).toLocaleDateString()}</span>
+                            </div>
+                         </td>
+                         <td className="px-10 py-8 text-right relative">
+                            <div className="flex items-center justify-end gap-3">
+                               <button 
+                                 onClick={() => navigate(`/platform/organizations/${org.id}`)}
+                                 className="h-10 px-5 rounded-[14px] bg-white border border-slate-200 text-[#0F172A] text-[10px] font-black uppercase tracking-widest hover:border-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-all shadow-sm flex items-center gap-2"
+                               >
+                                  Details
+                               </button>
                              
                              <TableActionMenu 
                                 id={org.id} 
@@ -255,8 +271,9 @@ const PlatformCompanies = () => {
                              </TableActionMenu>
                           </div>
                        </td>
-                    </tr>
+                    </motion.tr>
                   ))}
+                  </AnimatePresence>
                </tbody>
             </table>
          </div>
@@ -779,7 +796,7 @@ const CreateCompanyModal = ({ isOpen, onClose, plans, onSuccess }) => {
                               <div className="relative">
                                  <div className="w-40 h-40 border-4 border-blue-600/10 border-t-blue-600 rounded-full animate-spin" />
                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <ActivitySquare size={48} className="text-blue-600 animate-pulse" />
+                                    <Activity size={48} className="text-blue-600 animate-pulse" />
                                  </div>
                               </div>
                               

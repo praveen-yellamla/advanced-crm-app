@@ -95,7 +95,15 @@ const getPlatformHealth = async (req, res) => {
     await prisma.$queryRaw`SELECT 1`;
     const dbLatency = Date.now() - startTime;
 
-    // In a real production app, you'd check Twilio, OpenAI, etc.
+    const recentLogs = await prisma.auditLog.findMany({
+      take: 15,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { email: true, name: true } },
+        organization: { select: { slug: true } }
+      }
+    });
+
     res.json({
       success: true,
       data: {
@@ -113,7 +121,8 @@ const getPlatformHealth = async (req, res) => {
           memory: '1.8GB / 4GB',
           storage: '124GB / 512GB',
           network: '850Mbps'
-        }
+        },
+        auditLogs: recentLogs
       }
     });
   } catch (error) {

@@ -174,11 +174,11 @@ const AnalyticsCommandCenter = () => {
 
   const Skeleton = () => (
     <div className="space-y-12 pb-16 animate-pulse">
-       <div className="h-20 bg-slate-200 rounded-[24px]"></div>
+       <div className="h-20 bg-slate-200 rounded-xl"></div>
        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          {[1,2,3,4,5].map(i => <div key={i} className="h-32 bg-slate-200 rounded-[32px]"></div>)}
+          {[1,2,3,4,5].map(i => <div key={i} className="h-32 bg-slate-200 rounded-2xl"></div>)}
        </div>
-       <div className="h-[400px] bg-slate-200 rounded-[48px]"></div>
+       <div className="h-[400px] bg-slate-200 rounded-2xl"></div>
     </div>
   );
 
@@ -198,7 +198,7 @@ const AnalyticsCommandCenter = () => {
         >
           <motion.div 
             initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
-            className="bg-white p-8 rounded-[32px] shadow-2xl w-full max-w-sm flex flex-col items-center text-center"
+            className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm flex flex-col items-center text-center"
           >
             {exportStep === 1 && <FileText className="text-blue-500 mb-4 animate-bounce" size={48} />}
             {exportStep === 2 && <Zap className="text-amber-500 mb-4 animate-pulse" size={48} />}
@@ -235,14 +235,14 @@ const AnalyticsCommandCenter = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
            <div className="flex items-center gap-3 mb-3">
-              <div className="px-3 py-1 bg-violet-600 text-white text-[10px] font-black rounded-lg uppercase tracking-widest shadow-lg shadow-violet-200">Executive View</div>
-              <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-2">
+              <div className="px-3 py-1 bg-violet-600 text-white text-xs font-semibold rounded-lg shadow-sm">Executive View</div>
+              <span className="text-xs font-semibold text-emerald-600 flex items-center gap-2">
                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
                  System Online
               </span>
            </div>
-           <h1 className="text-4xl font-black text-[#0F172A] tracking-tighter">Business Overview</h1>
-           <p className="crm-body mt-1 mt-2">Comprehensive analytics and enterprise health monitoring.</p>
+           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Business Overview</h1>
+           <p className="text-sm font-medium text-slate-500 mt-2">Comprehensive analytics and enterprise health monitoring.</p>
         </div>
 
         <div className="flex items-center gap-4">
@@ -250,7 +250,7 @@ const AnalyticsCommandCenter = () => {
            <div className="relative" ref={datePickerRef}>
               <button 
                 onClick={() => setShowDatePicker(!showDatePicker)}
-                className="h-12 px-5 bg-white border border-slate-200 shadow-sm rounded-xl text-sm font-bold text-slate-700 flex items-center gap-3 hover:bg-slate-50 transition-all"
+                className="h-10 px-4 bg-white border border-slate-200 shadow-sm rounded-lg text-sm font-semibold text-slate-700 flex items-center gap-2 hover:bg-slate-50 transition-all"
               >
                  <Calendar size={18} className="text-blue-600" />
                  {period === 'custom' ? `${dateRange.start} to ${dateRange.end}` : DATE_PRESETS.find(p => p.id === period)?.label || 'Select Date'}
@@ -261,7 +261,7 @@ const AnalyticsCommandCenter = () => {
                 {showDatePicker && (
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                    className="absolute right-0 top-14 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 z-40 p-4"
+                    className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-xl border border-slate-200 z-40 p-4"
                   >
                     <div className="grid grid-cols-2 gap-2 mb-4">
                       {DATE_PRESETS.map(p => (
@@ -305,7 +305,7 @@ const AnalyticsCommandCenter = () => {
            </div>
 
            {/* Quick Fast Filters (Desktop Only) */}
-           <div className="hidden lg:flex bg-slate-50 border border-slate-200 rounded-xl p-1 shadow-sm h-12 items-center">
+           <div className="hidden lg:flex bg-slate-50 border border-slate-200 rounded-lg p-1 shadow-sm h-10 items-center">
              {[
                { id: '7d', label: '7D' },
                { id: '30d', label: '30D' },
@@ -315,7 +315,7 @@ const AnalyticsCommandCenter = () => {
                <button 
                  key={p.id}
                  onClick={() => setPeriod(p.id)}
-                 className={`h-full px-4 rounded-lg text-xs font-bold transition-all ${period === p.id ? 'bg-white text-blue-600 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+                 className={`h-full px-4 rounded-md text-xs font-semibold transition-all ${period === p.id ? 'bg-white text-blue-600 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
                >
                  {p.label}
                </button>
@@ -325,7 +325,7 @@ const AnalyticsCommandCenter = () => {
            <button 
              onClick={handleExport}
              disabled={isExporting}
-             className="h-12 px-6 bg-blue-600 text-white rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-blue-600/20 hover:-translate-y-0.5 hover:shadow-blue-600/30 transition-all disabled:opacity-50"
+             className="h-10 px-5 bg-blue-600 text-white rounded-lg font-semibold text-sm flex items-center gap-2 shadow-sm hover:bg-blue-700 transition-all disabled:opacity-50"
            >
               {isExporting ? <Clock className="animate-spin" size={16} /> : <Download size={16} />} 
               Export Report
@@ -344,29 +344,29 @@ const AnalyticsCommandCenter = () => {
          ].map((kpi, i) => (
            <motion.div 
              key={i}
-             whileHover={{ y: -4 }}
-             className={`bg-white p-6 rounded-[28px] border border-slate-200 shadow-sm hover:shadow-xl hover:${kpi.border} transition-all group cursor-default`}
+             whileHover={{ y: -2 }}
+             className={`bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:${kpi.border} transition-all group cursor-default`}
            >
-              <div className="flex items-center gap-4 mb-4">
-                 <div className={`p-3 rounded-2xl ${kpi.bg} ${kpi.color} group-hover:scale-110 transition-transform`}>
-                    <kpi.icon size={20} strokeWidth={2.5} />
+              <div className="flex items-center gap-3 mb-3">
+                 <div className={`p-2 rounded-xl ${kpi.bg} ${kpi.color}`}>
+                    <kpi.icon size={18} strokeWidth={2.5} />
                  </div>
               </div>
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">{kpi.label}</p>
-              <h2 className="text-3xl font-black text-[#0F172A] tracking-tighter">{kpi.value}</h2>
+              <p className="text-sm font-semibold text-slate-500 mb-1">{kpi.label}</p>
+              <h2 className="text-2xl font-bold text-slate-900">{kpi.value}</h2>
            </motion.div>
          ))}
       </div>
 
       {/* 2. SECOND SECTION: ANALYTICS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
          {/* REVENUE ANALYTICS */}
-         <div className="lg:col-span-2 bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-blue-100/50 transition-colors duration-1000" />
-            <div className="relative z-10 flex items-center justify-between mb-8">
+         <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -mr-20 -mt-20" />
+            <div className="relative z-10 flex items-center justify-between mb-6">
                <div>
-                  <h3 className="text-xl font-black text-[#0F172A] tracking-tight">Revenue Analytics</h3>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Growth projection over selected period</p>
+                  <h3 className="text-lg font-bold text-slate-900">Revenue Analytics</h3>
+                  <p className="text-sm font-medium text-slate-500 mt-1">Growth projection over selected period</p>
                </div>
                <BarChart3 size={24} className="text-slate-200" />
             </div>
@@ -404,11 +404,11 @@ const AnalyticsCommandCenter = () => {
          </div>
 
          {/* LEAD SOURCES */}
-         <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between mb-8">
+         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+            <div className="flex items-center justify-between mb-6">
                <div>
-                 <h3 className="text-xl font-black text-[#0F172A] tracking-tight">Lead Sources</h3>
-                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Acquisition channels</p>
+                 <h3 className="text-lg font-bold text-slate-900">Lead Sources</h3>
+                 <p className="text-sm font-medium text-slate-500 mt-1">Acquisition channels</p>
                </div>
                <PieIcon size={24} className="text-slate-200" />
             </div>
@@ -441,14 +441,14 @@ const AnalyticsCommandCenter = () => {
                     </ResponsiveContainer>
                  </div>
                  
-                 <div className="w-full mt-6 space-y-3">
+                 <div className="w-full mt-6 space-y-2">
                     {leadSourceData.map((source, i) => (
-                      <div key={i} className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-colors">
+                      <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-colors">
                          <div className="flex items-center gap-3">
                             <div className="w-3 h-3 rounded-full shadow-sm" style={{backgroundColor: COLORS[i % COLORS.length]}} />
-                            <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">{source.name.replace('_', ' ')}</span>
+                            <span className="text-xs font-semibold text-slate-700 capitalize">{source.name.replace('_', ' ').toLowerCase()}</span>
                          </div>
-                         <span className="text-sm font-black text-[#0F172A]">{source.value}</span>
+                         <span className="text-sm font-bold text-slate-900">{source.value}</span>
                       </div>
                     ))}
                  </div>
@@ -463,43 +463,43 @@ const AnalyticsCommandCenter = () => {
       </div>
 
       {/* 3. THIRD SECTION: TEAMS & AI */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
          {/* TEAM LEADERBOARD */}
-         <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between mb-8">
+         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+            <div className="flex items-center justify-between mb-6">
                <div>
-                 <h3 className="text-xl font-black text-[#0F172A] tracking-tight">Teams Performance</h3>
-                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Top converting agents</p>
+                 <h3 className="text-lg font-bold text-slate-900">Teams Performance</h3>
+                 <p className="text-sm font-medium text-slate-500 mt-1">Top converting agents</p>
                </div>
-               <button className="text-[10px] font-bold text-blue-600 uppercase tracking-widest hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg transition-colors">View All</button>
+               <button className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-md transition-colors">View All</button>
             </div>
 
             {agentLeaderboard && agentLeaderboard.length > 0 ? (
-              <div className="space-y-2 flex-1">
+               <div className="space-y-2 flex-1">
                  {agentLeaderboard.map((agent, i) => (
-                   <div key={i} className="flex items-center justify-between p-4 rounded-[20px] hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
-                      <div className="flex items-center gap-4">
-                         <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-slate-500 group-hover:bg-[#0F172A] group-hover:text-white transition-all shadow-sm text-sm">
+                   <div key={i} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-all border border-transparent group">
+                      <div className="flex items-center gap-3">
+                         <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-bold text-slate-500 shadow-sm text-sm">
                             {agent.avatar}
                          </div>
                          <div>
-                            <h4 className="text-sm font-bold text-[#0F172A]">{agent.name}</h4>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{agent.deals} Won Deals</p>
+                            <h4 className="text-sm font-semibold text-slate-900">{agent.name}</h4>
+                            <p className="text-xs font-medium text-slate-500 mt-0.5">{agent.deals} Won Deals</p>
                          </div>
                       </div>
-                      <div className="flex items-center gap-8 text-right">
+                      <div className="flex items-center gap-6 text-right">
                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Win Rate</p>
-                            <p className="text-sm font-black text-emerald-600">{agent.conversion}</p>
+                            <p className="text-xs font-medium text-slate-500">Win Rate</p>
+                            <p className="text-sm font-bold text-emerald-600">{agent.conversion}</p>
                          </div>
-                         <div className="w-20">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Revenue</p>
-                            <p className="text-sm font-black text-[#0F172A]">{agent.revenue}</p>
+                         <div className="w-16">
+                            <p className="text-xs font-medium text-slate-500">Revenue</p>
+                            <p className="text-sm font-bold text-slate-900">{agent.revenue}</p>
                          </div>
                       </div>
                    </div>
                  ))}
-              </div>
+               </div>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center py-10 text-slate-400">
                 <Users size={48} className="mb-4 opacity-20" />
@@ -509,17 +509,17 @@ const AnalyticsCommandCenter = () => {
          </div>
 
          {/* AI INSIGHTS */}
-         <div className="bg-[#0F172A] p-10 rounded-[40px] text-white shadow-2xl relative overflow-hidden group flex flex-col">
-            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-violet-600/20 rounded-full blur-[100px] -mr-32 -mt-32 group-hover:bg-violet-600/30 transition-all duration-700" />
+         <div className="bg-[#0F172A] p-8 rounded-3xl text-white shadow-xl relative overflow-hidden group flex flex-col">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-violet-600/20 rounded-full blur-[80px] -mr-20 -mt-20" />
             <div className="relative z-10 flex flex-col h-full">
-               <div className="flex items-center justify-between mb-10">
-                  <div className="flex items-center gap-4">
-                     <div className="p-3 bg-white/10 rounded-2xl text-violet-400 backdrop-blur-md">
-                        <Sparkles size={20} />
+               <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-3">
+                     <div className="p-2.5 bg-white/10 rounded-xl text-violet-400 backdrop-blur-md">
+                        <Sparkles size={18} />
                      </div>
                      <div>
-                       <h3 className="text-xl font-black tracking-tight">AI Insights</h3>
-                       <p className="text-[10px] font-bold text-violet-400 uppercase tracking-widest mt-0.5">Automated AI Analysis</p>
+                       <h3 className="text-lg font-bold">AI Insights</h3>
+                       <p className="text-xs font-medium text-violet-400 mt-0.5">Automated Analysis</p>
                      </div>
                   </div>
                </div>
@@ -530,13 +530,13 @@ const AnalyticsCommandCenter = () => {
                     { title: 'Revenue Forecast', text: 'Based on current pipeline velocity, projected revenue for next 30 days is ₹125K.', tag: 'PREDICTION' },
                     { title: 'Agent Coaching', text: 'Analysis of last 50 calls shows agents need improvement in objection handling.', tag: 'RECOMMENDATION' }
                   ].map((insight, i) => (
-                    <div key={i} className="p-6 bg-white/5 rounded-[24px] border border-white/10 hover:bg-white/10 transition-all cursor-pointer backdrop-blur-sm group/card">
-                       <div className="flex justify-between items-center mb-3">
-                          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${insight.tag === 'ALERT' ? 'bg-rose-500/20 text-rose-400' : 'bg-violet-500/20 text-violet-300'}`}>{insight.tag}</span>
+                    <div key={i} className="p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all cursor-pointer backdrop-blur-sm group/card">
+                       <div className="flex justify-between items-center mb-2">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${insight.tag === 'ALERT' ? 'bg-rose-500/20 text-rose-400' : 'bg-violet-500/20 text-violet-300'}`}>{insight.tag}</span>
                           <ArrowUpRight size={14} className="opacity-0 group-hover/card:opacity-100 transition-opacity" />
                        </div>
-                       <h4 className="text-sm font-bold mb-2 text-white">{insight.title}</h4>
-                       <p className="text-xs text-slate-400 leading-relaxed font-medium">{insight.text}</p>
+                       <h4 className="text-sm font-semibold mb-1 text-white">{insight.title}</h4>
+                       <p className="text-xs text-slate-400 leading-relaxed">{insight.text}</p>
                     </div>
                   ))}
                </div>
@@ -545,29 +545,29 @@ const AnalyticsCommandCenter = () => {
       </div>
 
       {/* 4. FOURTH SECTION: ACTIVITY FEED */}
-      <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm">
-         <div className="flex items-center justify-between mb-8">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+         <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-xl font-black text-[#0F172A] tracking-tight">System Activity</h3>
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Live CRM Audit Trail</p>
+              <h3 className="text-lg font-bold text-slate-900">System Activity</h3>
+              <p className="text-sm font-medium text-slate-500 mt-1">Live CRM Audit Trail</p>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg text-[10px] font-black text-slate-400 uppercase tracking-widest">
-               <Activity size={12} className="text-emerald-500" /> Live Feed
+            <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-md text-xs font-semibold text-emerald-600">
+               <Activity size={14} /> Live Feed
             </div>
          </div>
 
          {activityFeed && activityFeed.length > 0 ? (
            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {activityFeed.map((item, i) => (
-                <div key={i} className="flex gap-4 items-start p-5 border border-slate-100 rounded-3xl hover:bg-slate-50 hover:border-slate-200 transition-all">
-                   <div className="p-3 rounded-2xl bg-white border border-slate-100 text-blue-500 shadow-sm shrink-0">
+                <div key={i} className="flex gap-4 items-start p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all">
+                   <div className="p-2.5 rounded-lg bg-blue-50 border border-blue-100 text-blue-600 shrink-0">
                       <Activity size={16} />
                    </div>
                    <div>
                       <p className="text-xs font-medium text-slate-600 leading-relaxed">
-                         <b className="text-[#0F172A]">{item.user}</b> {item.action} <b className="text-[#0F172A]">{item.target}</b>
+                         <b className="text-slate-900">{item.user}</b> {item.action} <b className="text-slate-900">{item.target}</b>
                       </p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">
+                      <p className="text-xs font-medium text-slate-400 mt-1">
                          {item.time ? formatDistanceToNow(new Date(item.time), {addSuffix: true}) : 'Just now'}
                       </p>
                    </div>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { 
-  ClipboardCheck, Search, Filter, Calendar, Users, RefreshCw, Layers, AlignJustify, User, Clock, AlertTriangle, ArrowRight
+  ClipboardCheck, Search, Filter, Calendar, Users, RefreshCw, Layers, AlignJustify, User, Clock, AlertTriangle, ArrowRight, Plus
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -13,6 +13,18 @@ const TaskManager = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [targetAgentId, setTargetAgentId] = useState('');
+
+  // Create Task Modal State
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newTaskForm, setNewTaskForm] = useState({
+    title: '',
+    description: '',
+    assignedToId: '',
+    priority: 'Normal',
+    dueDate: ''
+  });
+
+  const [agentSearch, setAgentSearch] = useState('');
 
   // 1. Fetch team tasks
   const { data: tasks, isLoading, refetch } = useQuery({
@@ -46,6 +58,28 @@ const TaskManager = () => {
     }
   });
 
+  // 4. Mutation: Create Task
+  const createTaskMutation = useMutation({
+    mutationFn: async (taskData) => {
+      const res = await api.post('/manager/tasks', taskData);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Task created successfully');
+      setShowCreateModal(false);
+      setNewTaskForm({ title: '', description: '', assignedToId: '', priority: 'Normal', dueDate: '' });
+      refetch();
+    }
+  });
+
+  const handleCreateTask = () => {
+    if (!newTaskForm.title || !newTaskForm.assignedToId) {
+      toast.error('Title and Assignee are required');
+      return;
+    }
+    createTaskMutation.mutate(newTaskForm);
+  };
+
   const handleOpenReassign = (task) => {
     setSelectedTask(task);
     setShowReassignModal(true);
@@ -77,6 +111,16 @@ const TaskManager = () => {
   const pendingTasks = tasks?.filter(t => t.status === 'PENDING') || [];
   const inProgressTasks = tasks?.filter(t => t.status === 'IN_PROGRESS' || t.status === 'ACTIVE') || [];
   const completedTasks = tasks?.filter(t => t.status === 'COMPLETED' || t.status === 'DONE') || [];
+  // Display Agents Logic (Scalability for 1000+ agents)
+  const selectedAgent = agents?.find(a => a.id.toString() === selectedAgentId);
+  const searchResults = agents?.filter(a => {
+    if (a.id.toString() === selectedAgentId) return false;
+    return a.name.toLowerCase().includes(agentSearch.toLowerCase());
+  }) || [];
+  
+  const displayAgents = selectedAgent ? [selectedAgent, ...searchResults] : searchResults;
+  const slicedAgents = displayAgents.slice(0, 10);
+  const remainingCount = Math.max(0, searchResults.length - (slicedAgents.length - (selectedAgent ? 1 : 0)));
 
   return (
     <div className="space-y-8 pb-16 px-4 md:px-0">
@@ -114,23 +158,74 @@ const TaskManager = () => {
             <Calendar size={14} /> Calendar
           </button>
         </div>
+
+        {/* CREATE TASK BUTTON */}
+        <button 
+          onClick={() => setShowCreateModal(true)}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold px-4 py-2 flex items-center justify-center gap-2 shadow-sm transition-colors whitespace-nowrap"
+        >
+          <Plus size={16} /> New Task
+        </button>
       </div>
 
-      {/* FILTER CONTROL */}
-      <div className="crm-card">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-          <Users size={16} /> Filter by Assigned Agent:
-        </div>
-        <select
-          value={selectedAgentId}
-          onChange={(e) => setSelectedAgentId(e.target.value)}
-          className="w-48 bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold text-slate-700 focus:outline-none"
+      {/* FILTER CONTROL (UPGRADED AVATAR CHIPS) */}
+      <div className="flex items-center gap-3 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0" style={{ scrollbarWidth: 'none' }}>
+        <button
+          onClick={() => setSelectedAgentId('')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all whitespace-nowrap ${
+            selectedAgentId === '' 
+              ? 'bg-slate-900 border-slate-900 text-white shadow-md' 
+              : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 shadow-sm'
+          }`}
         >
-          <option value="">All Team Members</option>
-          {agents?.map(a => (
-            <option key={a.id} value={a.id}>{a.name}</option>
-          ))}
-        </select>
+          <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+            <Users size={12} className={selectedAgentId === '' ? 'text-white' : 'text-slate-500'} />
+          </div>
+          <span className="text-xs font-bold">All Team</span>
+        </button>
+
+        <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block"></div>
+
+        {/* SEARCH INPUT CHIP */}
+        <div className="relative flex-shrink-0">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input 
+            type="text" 
+            placeholder="Search advisors..." 
+            value={agentSearch}
+            onChange={(e) => setAgentSearch(e.target.value)}
+            className="pl-8 pr-4 py-2 w-48 rounded-full border border-slate-200 text-xs font-bold focus:outline-none focus:border-indigo-500 bg-white shadow-sm transition-all focus:w-64"
+          />
+        </div>
+
+        {slicedAgents.map(a => (
+          <button
+            key={a.id}
+            onClick={() => setSelectedAgentId(selectedAgentId === a.id.toString() ? '' : a.id.toString())}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all whitespace-nowrap ${
+              selectedAgentId === a.id.toString()
+                ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' 
+                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 shadow-sm'
+            }`}
+          >
+            {a.avatar_url ? (
+              <img src={a.avatar_url} alt={a.name} className="w-6 h-6 rounded-full object-cover border border-white/20" />
+            ) : (
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${
+                selectedAgentId === a.id.toString() ? 'bg-indigo-500 text-white' : 'bg-indigo-50 text-indigo-700'
+              }`}>
+                {a.name.charAt(0)}
+              </div>
+            )}
+            <span className="text-xs font-bold">{a.name}</span>
+          </button>
+        ))}
+
+        {remainingCount > 0 && (
+          <span className="text-[10px] font-black text-slate-400 whitespace-nowrap ml-2 uppercase tracking-wider">
+            + {remainingCount} MORE
+          </span>
+        )}
       </div>
 
       {/* KANBAN VIEW */}
@@ -262,6 +357,94 @@ const TaskManager = () => {
           </div>
         </div>
       )}
+
+      {/* CREATE TASK MODAL */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-100">
+            <h3 className="text-lg font-black text-slate-900">Create New Task</h3>
+            <p className="text-xs text-slate-500 mt-1 mb-4">Assign a new action item to an advisor.</p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Task Title <span className="text-rose-500">*</span></label>
+                <input 
+                  type="text" 
+                  value={newTaskForm.title}
+                  onChange={(e) => setNewTaskForm({...newTaskForm, title: e.target.value})}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                  placeholder="e.g. Follow up with Enterprise Lead"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Description</label>
+                <textarea 
+                  value={newTaskForm.description}
+                  onChange={(e) => setNewTaskForm({...newTaskForm, description: e.target.value})}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 min-h-[80px]"
+                  placeholder="Additional details..."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Assign To <span className="text-rose-500">*</span></label>
+                  <select
+                    value={newTaskForm.assignedToId}
+                    onChange={(e) => setNewTaskForm({...newTaskForm, assignedToId: e.target.value})}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="">Select advisor...</option>
+                    {agents?.map(a => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Priority</label>
+                  <select
+                    value={newTaskForm.priority}
+                    onChange={(e) => setNewTaskForm({...newTaskForm, priority: e.target.value})}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Normal">Normal</option>
+                    <option value="High">High</option>
+                    <option value="Urgent">Urgent</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Due Date</label>
+                <input 
+                  type="date"
+                  value={newTaskForm.dueDate}
+                  onChange={(e) => setNewTaskForm({...newTaskForm, dueDate: e.target.value})}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-slate-100">
+              <button 
+                onClick={() => setShowCreateModal(false)}
+                className="px-4 py-2 text-slate-500 text-xs font-bold hover:bg-slate-50 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleCreateTask}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-md disabled:opacity-50"
+                disabled={createTaskMutation.isPending}
+              >
+                {createTaskMutation.isPending ? 'Creating...' : 'Create Task'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -275,7 +458,7 @@ const KanbanColumn = ({ title, tasks, onReassign, badgeColor }) => {
       </div>
       <div className="space-y-3 overflow-y-auto flex-1">
         {tasks.map(task => (
-          <div key={task.id} className="crm-card">
+          <div key={task.id} className="crm-card group relative">
             <div>
               <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
                 task.priority === 'High' ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-500'

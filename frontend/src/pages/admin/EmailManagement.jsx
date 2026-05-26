@@ -70,7 +70,7 @@ const EmailManagement = () => {
         <StatCard title="Total Dispatched" value={auditLogs?.length || 0} subText="All recorded emails" icon={<Mail />} color="blue" />
         <StatCard title="Delivered" value={auditLogs?.filter(l => l.email?.deliveredAt).length || 0} subText="Confirmed by SMTP" icon={<CheckCircle />} color="emerald" />
         <StatCard title="Failed / Bounced" value={auditLogs?.filter(l => l.email?.failedAt).length || 0} subText="Delivery errors" icon={<XCircle />} color="red" />
-        <StatCard title="Flagged Communications" value={0} subText="Manager interventions" icon={<AlertTriangle />} color="amber" />
+        <StatCard title="Flagged Communications" value={auditLogs?.filter(l => l.eventType === 'FLAGGED').length || 0} subText="Manager interventions" icon={<AlertTriangle />} color="amber" />
       </div>
 
       {/* DYNAMIC FILTERS */}

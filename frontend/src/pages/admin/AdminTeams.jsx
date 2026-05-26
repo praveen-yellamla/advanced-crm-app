@@ -211,12 +211,21 @@ const AdminTeams = () => {
                        </td>
                        <td className="px-6 py-5">
                           <div className="w-48">
-                             <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-tight mb-1.5">
-                                <span>Revenue Target</span>
-                                <span className="text-blue-600 font-bold">₹{(team.revenueGoal ?? 0).toLocaleString('en-IN')}</span>
+                             <div className="flex justify-between items-end mb-1.5">
+                                <div className="flex flex-col">
+                                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Current</span>
+                                  <span className="text-xs font-bold text-slate-900">₹{(team.currentRevenue ?? 0).toLocaleString('en-IN')}</span>
+                                </div>
+                                <div className="flex flex-col items-end">
+                                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Target</span>
+                                  <span className="text-blue-600 font-bold text-xs">₹{(team.revenueGoal ?? 0).toLocaleString('en-IN')}</span>
+                                </div>
                              </div>
                              <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-blue-500 rounded-full w-[0%]" />
+                                <div 
+                                  className="h-full bg-blue-500 rounded-full transition-all duration-1000 ease-out" 
+                                  style={{ width: `${team.revenueGoal ? Math.min(100, Math.round(((team.currentRevenue ?? 0) / team.revenueGoal) * 100)) : 0}%` }}
+                                />
                              </div>
                           </div>
                        </td>

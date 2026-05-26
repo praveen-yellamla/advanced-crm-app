@@ -7,8 +7,9 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 router.use(protect);
 router.use(authorize('AGENT', 'ADMIN'));
 
-// Dashboard
+// Dashboard & Analytics
 router.get('/dashboard', agentController.getDashboardStats);
+router.get('/analytics', agentController.getAgentAnalytics);
 
 // Leads & Pipeline
 router.get('/leads', agentController.getMyLeads);

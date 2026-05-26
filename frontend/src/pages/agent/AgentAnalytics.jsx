@@ -16,7 +16,7 @@ const AgentAnalytics = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['agentAnalytics'],
     queryFn: async () => {
-      const res = await api.get('/agent/dashboard'); // Reusing stats for now
+      const res = await api.get('/agent/analytics'); 
       return res.data.data;
     }
   });
@@ -36,7 +36,7 @@ const AgentAnalytics = () => {
         <div className="flex gap-4">
            <div className="flex items-center gap-3 px-6 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm">
               <ShieldCheck className="text-emerald-500" size={20} />
-              <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Accuracy Rate: 94.2%</span>
+              <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Accuracy Rate: {stats?.accuracyRate || '0%'}</span>
            </div>
            <button className="h-16 px-8 bg-slate-900 text-white rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-slate-900/20 hover:scale-105 transition-all flex items-center gap-3">
               <Globe size={18} className="text-blue-400" /> Leaderboard
@@ -70,14 +70,7 @@ const AgentAnalytics = () => {
 
             <div className="h-[400px] -ml-6 relative z-10">
                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={[
-                    { name: '08:00', calls: 2, conv: 0 },
-                    { name: '10:00', calls: 12, conv: 2 },
-                    { name: '12:00', calls: 25, conv: 4 },
-                    { name: '14:00', calls: 18, conv: 3 },
-                    { name: '16:00', calls: 32, conv: 7 },
-                    { name: '18:00', calls: 10, conv: 1 },
-                  ]}>
+                  <AreaChart data={stats?.conversionTrends || []}>
                      <defs>
                         <linearGradient id="colorCalls" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#2563EB" stopOpacity={0.2}/>
@@ -108,7 +101,7 @@ const AgentAnalytics = () => {
                      <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">AI Prediction</h3>
                   </div>
                   <div className="space-y-4">
-                     <p className="text-2xl font-black text-white italic leading-tight">72% Conversion Probability</p>
+                     <p className="text-2xl font-black text-white italic leading-tight">{stats?.aiPrediction?.probability || 0}% Conversion Probability</p>
                      <p className="text-xs font-bold text-slate-400 leading-relaxed uppercase tracking-widest">Projected performance based on current session sentiment and talk-ratio.</p>
                   </div>
                   <div className="pt-6 border-t border-white/10 flex items-center justify-between">
@@ -125,28 +118,22 @@ const AgentAnalytics = () => {
                   <ResponsiveContainer width="100%" height="100%">
                      <RePieChart>
                         <Pie
-                           data={[
-                              { name: 'Won', value: 40 },
-                              { name: 'Interested', value: 30 },
-                              { name: 'Callback', value: 20 },
-                              { name: 'Other', value: 10 },
-                           ]}
+                           data={stats?.callDispositionMix || []}
                            cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={8} dataKey="value"
                         >
-                           <Cell fill="#10B981" />
-                           <Cell fill="#3B82F6" />
-                           <Cell fill="#F59E0B" />
-                           <Cell fill="#F43F5E" />
+                           {stats?.callDispositionMix?.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={['#10B981', '#3B82F6', '#F59E0B', '#F43F5E'][index % 4]} />
+                           ))}
                         </Pie>
                         <Tooltip />
                      </RePieChart>
                   </ResponsiveContainer>
                </div>
                <div className="grid grid-cols-2 gap-4">
-                  <MixLabel label="Won" color="emerald" value="40%" />
-                  <MixLabel label="Interested" color="blue" value="30%" />
-                  <MixLabel label="Callback" color="amber" value="20%" />
-                  <MixLabel label="Loss" color="rose" value="10%" />
+                  <MixLabel label="Won" color="emerald" value={`${stats?.callDispositionMix?.[0]?.value || 0}%`} />
+                  <MixLabel label="Interested" color="blue" value={`${stats?.callDispositionMix?.[1]?.value || 0}%`} />
+                  <MixLabel label="Callback" color="amber" value={`${stats?.callDispositionMix?.[2]?.value || 0}%`} />
+                  <MixLabel label="Loss" color="rose" value={`${stats?.callDispositionMix?.[3]?.value || 0}%`} />
                </div>
             </div>
          </div>
@@ -154,9 +141,9 @@ const AgentAnalytics = () => {
 
       {/* EFFICIENCY METRICS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-         <EfficiencyCard title="Response Latency" value="1.4m" icon={Activity} color="rose" desc="Avg. time between lead entry and first outbound attempt." />
-         <EfficiencyCard title="Interaction Depth" value="4.2" icon={MessageSquare} color="violet" desc="Avg. number of cross-channel touchpoints per conversion." />
-         <EfficiencyCard title="Workload Index" value="88%" icon={Zap} color="amber" desc="Current utilization based on active leads and pending tasks." />
+         <EfficiencyCard title="Response Latency" value={stats?.efficiencyMetrics?.responseLatency || '0m'} icon={Activity} color="rose" desc="Avg. time between lead entry and first outbound attempt." />
+         <EfficiencyCard title="Interaction Depth" value={stats?.efficiencyMetrics?.interactionDepth || '0'} icon={MessageSquare} color="violet" desc="Avg. number of cross-channel touchpoints per conversion." />
+         <EfficiencyCard title="Workload Index" value={stats?.efficiencyMetrics?.workloadIndex || '0%'} icon={Zap} color="amber" desc="Current utilization based on active leads and pending tasks." />
       </div>
     </div>
   );

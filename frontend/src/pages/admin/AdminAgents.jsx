@@ -210,25 +210,25 @@ const AdminAgents = () => {
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
         <div className="space-y-2">
            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+              <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm">
                  <Users size={20} />
               </div>
-              <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase">Team Members</h1>
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Team Members</h1>
            </div>
-           <p className="text-slate-500 font-bold text-xs uppercase tracking-widest ml-1">Manage your agents and managers</p>
+           <p className="text-sm font-medium text-slate-500 ml-1">Manage your agents and managers</p>
         </div>
 
         <div className="flex flex-wrap gap-4">
-           <button onClick={() => navigate('/admin/agents/invite')} className='h-14 px-8 bg-blue-600 text-white rounded-2xl flex items-center gap-3 text-xs font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-blue-500/20 group'><UserPlus size={18} className='text-white group-hover:rotate-12 transition-transform' /> Invite by Email</button>
+           <button onClick={() => navigate('/admin/agents/invite')} className='h-10 px-4 bg-blue-600 text-white rounded-lg flex items-center gap-2 text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm'><UserPlus size={16} /> Invite by Email</button>
            <button 
              onClick={() => {
                setEditAgentId(null);
                resetForm();
                setIsModalOpen(true);
              }}
-             className="h-14 px-8 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center gap-3"
+             className="h-10 px-4 bg-white border border-slate-200 text-slate-700 rounded-lg font-semibold text-sm hover:bg-slate-50 transition-all flex items-center gap-2"
            >
-              <Plus size={18} /> Add Manually
+              <Plus size={16} /> Add Manually
            </button>
         </div>
       </div>
@@ -246,30 +246,30 @@ const AdminAgents = () => {
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ delay: i * 0.1 }}
-             className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-xl hover:shadow-slate-200/50 transition-all"
+             className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md hover:border-slate-300 transition-all cursor-default"
            >
               <div className={`absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 rounded-full bg-${stat.color}-500/5 transition-transform group-hover:scale-150 duration-700`} />
-              <div className={`w-14 h-14 rounded-2xl bg-${stat.color}-50 flex items-center justify-center text-${stat.color}-600 mb-6 shadow-sm border border-${stat.color}-100`}>
-                 <stat.icon size={24} />
+              <div className={`w-12 h-12 rounded-xl bg-${stat.color}-50 flex items-center justify-center text-${stat.color}-600 mb-4 shadow-sm border border-${stat.color}-100`}>
+                 <stat.icon size={20} />
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.label}</p>
-              <p className="text-3xl font-black text-slate-900 mt-2">{stat.val}</p>
+              <p className="text-sm font-semibold text-slate-500">{stat.label}</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">{stat.val}</p>
            </motion.div>
          ))}
       </div>
 
       {/* CONTROL BAR */}
-      <div className="flex flex-col lg:flex-row gap-6 items-center bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
+      <div className="flex flex-col lg:flex-row gap-6 items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
          <div className="flex-1 relative group w-full">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={18} />
             <input 
                type="text" placeholder="Search by name, email, or identity hash..." 
-               className="w-full h-16 pl-16 pr-6 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600/10 outline-none transition-all font-bold text-slate-900 placeholder:text-slate-400"
+               className="w-full h-10 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all text-sm font-medium text-slate-900 placeholder:text-slate-400"
                value={search} onChange={e => setSearch(e.target.value)}
             />
          </div>
          
-         <div className="flex gap-2 p-2 bg-slate-100 rounded-2xl w-full lg:w-auto">
+         <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-full lg:w-auto">
             {[
               { id: 'ALL', label: 'All' },
               { id: 'MANUAL', label: 'Manual' },
@@ -279,8 +279,8 @@ const AdminAgents = () => {
                <button 
                  key={t.id}
                  onClick={() => setFilterType(t.id)}
-                 className={`px-6 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex-1 lg:flex-none ${
-                   filterType === t.id ? 'bg-white text-blue-600 shadow-md scale-105' : 'text-slate-500 hover:text-slate-900'
+                 className={`px-4 h-8 rounded-md text-sm font-semibold transition-all flex-1 lg:flex-none ${
+                   filterType === t.id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                  }`}
                >
                   {t.label}
@@ -290,16 +290,16 @@ const AdminAgents = () => {
       </div>
 
       {/* DATA GRID */}
-      <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/20 overflow-hidden">
-         <div className="overflow-x-auto text-sans">
-            <table className="crm-table">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+         <div className="overflow-x-auto">
+            <table className="w-full text-left">
                <thead>
-                  <tr className="bg-slate-50/50 border-b border-slate-100">
-                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Name</th>
-                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">How They Joined</th>
-                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Assignment</th>
-                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Account Status</th>
-                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Actions</th>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                     <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
+                     <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">How They Joined</th>
+                     <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Assignment</th>
+                     <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Account Status</th>
+                     <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
                   </tr>
                </thead>
                <tbody className="divide-y divide-slate-50">
@@ -311,75 +311,75 @@ const AdminAgents = () => {
                   ) : filteredItems.length === 0 ? (
                     <tr><td colSpan="5" className="p-24 text-center text-slate-300 font-bold italic uppercase text-xs tracking-widest">Zero matches in primary database.</td></tr>
                   ) : filteredItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                       <td className="px-8 py-7">
-                          <div className="flex items-center gap-5">
-                             <div className="relative">
-                                <div className="w-14 h-14 rounded-2xl border-4 border-white bg-slate-100 overflow-hidden shadow-lg group-hover:rotate-3 transition-transform">
-                                   <img src={item.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name || item.email)}&background=random&color=fff&bold=true`} alt="" className="w-full h-full object-cover" />
-                                </div>
-                                <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-4 border-white ${item.isActive ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                             </div>
-                             <div>
-                                <p className="font-black text-slate-900 text-base">{item.name || 'Anonymous Entity'}</p>
-                                <p className="text-xs text-slate-400 font-bold tracking-tight">{item.email}</p>
-                             </div>
-                          </div>
-                       </td>
-                       <td className="px-8 py-7">
-                          <div className={`px-4 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest w-fit flex items-center gap-2 ${
-                            (item.agentType === 'MANUAL' || !item.token) ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-violet-50 text-violet-700 border-violet-100'
-                          }`}>
-                             {(item.agentType === 'MANUAL' || !item.token) ? <Fingerprint size={14} /> : <ExternalLink size={14} />}
-                             {(item.agentType === 'MANUAL' || !item.token) ? 'Added Directly' : 'Email Invite'}
-                          </div>
-                       </td>
-                       <td className="px-8 py-7">
-                           <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${item.team ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-400'}`}>
-                                 <Briefcase size={16} />
+                     <tr key={item.id} className="hover:bg-slate-50 transition-colors group">
+                        <td className="px-6 py-4">
+                           <div className="flex items-center gap-4">
+                              <div className="relative">
+                                 <div className="w-10 h-10 rounded-full border-2 border-white bg-slate-100 overflow-hidden shadow-sm">
+                                    <img src={item.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name || item.email)}&background=random&color=fff`} alt="" className="w-full h-full object-cover" />
+                                 </div>
+                                 <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${item.isActive ? 'bg-emerald-500' : 'bg-slate-300'}`} />
                               </div>
                               <div>
-                                 <span className="text-sm font-black text-slate-700 uppercase tracking-tight">{item.role || 'AGENT'}</span>
-                                 {(item.teamName || item.team) ? (
-                                    <div>
-                                       <p className="text-[10px] text-indigo-600 font-black uppercase tracking-wider">{item.teamName || item.team?.teamName || item.team?.name || "Not Assigned to Team"}</p>
-                                       <p className="text-[9px] text-slate-400 font-bold mt-0.5">Mgr: {item.team?.manager?.name || "No Manager"}</p>
-                                    </div>
-                                 ) : (
-                                    <p className="text-[10px] text-slate-400 font-bold">Not Assigned to Team</p>
-                                 )}
+                                 <p className="font-semibold text-slate-900 text-sm">{item.name || 'Anonymous Entity'}</p>
+                                 <p className="text-xs text-slate-500">{item.email}</p>
                               </div>
                            </div>
                         </td>
-                        <td className="px-8 py-7">
-                           {filterType === 'PENDING' ? (
-                              <div className="flex flex-col gap-1 text-amber-500 font-black">
-                                 <div className="flex items-center gap-2">
-                                    <History size={16} className="animate-pulse" />
-                                    <span className="text-[10px] uppercase tracking-[0.1em]">Awaiting Onboarding</span>
-                                 </div>
-                                 <span className="text-[9px] text-slate-400 font-bold ml-6">
-                                    Invited {Math.max(0, Math.round((new Date() - new Date(item.createdAt)) / (1000 * 60 * 60)))}h ago
-                                 </span>
-                              </div>
-                           ) : item.agentType === 'INVITED' && item.inviteStatus === 'PENDING' ? (
-                             <div className="flex items-center gap-2 text-amber-500 font-black">
-                                <History size={16} />
-                                <span className="text-[10px] uppercase tracking-[0.1em]">Setup Pending</span>
-                             </div>
-                           ) : item.isActive ? (
-                             <div className="flex items-center gap-2 text-emerald-500 font-black">
-                                <ShieldCheck size={16} />
-                                <span className="text-[10px] uppercase tracking-[0.1em]">Active</span>
-                             </div>
-                           ) : (
-                             <div className="flex items-center gap-2 text-slate-300 font-black">
-                                <Ban size={16} />
-                                <span className="text-[10px] uppercase tracking-[0.1em]">Access Denied</span>
-                             </div>
-                           )}
+                        <td className="px-6 py-4">
+                           <div className={`px-2.5 py-1 rounded-md text-xs font-semibold w-fit flex items-center gap-1.5 ${
+                             (item.agentType === 'MANUAL' || !item.token) ? 'bg-blue-50 text-blue-700' : 'bg-violet-50 text-violet-700'
+                           }`}>
+                              {(item.agentType === 'MANUAL' || !item.token) ? <Fingerprint size={14} /> : <ExternalLink size={14} />}
+                              {(item.agentType === 'MANUAL' || !item.token) ? 'Added Directly' : 'Email Invite'}
+                           </div>
                         </td>
+                        <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                               <div className={`w-8 h-8 rounded-md flex items-center justify-center ${item.team ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-400'}`}>
+                                  <Briefcase size={16} />
+                               </div>
+                               <div>
+                                  <span className="text-sm font-semibold text-slate-900">{item.role || 'AGENT'}</span>
+                                  {(item.teamName || item.team) ? (
+                                     <div>
+                                        <p className="text-xs text-slate-600 font-medium">{item.teamName || item.team?.teamName || item.team?.name || "Not Assigned to Team"}</p>
+                                        <p className="text-[11px] text-slate-500 mt-0.5">Mgr: {item.team?.manager?.name || "No Manager"}</p>
+                                     </div>
+                                  ) : (
+                                     <p className="text-xs text-slate-500 italic">Not Assigned to Team</p>
+                                  )}
+                               </div>
+                            </div>
+                         </td>
+                         <td className="px-6 py-4">
+                            {filterType === 'PENDING' ? (
+                               <div className="flex flex-col gap-1 text-amber-600">
+                                  <div className="flex items-center gap-2">
+                                     <History size={16} className="animate-pulse" />
+                                     <span className="text-xs font-medium">Awaiting Onboarding</span>
+                                  </div>
+                                  <span className="text-[11px] text-amber-600/70 ml-6">
+                                     Invited {Math.max(0, Math.round((new Date() - new Date(item.createdAt)) / (1000 * 60 * 60)))}h ago
+                                  </span>
+                               </div>
+                            ) : item.agentType === 'INVITED' && item.inviteStatus === 'PENDING' ? (
+                              <div className="flex items-center gap-2 text-amber-600">
+                                 <History size={16} />
+                                 <span className="text-xs font-medium">Setup Pending</span>
+                              </div>
+                            ) : item.isActive ? (
+                              <div className="flex items-center gap-2 text-emerald-600">
+                                 <ShieldCheck size={16} />
+                                 <span className="text-xs font-medium">Active</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 text-slate-400">
+                                 <Ban size={16} />
+                                 <span className="text-xs font-medium">Access Denied</span>
+                              </div>
+                            )}
+                         </td>
                         <td className="px-8 py-7">
                            <div className="flex items-center justify-end">
                               <TableActionMenu
@@ -470,39 +470,39 @@ const AdminAgents = () => {
          {isInviteModalOpen && (
            <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#020617]/80 backdrop-blur-xl" onClick={() => setIsInviteModalOpen(false)}/>
-              <motion.div initial={{ opacity: 0, scale: 0.95, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 40 }} className="relative w-full max-w-2xl bg-white rounded-[48px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden">
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 40 }} className="relative w-full max-w-2xl bg-white rounded-3xl shadow-xl overflow-hidden">
                  {generatedInviteLink ? (
-                    <div className="p-20 text-center space-y-8">
-                       <div className="w-24 h-24 bg-emerald-50 text-emerald-500 rounded-[32px] flex items-center justify-center mx-auto border-4 border-white shadow-xl shadow-emerald-500/10 rotate-3">
-                          <Zap size={40} />
+                    <div className="p-12 text-center space-y-6">
+                       <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center mx-auto border border-emerald-100 shadow-sm">
+                          <Zap size={32} />
                        </div>
                        <div>
-                          <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Protocol Established</h2>
-                          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-4">Secure invitation payload is ready for transmission.</p>
+                          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Protocol Established</h2>
+                          <p className="text-slate-500 font-medium text-sm mt-2">Secure invitation payload is ready for transmission.</p>
                        </div>
-                       <div className="bg-slate-50 p-8 rounded-[32px] border-2 border-dashed border-slate-200 font-mono text-[10px] text-blue-600 break-all select-all leading-relaxed">
+                       <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 font-mono text-sm text-blue-600 break-all select-all">
                           {generatedInviteLink}
                        </div>
-                       <div className="grid grid-cols-2 gap-4">
+                       <div className="grid grid-cols-2 gap-4 mt-6">
                           <button 
                             onClick={() => { navigator.clipboard.writeText(generatedInviteLink); toast.success('Payload copied to clipboard'); }}
-                            className="h-18 rounded-3xl bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3"
+                            className="h-12 rounded-xl bg-blue-600 text-white font-semibold text-sm shadow-sm hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
                           >
-                             <Copy size={20} /> Copy Link
+                             <Copy size={18} /> Copy Link
                           </button>
-                          <button onClick={() => { setIsInviteModalOpen(false); setGeneratedInviteLink(''); }} className="h-18 rounded-3xl bg-slate-100 text-slate-600 font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all">Close Uplink</button>
+                          <button onClick={() => { setIsInviteModalOpen(false); setGeneratedInviteLink(''); }} className="h-12 rounded-xl bg-slate-100 text-slate-600 font-semibold text-sm hover:bg-slate-200 transition-all">Close Uplink</button>
                        </div>
                     </div>
                  ) : (
                     <>
-                        <div className="p-12 pb-6 border-b border-slate-100">
-                           <div className="flex items-center gap-4 mb-4">
-                              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
-                                 <UserPlus size={24} />
+                        <div className="p-8 pb-4 border-b border-slate-100">
+                           <div className="flex items-center gap-3 mb-2">
+                              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+                                 <UserPlus size={20} />
                               </div>
-                              <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">Dispatch Invitation</h2>
+                              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Dispatch Invitation</h2>
                            </div>
-                           <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest ml-1">Establish a new identity access point within the CRM infrastructure.</p>
+                           <p className="text-slate-500 font-medium text-sm">Establish a new identity access point within the CRM infrastructure.</p>
                         </div>
                         <form onSubmit={(e) => {
                            e.preventDefault();
@@ -511,28 +511,28 @@ const AdminAgents = () => {
                              role: formData.role,
                              name: formData.name.trim()
                            });
-                        }} className="p-12 pt-8 space-y-8">
-                           <div className="grid grid-cols-2 gap-8">
-                              <div className="space-y-3">
-                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Target Identity Name</label>
+                        }} className="p-8 space-y-6">
+                           <div className="grid grid-cols-2 gap-6">
+                              <div className="space-y-2">
+                                 <label className="text-sm font-medium text-slate-700">Target Identity Name</label>
                                  <input 
                                     type="text" required placeholder="Legal Full Name"
-                                    className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 transition-all outline-none font-bold text-slate-900"
+                                    className="w-full h-10 px-4 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition-all outline-none text-sm text-slate-900"
                                     value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
                                  />
                               </div>
-                              <div className="space-y-3">
-                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Communication Endpoint</label>
+                              <div className="space-y-2">
+                                 <label className="text-sm font-medium text-slate-700">Communication Endpoint</label>
                                  <input 
                                     type="email" required placeholder="name@network.com"
-                                    className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 transition-all outline-none font-bold text-slate-900"
+                                    className="w-full h-10 px-4 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition-all outline-none text-sm text-slate-900"
                                     value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
                                  />
                               </div>
                            </div>
 
-                           <div className="space-y-4">
-                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">System Access Level</label>
+                           <div className="space-y-3">
+                              <label className="text-sm font-medium text-slate-700">System Access Level</label>
                               <div className="grid grid-cols-2 gap-4">
                                  {[
                                    { val: 'AGENT', label: 'Standard Agent', desc: 'Core operational access to leads and tasks.' },
@@ -543,31 +543,31 @@ const AdminAgents = () => {
                                    <div 
                                      key={r.val}
                                      onClick={() => setFormData({...formData, role: r.val})}
-                                     className={`p-6 rounded-3xl border-2 cursor-pointer transition-all ${
-                                       formData.role === r.val ? 'border-blue-600 bg-blue-50/50' : 'border-slate-100 hover:border-slate-200'
+                                     className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                                       formData.role === r.val ? 'border-blue-600 bg-blue-50' : 'border-slate-200 hover:border-slate-300'
                                      }`}
                                    >
-                                      <div className="flex items-center justify-between mb-2">
-                                         <span className="text-xs font-black uppercase tracking-tight text-slate-900">{r.label}</span>
+                                      <div className="flex items-center justify-between mb-1">
+                                         <span className="text-sm font-semibold text-slate-900">{r.label}</span>
                                          {formData.role === r.val && <CheckCircle2 size={16} className="text-blue-600" />}
                                       </div>
-                                      <p className="text-[10px] text-slate-400 font-bold leading-relaxed">{r.desc}</p>
+                                      <p className="text-xs text-slate-500 leading-relaxed">{r.desc}</p>
                                    </div>
                                  ))}
                               </div>
                            </div>
 
-                           <div className="flex gap-4 pt-8">
-                              <button type="button" onClick={() => setIsInviteModalOpen(false)} className="flex-1 h-18 rounded-3xl bg-slate-50 text-slate-400 font-black uppercase tracking-widest text-[11px] hover:bg-slate-100 transition-all">Abort</button>
+                           <div className="flex gap-3 pt-6 border-t border-slate-100 mt-6">
+                              <button type="button" onClick={() => setIsInviteModalOpen(false)} className="flex-1 h-10 rounded-lg bg-slate-100 text-slate-600 font-semibold text-sm hover:bg-slate-200 transition-all">Abort</button>
                               <button 
                                 type="submit" 
                                 disabled={inviteUserMutation.isPending}
-                                className="flex-[2] h-18 rounded-3xl bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                className="flex-[2] h-10 rounded-lg bg-blue-600 text-white font-semibold text-sm shadow-sm hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                               >
                                  {inviteUserMutation.isPending ? (
-                                   <Loader2 className="animate-spin" size={20} />
+                                   <Loader2 className="animate-spin" size={18} />
                                  ) : (
-                                   <>Initialize Dispatch <ArrowRight size={20}/></>
+                                   <>Initialize Dispatch <ArrowRight size={16}/></>
                                  )}
                               </button>
                            </div>
@@ -584,10 +584,10 @@ const AdminAgents = () => {
          {isModalOpen && (
            <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#020617]/80 backdrop-blur-xl" onClick={() => { setIsModalOpen(false); resetForm(); }}/>
-              <motion.div initial={{ opacity: 0, scale: 0.95, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 40 }} className="relative w-full max-w-2xl bg-white rounded-[48px] shadow-2xl overflow-hidden">
-                 <div className="p-12 pb-6 border-b border-slate-100">
-                    <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">{editAgentId ? 'Modify Identity' : (formData.role === 'manager' ? 'Add Manager Manually' : 'Add Agent Manually')}</h2>
-                    <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2">Configure permanent system access for this entity.</p>
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 40 }} className="relative w-full max-w-2xl bg-white rounded-3xl shadow-xl overflow-hidden">
+                 <div className="p-8 pb-4 border-b border-slate-100">
+                    <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{editAgentId ? 'Modify Identity' : (formData.role === 'manager' ? 'Add Manager Manually' : 'Add Agent Manually')}</h2>
+                    <p className="text-slate-500 font-medium text-sm mt-1">Configure permanent system access for this entity.</p>
                  </div>
 
                  <form onSubmit={(e) => {
@@ -611,18 +611,18 @@ const AdminAgents = () => {
                          role: formData.role?.toLowerCase()
                        });
                      }
-                  }} className="p-12 pt-8 space-y-8">
+                  }} className="p-8 space-y-6">
                      {!editAgentId && (
-                        <div className="space-y-3 pb-4 border-b border-slate-100">
-                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Adding a:</label>
+                        <div className="space-y-2 pb-4 border-b border-slate-100">
+                           <label className="text-sm font-medium text-slate-700">Adding a:</label>
                            <div className="grid grid-cols-2 gap-4">
                               <button
                                  type="button"
                                  onClick={() => setFormData({ ...formData, role: 'agent' })}
-                                 className={`h-14 px-6 rounded-2xl border font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all ${
+                                 className={`h-10 px-4 rounded-lg border font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
                                     formData.role === 'agent'
-                                       ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20'
-                                       : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
+                                       ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                                  }`}
                               >
                                  <span>👤 Agent</span>
@@ -630,10 +630,10 @@ const AdminAgents = () => {
                               <button
                                  type="button"
                                  onClick={() => setFormData({ ...formData, role: 'manager' })}
-                                 className={`h-14 px-6 rounded-2xl border font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all ${
+                                 className={`h-10 px-4 rounded-lg border font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
                                     formData.role === 'manager'
-                                       ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20'
-                                       : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
+                                       ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                                  }`}
                               >
                                  <span>👔 Manager</span>
@@ -642,70 +642,70 @@ const AdminAgents = () => {
                         </div>
                      )}
 
-                    <div className="grid grid-cols-2 gap-8">
+                    <div className="grid grid-cols-2 gap-6">
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Full Name</label>
+                          <label className="text-sm font-medium text-slate-700">Full Name</label>
                           <input 
                              type="text" required placeholder="e.g. John Doe"
-                             className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900"
+                             className="w-full h-10 px-4 bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-600 transition-all text-sm text-slate-900"
                              value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
                           />
                        </div>
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
+                          <label className="text-sm font-medium text-slate-700">Email Address</label>
                           <input 
                              type="email" required placeholder="e.g. agent@company.com" autoComplete="new-email"
-                             className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900"
+                             className="w-full h-10 px-4 bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-600 transition-all text-sm text-slate-900"
                              value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
                           />
                        </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-8">
+                    <div className="grid grid-cols-2 gap-6">
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                          <label className="text-sm font-medium text-slate-700">
                              {formData.role === 'manager' ? 'Team to Manage (optional)' : 'Assign to Team'}
                           </label>
                           <select 
                              required={formData.role !== 'manager'}
-                             className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_1.5rem_center] bg-no-repeat"
+                             className="w-full h-10 px-4 bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-600 transition-all text-sm text-slate-900 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.75rem_center] bg-no-repeat"
                              value={formData.teamId} onChange={e => setFormData({...formData, teamId: e.target.value})}
                           >
                              <option value="">{formData.role === 'manager' ? 'Select a team to manage...' : 'Select a team...'}</option>
                              {teams?.map(t => <option key={t.id} value={t.id}>{t.teamName}</option>)}
                           </select>
                           {formData.role === 'manager' && (
-                              <p className="text-[10px] text-slate-400 font-bold mt-1.5 ml-1">
+                              <p className="text-xs text-slate-500 font-medium mt-1">
                                  You can assign a team later from the Teams page
                               </p>
                            )}
                        </div>
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Phone Number</label>
+                          <label className="text-sm font-medium text-slate-700">Phone Number</label>
                           <input 
                              type="text" placeholder="+1 (555) 000-0000"
-                             className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900"
+                             className="w-full h-10 px-4 bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-600 transition-all text-sm text-slate-900"
                              value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
                           />
                        </div>
                     </div>
 
                      {!editAgentId && (
-                        <div className="grid grid-cols-2 gap-8">
+                        <div className="grid grid-cols-2 gap-6">
                            <div className="space-y-2 col-span-2">
-                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Set Password</label>
+                              <label className="text-sm font-medium text-slate-700">Set Password</label>
                               <input 
                                  type="password" required placeholder="Choose a secure password"
-                                 className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900"
+                                 className="w-full h-10 px-4 bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-600 transition-all text-sm text-slate-900"
                                  value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})}
                               />
                            </div>
                         </div>
                      )}
 
-                    <div className="flex gap-4 pt-12 border-t border-slate-100">
-                       <button type="button" onClick={() => { setIsModalOpen(false); resetForm(); }} className="flex-1 h-18 rounded-3xl bg-slate-50 text-slate-400 font-black uppercase tracking-widest text-[11px] hover:bg-slate-100 transition-all">Cancel</button>
-                       <button type="submit" className="flex-[2] h-18 rounded-3xl bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all">
+                    <div className="flex gap-3 pt-6 border-t border-slate-100 mt-6">
+                       <button type="button" onClick={() => { setIsModalOpen(false); resetForm(); }} className="flex-1 h-10 rounded-lg bg-slate-100 text-slate-600 font-semibold text-sm hover:bg-slate-200 transition-all">Cancel</button>
+                       <button type="submit" className="flex-[2] h-10 rounded-lg bg-blue-600 text-white font-semibold text-sm shadow-sm hover:bg-blue-700 transition-all">
                           {editAgentId ? 'Commit Changes' : (formData.role === 'manager' ? 'Add Manager' : 'Add Agent')}
                        </button>
                     </div>
@@ -720,9 +720,9 @@ const AdminAgents = () => {
          {assignModalOpen && (
            <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#020617]/80 backdrop-blur-xl" onClick={() => setAssignModalOpen(false)}/>
-              <motion.div initial={{ opacity: 0, scale: 0.95, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 40 }} className="relative w-full max-w-md bg-white rounded-[48px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden p-12">
-                 <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase mb-2">Assign Team</h2>
-                 <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-8">Route <span className="text-blue-600">{selectedAgentForTeam?.name}</span> to an operational team.</p>
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 40 }} className="relative w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden p-8">
+                 <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-2">Assign Team</h2>
+                 <p className="text-slate-500 font-medium text-sm mb-6">Route <span className="text-blue-600 font-semibold">{selectedAgentForTeam?.name}</span> to an operational team.</p>
 
                  <form onSubmit={(e) => {
                     e.preventDefault();
@@ -730,12 +730,12 @@ const AdminAgents = () => {
                        id: selectedAgentForTeam.id,
                        team_id: assignTeamId ? parseInt(assignTeamId) : null
                     });
-                 }} className="space-y-8">
+                 }} className="space-y-6">
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Select Target Team</label>
+                       <label className="text-sm font-medium text-slate-700">Select Target Team</label>
                        <select 
                           required
-                          className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold text-slate-900 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_1.5rem_center] bg-no-repeat"
+                          className="w-full h-10 px-4 bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-600 transition-all text-sm text-slate-900 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.75rem_center] bg-no-repeat"
                           value={assignTeamId} onChange={e => setAssignTeamId(e.target.value)}
                        >
                           <option value="">Select Team...</option>
@@ -743,12 +743,12 @@ const AdminAgents = () => {
                        </select>
                     </div>
 
-                    <div className="flex gap-4 pt-4">
-                       <button type="button" onClick={() => setAssignModalOpen(false)} className="flex-1 h-16 rounded-3xl bg-slate-50 text-slate-400 font-black uppercase tracking-widest text-[11px] hover:bg-slate-100 transition-all">Cancel</button>
+                    <div className="flex gap-3 pt-2">
+                       <button type="button" onClick={() => setAssignModalOpen(false)} className="flex-1 h-10 rounded-lg bg-slate-100 text-slate-600 font-semibold text-sm hover:bg-slate-200 transition-all">Cancel</button>
                        <button 
                          type="submit" 
                          disabled={assignTeamMutation.isPending}
-                         className="flex-[2] h-16 rounded-3xl bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                         className="flex-[2] h-10 rounded-lg bg-blue-600 text-white font-semibold text-sm shadow-sm hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
                        >
                           {assignTeamMutation.isPending ? 'Assigning...' : 'Assign Team'}
                        </button>

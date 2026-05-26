@@ -61,6 +61,7 @@ const getAnalytics = async (req, res) => {
     
     const [
       totalRevenueObj,
+      pipelineValueObj,
       totalLeads,
       wonLeads,
       agents,
@@ -72,6 +73,10 @@ const getAnalytics = async (req, res) => {
       prisma.invoice.aggregate({
         _sum: { amount: true },
         where: { status: 'PAID', createdAt: { gte: dateFilter } }
+      }),
+      prisma.invoice.aggregate({
+        _sum: { amount: true },
+        where: { status: { in: ['DRAFT', 'SENT'] }, createdAt: { gte: dateFilter } }
       }),
       prisma.lead.count({ where: { createdAt: { gte: dateFilter } } }),
       prisma.lead.count({ where: { status: 'WON', createdAt: { gte: dateFilter } } }),
@@ -164,6 +169,7 @@ const getAnalytics = async (req, res) => {
     });
 
     const platformRevenue = totalRevenueObj._sum.amount || 0;
+    const pipelineValue = pipelineValueObj._sum.amount || 0;
     const avgConversion = totalLeads > 0 ? ((wonLeads / totalLeads) * 100).toFixed(1) + '%' : '0%';
 
     const analyticsData = {
@@ -173,6 +179,7 @@ const getAnalytics = async (req, res) => {
       activityFeed,
       kpis: {
         platformRevenue: `$${platformRevenue.toLocaleString()}`,
+        pipelineValue: `$${pipelineValue.toLocaleString()}`,
         activeLeads: totalLeads.toLocaleString(),
         avgConversion,
         aiEfficiency: '96%', // Simulated for now

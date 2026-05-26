@@ -36,9 +36,15 @@ const AgentInvoices = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
 
+  const getDefaultDueDate = () => {
+     const date = new Date();
+     date.setDate(date.getDate() + 7);
+     return date.toISOString().split('T')[0];
+  };
+
   const [newInvoice, setNewInvoice] = useState({
     leadId: '',
-    dueDate: '',
+    dueDate: getDefaultDueDate(),
     currency: 'USD',
     notes: '',
     discount: 0,
@@ -164,7 +170,7 @@ const AgentInvoices = () => {
     };
   };
 
-  const handleSaveDraft = async (isAuto = false) => {
+  const handleSaveDraft = async (isAuto = false, overrideStatus = undefined) => {
     if (!newInvoice.leadId) {
       if (!isAuto) toast.error('Client Target is required to save');
       return;
@@ -173,7 +179,7 @@ const AgentInvoices = () => {
     if (isAuto) setIsAutoSaving(true);
     else setSaveStatus('Saving...');
 
-    const payload = preparePayload();
+    const payload = preparePayload(overrideStatus);
 
     if (invoiceId) {
       await updateMutation.mutateAsync(payload).catch(() => {});
@@ -363,7 +369,7 @@ const AgentInvoices = () => {
         <button 
            onClick={() => {
              setInvoiceId(null);
-             setNewInvoice({ leadId: '', dueDate: '', currency: 'USD', notes: '', discount: 0, items: [{ description: '', quantity: 1, unitPrice: 0, tax: 0 }], status: 'DRAFT' });
+             setNewInvoice({ leadId: '', dueDate: getDefaultDueDate(), currency: 'USD', notes: '', discount: 0, items: [{ description: '', quantity: 1, unitPrice: 0, tax: 0 }], status: 'DRAFT', recipientEmail: '', ccEmail: '', bccEmail: '' });
              setHasUnsavedChanges(false);
              setSaveStatus('');
              setIsModalOpen(true);
@@ -436,7 +442,7 @@ const AgentInvoices = () => {
                           </div>
                        </td>
                        <td className="px-6 py-6 whitespace-nowrap text-xs font-bold text-slate-500">
-                          {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : 'N/A'}
+                          {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : 'Not Set'}
                        </td>
                        <td className="px-6 py-6 whitespace-nowrap text-xs font-medium text-slate-400">
                           {new Date(inv.createdAt).toLocaleDateString()}
@@ -624,8 +630,7 @@ const AgentInvoices = () => {
                                <button onClick={() => generatePDF('download')} className="h-12 bg-white/10 hover:bg-white/20 rounded-xl font-bold uppercase text-[10px] tracking-widest flex items-center justify-center gap-2"><Download size={14}/> PDF</button>
                                <button onClick={handleDuplicate} className="h-12 bg-white/10 hover:bg-white/20 rounded-xl font-bold uppercase text-[10px] tracking-widest flex items-center justify-center gap-2"><Copy size={14}/> Clone</button>
                                {newInvoice.status === 'DRAFT' && (
-                                 <button onClick={() => handleSaveDraft(false).then(() => {
-                                   setNewInvoice(prev => ({...prev, status: 'PENDING_APPROVAL'}));
+                                 <button onClick={() => handleSaveDraft(false, 'PENDING_APPROVAL').then(() => {
                                    toast.success('Submitted for Approval');
                                  })} className="h-12 bg-amber-500/20 hover:bg-amber-500/40 text-amber-400 rounded-xl font-bold uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 text-center leading-tight">Submit</button>
                                )}

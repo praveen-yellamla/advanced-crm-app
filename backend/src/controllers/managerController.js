@@ -35,18 +35,31 @@ const getDashboardStats = async (req, res) => {
       return res.json({ success: true, data: { cards: {}, funnel: [], sources: [], leaderboard: [], activity: [] } });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const startOfWeek = new Date();
-    startOfWeek.setDate(today.getDate() - today.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const { period = 'month' } = req.query;
+    let dateFilter = {};
+    const now = new Date();
+    
+    if (period === 'today') {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      dateFilter = { gte: today };
+    } else if (period === 'week') {
+      const lastWeek = new Date();
+      lastWeek.setDate(now.getDate() - 7);
+      dateFilter = { gte: lastWeek };
+    } else if (period === 'month') {
+      const lastMonth = new Date();
+      lastMonth.setMonth(now.getMonth() - 1);
+      dateFilter = { gte: lastMonth };
+    } else if (period === 'year') {
+      const lastYear = new Date();
+      lastYear.setFullYear(now.getFullYear() - 1);
+      dateFilter = { gte: lastYear };
+    }
+    // period === 'all' -> no date filter
 
     const [
-      callsToday,
-      leadsAssignedThisWeek,
+      callsTotal,
+      leadsAssignedTotal,
       leadsTeam,
       revenueTeam,
       avgDurationResult,
@@ -54,39 +67,39 @@ const getDashboardStats = async (req, res) => {
       leaderboardAgents,
       recentLogs
     ] = await Promise.all([
-      // Total Calls Today (team)
+      // Total Calls
       prisma.call.count({
         where: {
           organizationId: scope.organizationId,
           agentId: { in: scope.agentIds },
-          createdAt: { gte: today }
+          ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter })
         }
       }),
-      // Leads Assigned This Week (team)
+      // Leads Assigned
       prisma.lead.count({
         where: {
           organizationId: scope.organizationId,
           assignedToId: { in: scope.agentIds },
-          createdAt: { gte: startOfWeek }
+          ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter })
         }
       }),
-      // Conversion Rate - Total Leads in scope (MTD)
+      // Conversion Rate - Total Leads in scope
       prisma.lead.findMany({
         where: {
           organizationId: scope.organizationId,
           assignedToId: { in: scope.agentIds },
-          createdAt: { gte: startOfMonth }
+          ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter })
         },
         select: { status: true }
       }),
-      // Revenue Generated This Month
+      // Revenue Generated
       prisma.invoice.aggregate({
         _sum: { amount: true },
         where: {
           organizationId: scope.organizationId,
           raisedById: { in: scope.agentIds },
           status: 'PAID',
-          createdAt: { gte: startOfMonth }
+          ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter })
         }
       }),
       // Average Handle Time (seconds)
@@ -94,14 +107,16 @@ const getDashboardStats = async (req, res) => {
         _avg: { duration: true },
         where: {
           organizationId: scope.organizationId,
-          agentId: { in: scope.agentIds }
+          agentId: { in: scope.agentIds },
+          ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter })
         }
       }),
       // Tasks overview
       prisma.task.findMany({
         where: {
           organizationId: scope.organizationId,
-          assignedToId: { in: scope.agentIds }
+          assignedToId: { in: scope.agentIds },
+          ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter })
         },
         select: { status: true, dueDate: true }
       }),
@@ -113,14 +128,18 @@ const getDashboardStats = async (req, res) => {
           name: true,
           profileImage: true,
           calls: { 
+            where: { ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }) },
             select: { 
               duration: true,
               qaScore: { select: { total: true } }
             } 
           },
-          assignedLeads: { select: { status: true } },
+          assignedLeads: { 
+            where: { ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }) },
+            select: { status: true } 
+          },
           invoices: {
-            where: { status: 'PAID' },
+            where: { status: 'PAID', ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }) },
             select: { amount: true }
           }
         }
@@ -129,7 +148,8 @@ const getDashboardStats = async (req, res) => {
       prisma.leadActivity.findMany({
         where: {
           organizationId: scope.organizationId,
-          lead: { assignedToId: { in: scope.agentIds } }
+          lead: { assignedToId: { in: scope.agentIds } },
+          ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter })
         },
         orderBy: { createdAt: 'desc' },
         take: 10,
@@ -176,8 +196,8 @@ const getDashboardStats = async (req, res) => {
       success: true,
       data: {
         cards: {
-          callsToday,
-          leadsAssignedThisWeek,
+          callsToday: callsTotal,
+          leadsAssignedThisWeek: leadsAssignedTotal,
           conversionRate: Math.round(conversionRate * 10) / 10,
           revenueGenerated: revenueTeam._sum.amount || 0,
           avgHandleTime: Math.round((avgDurationResult._avg.duration || 0) / 60 * 10) / 10,
@@ -254,11 +274,33 @@ const getDashboardLeadSources = async (req, res) => {
       return res.json({ success: true, data: [] });
     }
 
+    const { period = 'month' } = req.query;
+    let dateFilter = {};
+    const now = new Date();
+    
+    if (period === 'today') {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      dateFilter = { gte: today };
+    } else if (period === 'week') {
+      const lastWeek = new Date();
+      lastWeek.setDate(now.getDate() - 7);
+      dateFilter = { gte: lastWeek };
+    } else if (period === 'month') {
+      const lastMonth = new Date();
+      lastMonth.setMonth(now.getMonth() - 1);
+      dateFilter = { gte: lastMonth };
+    } else if (period === 'year') {
+      const lastYear = new Date();
+      lastYear.setFullYear(now.getFullYear() - 1);
+      dateFilter = { gte: lastYear };
+    }
+
     const sources = await prisma.lead.groupBy({
       by: ['source'],
       where: {
         organizationId: scope.organizationId,
-        assignedToId: { in: scope.agentIds }
+        assignedToId: { in: scope.agentIds },
+        ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter })
       },
       _count: { source: true }
     });
@@ -281,11 +323,33 @@ const getDashboardConversionFunnel = async (req, res) => {
       return res.json({ success: true, data: [] });
     }
 
+    const { period = 'month' } = req.query;
+    let dateFilter = {};
+    const now = new Date();
+    
+    if (period === 'today') {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      dateFilter = { gte: today };
+    } else if (period === 'week') {
+      const lastWeek = new Date();
+      lastWeek.setDate(now.getDate() - 7);
+      dateFilter = { gte: lastWeek };
+    } else if (period === 'month') {
+      const lastMonth = new Date();
+      lastMonth.setMonth(now.getMonth() - 1);
+      dateFilter = { gte: lastMonth };
+    } else if (period === 'year') {
+      const lastYear = new Date();
+      lastYear.setFullYear(now.getFullYear() - 1);
+      dateFilter = { gte: lastYear };
+    }
+
     const leads = await prisma.lead.groupBy({
       by: ['status'],
       where: {
         organizationId: scope.organizationId,
-        assignedToId: { in: scope.agentIds }
+        assignedToId: { in: scope.agentIds },
+        ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter })
       },
       _count: { status: true }
     });
@@ -1066,6 +1130,38 @@ const getTeamTasks = async (req, res) => {
   }
 };
 
+const createTask = async (req, res) => {
+  try {
+    const scope = await getTeamScope(req);
+    const { title, description, assignedToId, priority, dueDate } = req.body;
+
+    if (!title || !assignedToId) {
+      return res.status(400).json({ success: false, message: "Title and Assignee are required" });
+    }
+
+    if (!scope.agentIds.includes(parseInt(assignedToId))) {
+      return res.status(403).json({ success: false, message: "Agent is not part of your team" });
+    }
+
+    const task = await prisma.task.create({
+      data: {
+        organizationId: scope.organizationId,
+        title,
+        description: description || null,
+        priority: priority || 'Normal',
+        dueDate: dueDate ? new Date(dueDate) : null,
+        status: 'PENDING',
+        assignedToId: parseInt(assignedToId),
+        createdById: req.user.id
+      }
+    });
+
+    res.json({ success: true, data: task });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const reassignTask = async (req, res) => {
   try {
     const { taskId } = req.params;
@@ -1492,6 +1588,7 @@ module.exports = {
   getTeamLeads,
   reassignLead,
   getTeamTasks,
+  createTask,
   reassignTask,
   getTeamEmails,
   getTeamInvoices,

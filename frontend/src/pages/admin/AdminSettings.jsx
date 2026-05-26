@@ -150,13 +150,13 @@ const AdminSettings = () => {
     <div className="flex flex-col xl:flex-row gap-10 pb-24 min-h-screen">
       {/* Sticky Sidebar */}
       <aside className="w-full xl:w-96 flex flex-col gap-8">
-        <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm space-y-6 xl:sticky xl:top-6">
+        <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm space-y-6 xl:sticky xl:top-6">
            <div className="flex items-center gap-4">
               <Link to="/admin/dashboard" className="h-10 w-10 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 transition-all">
                 <ArrowLeft size={16} />
               </Link>
               <div>
-                 <h2 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase">Settings</h2>
+                 <h2 className="text-xl font-semibold text-slate-800">Settings</h2>
                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Workspace configuration</p>
               </div>
            </div>
@@ -204,7 +204,7 @@ const AdminSettings = () => {
                initial={{ opacity: 0, x: 20 }}
                animate={{ opacity: 1, x: 0 }}
                exit={{ opacity: 0, x: -20 }}
-               className="bg-white p-10 xl:p-14 rounded-[64px] border border-slate-100 shadow-sm relative overflow-hidden min-h-[750px]"
+               className="bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden min-h-[750px]"
             >
                {isProfileLoading ? (
                  <PlaceholderSettings category={activeCategory} />
@@ -274,7 +274,7 @@ const CompanySettings = ({ draftSettings, onChange }) => {
     return (
         <div className="space-y-12 relative z-10">
             <div>
-                <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">Company Profile</h3>
+                <h3 className="text-2xl font-bold text-slate-800">Company Profile</h3>
                 <p className="text-sm font-bold text-slate-400 mt-2">Manage your company branding, address, and local settings.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -392,7 +392,7 @@ const TeamMembersSettings = () => {
     <div className="space-y-12 relative z-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">Team Members</h3>
+          <h3 className="text-2xl font-bold text-slate-800">Team Members</h3>
           <p className="text-sm font-bold text-slate-400 mt-2">Add, configure permissions, and manage your agent invitation pools.</p>
         </div>
         <button 
@@ -490,9 +490,9 @@ const TeamMembersSettings = () => {
         )}
       </AnimatePresence>
 
-      <div className="bg-slate-50 rounded-[40px] p-8 border border-slate-100 space-y-6">
+      <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100 space-y-6">
          <div className="flex items-center justify-between gap-4">
-            <h4 className="text-xl font-black text-[#0F172A] uppercase tracking-tighter italic">Active Members</h4>
+            <h4 className="text-lg font-semibold text-slate-800">Active Members</h4>
             <div className="relative w-72">
                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                <input 
@@ -573,8 +573,8 @@ const TeamMembersSettings = () => {
       </div>
 
       {/* Invitations Pool */}
-      <div className="bg-slate-50 rounded-[40px] p-8 border border-slate-100 space-y-6">
-         <h4 className="text-xl font-black text-[#0F172A] uppercase tracking-tighter italic">Pending Invitations Ledger</h4>
+      <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100 space-y-6">
+         <h4 className="text-lg font-semibold text-slate-800">Pending Invitations Ledger</h4>
          
          <div className="overflow-x-auto rounded-3xl border border-slate-100 bg-white">
             <table className="crm-table">
@@ -642,7 +642,7 @@ const TelephonySettings = ({ draftSettings, onChange }) => {
         <div className="space-y-12 relative z-10">
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">Phone Settings</h3>
+                    <h3 className="text-2xl font-bold text-slate-800">Phone Settings</h3>
                     <p className="text-sm font-bold text-slate-400 mt-2">Connect and configure your telephony and calling providers.</p>
                 </div>
                 <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100">
@@ -697,7 +697,7 @@ const TelephonySettings = ({ draftSettings, onChange }) => {
             </div>
 
             {/* Custom Telephony Configurations */}
-            <div className="p-8 bg-slate-50 border border-slate-100 rounded-[32px] space-y-6">
+            <div className="p-8 bg-slate-50 border border-slate-100 rounded-xl space-y-6">
                <h4 className="text-lg font-black text-[#0F172A] uppercase tracking-tighter">Routing & Call Control</h4>
                
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -768,7 +768,7 @@ const AdsSettings = () => {
     <div className="space-y-12 relative z-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">Ad Integration</h3>
+          <h3 className="text-2xl font-bold text-slate-800">Ad Integration</h3>
           <p className="text-sm font-bold text-slate-400 mt-2">Connect your Google Ads account to sync leads automatically.</p>
         </div>
         {status?.connected && (
@@ -783,7 +783,7 @@ const AdsSettings = () => {
         )}
       </div>
 
-      <div className="p-12 bg-white border border-slate-100 rounded-[48px] shadow-sm space-y-10 relative overflow-hidden group">
+      <div className="p-12 bg-white border border-slate-100 rounded-2xl shadow-sm space-y-10 relative overflow-hidden group">
         <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:rotate-12 transition-transform duration-1000">
           <Globe size={120} />
         </div>
@@ -885,14 +885,14 @@ const WebhooksSettings = ({ draftSettings, onChange }) => {
   return (
     <div className="space-y-12 relative z-10">
       <div>
-        <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">API & Webhooks</h3>
+        <h3 className="text-2xl font-bold text-slate-800">API & Webhooks</h3>
         <p className="text-sm font-bold text-slate-400 mt-2">Manage developer access tokens, IP whitelists, and real-time data webhooks.</p>
       </div>
 
       {/* Developer API Keys */}
-      <div className="p-8 bg-slate-50 border border-slate-100 rounded-[40px] space-y-6">
+      <div className="p-8 bg-slate-50 border border-slate-100 rounded-2xl space-y-6">
          <div className="flex items-center justify-between">
-            <h4 className="text-xl font-black text-[#0F172A] uppercase tracking-tighter italic">Live Access Credentials</h4>
+            <h4 className="text-lg font-semibold text-slate-800">Live Access Credentials</h4>
             <button 
               onClick={handleRotateKey}
               className="h-10 px-6 bg-[#0F172A] hover:bg-blue-600 rounded-xl text-[9px] font-black uppercase tracking-widest text-white transition-all flex items-center gap-2"
@@ -916,9 +916,9 @@ const WebhooksSettings = ({ draftSettings, onChange }) => {
       </div>
 
       {/* Ingestion Webhooks */}
-      <div className="p-8 bg-slate-50 border border-slate-100 rounded-[40px] space-y-6">
+      <div className="p-8 bg-slate-50 border border-slate-100 rounded-2xl space-y-6">
          <div className="flex items-center justify-between">
-            <h4 className="text-xl font-black text-[#0F172A] uppercase tracking-tighter italic">Lead Ingestion URL</h4>
+            <h4 className="text-lg font-semibold text-slate-800">Lead Ingestion URL</h4>
             <span className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[9px] font-black uppercase tracking-widest">Webhook Active</span>
          </div>
          <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Send POST requests containing lead payloads directly to this gateway:</p>
@@ -972,7 +972,7 @@ const BillingPaymentsSettings = ({ draftSettings, onChange }) => {
     <div className="space-y-12 relative z-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">Billing & Taxes</h3>
+          <h3 className="text-2xl font-bold text-slate-800">Billing & Taxes</h3>
           <p className="text-sm font-bold text-slate-400 mt-2">Manage subscription tiers, invoices parameters, and seat allocations.</p>
         </div>
         <button 
@@ -985,17 +985,17 @@ const BillingPaymentsSettings = ({ draftSettings, onChange }) => {
 
       {/* Subscription Tier Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-         <div className="p-8 bg-slate-50 border border-slate-100 rounded-[32px]">
+         <div className="p-8 bg-slate-50 border border-slate-100 rounded-xl">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Seats Allocation</span>
             <div className="text-3xl font-black text-[#0F172A] italic mt-2">5 / 20</div>
             <p className="text-[9px] text-slate-400 mt-2 font-bold uppercase tracking-wide">Seat allocation based on Enterprise tier.</p>
          </div>
-         <div className="p-8 bg-slate-50 border border-slate-100 rounded-[32px]">
+         <div className="p-8 bg-slate-50 border border-slate-100 rounded-xl">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">AI API Token Overrides</span>
             <div className="text-3xl font-black text-[#0F172A] italic mt-2">12,492 / 500k</div>
             <p className="text-[9px] text-slate-400 mt-2 font-bold uppercase tracking-wide">Tokens consumed from monthly quota.</p>
          </div>
-         <div className="p-8 bg-slate-50 border border-slate-100 rounded-[32px]">
+         <div className="p-8 bg-slate-50 border border-slate-100 rounded-xl">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Voice Calls Recording Storage</span>
             <div className="text-3xl font-black text-[#0F172A] italic mt-2">1.2 GB / 512 GB</div>
             <p className="text-[9px] text-slate-400 mt-2 font-bold uppercase tracking-wide">Active recordings audio file usage.</p>
@@ -1003,8 +1003,8 @@ const BillingPaymentsSettings = ({ draftSettings, onChange }) => {
       </div>
 
       {/* Custom Invoice Constants */}
-      <div className="p-10 bg-slate-50 rounded-[40px] border border-slate-100 space-y-8">
-         <h4 className="text-xl font-black text-[#0F172A] uppercase tracking-tighter italic">Invoice Constant Properties</h4>
+      <div className="p-10 bg-slate-50 rounded-2xl border border-slate-100 space-y-8">
+         <h4 className="text-lg font-semibold text-slate-800">Invoice Constant Properties</h4>
          
          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <FormInput 
@@ -1040,7 +1040,7 @@ const BillingPaymentsSettings = ({ draftSettings, onChange }) => {
 
       {/* Past Invoices from Stripe */}
       <div className="space-y-6">
-         <h4 className="text-xl font-black text-[#0F172A] uppercase tracking-tighter italic">Stripe Invoices Feed</h4>
+         <h4 className="text-lg font-semibold text-slate-800">Stripe Invoices Feed</h4>
          
          <div className="overflow-x-auto rounded-3xl border border-slate-100">
             <table className="crm-table bg-white">
@@ -1086,7 +1086,7 @@ const AISettings = ({ draftSettings, onChange }) => {
     <div className="space-y-12 relative z-10">
         <div className="flex items-center justify-between">
             <div>
-                <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">AI Features</h3>
+                <h3 className="text-2xl font-bold text-slate-800">AI Features</h3>
                 <p className="text-sm font-bold text-slate-400 mt-2">Configure dynamic AI assistant parameters, transcript tools, and automated actions.</p>
             </div>
             <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-xl border border-blue-100 text-blue-600 font-black text-[9px] uppercase tracking-widest">
@@ -1178,7 +1178,7 @@ const AIApiKeyPanel = () => {
   };
 
   return (
-    <div className="p-10 bg-[#0F172A] rounded-[40px] shadow-2xl space-y-8 relative overflow-hidden">
+    <div className="p-10 bg-[#0F172A] rounded-2xl shadow-2xl space-y-8 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600 rounded-full blur-[100px] opacity-10 -mr-24 -mt-24" />
       <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
         <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Advanced Model Parameters</span>
@@ -1283,12 +1283,12 @@ const StorageSettings = () => {
   return (
     <div className="space-y-12 relative z-10">
       <div>
-        <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">File Storage</h3>
+        <h3 className="text-2xl font-bold text-slate-800">File Storage</h3>
         <p className="text-sm font-bold text-slate-400 mt-2">Manage shared templates, client agreements, S3 storage limits, and static assets.</p>
       </div>
 
       {/* Storage limit */}
-      <div className="p-8 bg-slate-50 border border-slate-100 rounded-[32px] space-y-4">
+      <div className="p-8 bg-slate-50 border border-slate-100 rounded-xl space-y-4">
          <div className="flex justify-between text-xs font-black text-[#0F172A] uppercase tracking-wider">
             <span>S3 Workspace Usage</span>
             <span>12 MB / 512 MB (2.3%)</span>
@@ -1317,7 +1317,7 @@ const StorageSettings = () => {
       {/* Drag & Drop Simulator */}
       <div 
         onClick={handleUpload}
-        className="p-12 border-2 border-dashed border-slate-200 rounded-[40px] flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-blue-600 hover:bg-slate-50/50 transition-all text-center"
+        className="p-12 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-blue-600 hover:bg-slate-50/50 transition-all text-center"
       >
          <UploadCloud size={40} className="text-slate-400 animate-bounce" />
          <div>
@@ -1328,7 +1328,7 @@ const StorageSettings = () => {
 
       {/* Files List */}
       <div className="space-y-4">
-         <h4 className="text-xl font-black text-[#0F172A] uppercase tracking-tighter italic">Shared Files</h4>
+         <h4 className="text-lg font-semibold text-slate-800">Shared Files</h4>
          <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden">
             <table className="crm-table">
                <thead>
@@ -1367,7 +1367,7 @@ const NotificationsSettings = ({ draftSettings, onChange }) => {
   return (
     <div className="space-y-12 relative z-10">
       <div>
-        <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">Notifications</h3>
+        <h3 className="text-2xl font-bold text-slate-800">Notifications</h3>
         <p className="text-sm font-bold text-slate-400 mt-2">Manage preferences for system alerts, daily digests, and messaging integration nodes.</p>
       </div>
 
@@ -1399,7 +1399,7 @@ const NotificationsSettings = ({ draftSettings, onChange }) => {
       </div>
 
       {/* Slack Integration */}
-      <div className="p-8 bg-slate-50 border border-slate-100 rounded-[32px] space-y-6">
+      <div className="p-8 bg-slate-50 border border-slate-100 rounded-xl space-y-6">
          <h4 className="text-lg font-black text-[#0F172A] uppercase tracking-tighter">Slack Webhook Node Integration</h4>
          <FormInput 
            label="Incoming Webhook Target URL" 
@@ -1433,7 +1433,7 @@ const DataPrivacySettings = ({ draftSettings, onChange }) => {
   return (
     <div className="space-y-12 relative z-10">
       <div>
-        <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">Data Privacy</h3>
+        <h3 className="text-2xl font-bold text-slate-800">Data Privacy</h3>
         <p className="text-sm font-bold text-slate-400 mt-2">Enforce GDPR rules, manage data retention limits, and manage recording consent.</p>
       </div>
 
@@ -1452,7 +1452,7 @@ const DataPrivacySettings = ({ draftSettings, onChange }) => {
          />
       </div>
 
-      <div className="p-8 bg-slate-50 border border-slate-100 rounded-[32px] space-y-6">
+      <div className="p-8 bg-slate-50 border border-slate-100 rounded-xl space-y-6">
          <h4 className="text-lg font-black text-[#0F172A] uppercase tracking-tighter block">Data Retention Rules</h4>
          <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Configure maximum days before system logs are automatically purged from database:</p>
 
@@ -1468,7 +1468,7 @@ const DataPrivacySettings = ({ draftSettings, onChange }) => {
       </div>
 
       {/* Export Company Data */}
-      <div className="p-10 bg-slate-900 rounded-[48px] shadow-2xl text-white relative overflow-hidden group">
+      <div className="p-10 bg-slate-900 rounded-2xl shadow-2xl text-white relative overflow-hidden group">
          <div className="absolute top-0 right-0 p-10 opacity-15 group-hover:rotate-12 transition-transform duration-1000"><ShieldCheck size={90} /></div>
          <div className="relative z-10 space-y-4">
             <h4 className="text-2xl font-black uppercase tracking-tighter italic">Export Complete Database Dump</h4>
@@ -1534,7 +1534,7 @@ const SecuritySettings = () => {
     <div className="space-y-12 relative z-10">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">Security & Sessions</h3>
+          <h3 className="text-2xl font-bold text-slate-800">Security & Sessions</h3>
           <p className="text-sm font-bold text-slate-400 mt-2">Manage active logins, revoke sessions, and configure login credentials.</p>
         </div>
         <div className="flex items-center gap-3 px-4 py-2 bg-emerald-50 rounded-2xl border border-emerald-100">
@@ -1544,7 +1544,7 @@ const SecuritySettings = () => {
       </div>
 
       {/* Password Management */}
-      <div className="p-10 bg-slate-50 rounded-[48px] border border-slate-100 space-y-8">
+      <div className="p-10 bg-slate-50 rounded-2xl border border-slate-100 space-y-8">
         <div className="flex items-center gap-4">
            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[#0F172A] shadow-sm border border-slate-100">
               <Lock size={20} />
@@ -1596,7 +1596,7 @@ const SecuritySettings = () => {
            {isLoading ? (
              <div className="h-40 flex items-center justify-center text-slate-400 animate-pulse uppercase font-black tracking-widest">Scanning active sessions...</div>
            ) : sessions?.map((session) => (
-             <div key={session.id} className="p-8 bg-white border border-slate-100 rounded-[32px] shadow-sm hover:shadow-xl hover:border-blue-100 transition-all duration-500 flex items-center justify-between group">
+             <div key={session.id} className="p-8 bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-xl hover:border-blue-100 transition-all duration-500 flex items-center justify-between group">
                 <div className="flex items-center gap-6">
                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all duration-500 border border-slate-100">
                       {session.userAgent?.includes('Mobile') ? <Smartphone size={24} /> : <Monitor size={24} />}
@@ -1674,7 +1674,7 @@ const AuditLedger = () => {
     <div className="space-y-12 relative z-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-                <h3 className="text-4xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">Activity Logs</h3>
+                <h3 className="text-2xl font-bold text-slate-800">Activity Logs</h3>
                 <p className="text-sm font-bold text-slate-400 mt-2">A complete audited history of all changes and actions performed by your team.</p>
             </div>
             <button 
@@ -1708,7 +1708,7 @@ const AuditLedger = () => {
         </div>
 
         {/* Audit Logs Table */}
-        <div className="bg-slate-900 rounded-[48px] overflow-hidden shadow-2xl">
+        <div className="bg-slate-900 rounded-2xl overflow-hidden shadow-2xl">
            <table className="crm-table">
               <thead>
                  <tr className="bg-slate-800/50">
@@ -1747,7 +1747,7 @@ const AuditLedger = () => {
 // ==========================================
 const PlaceholderSettings = ({ category }) => (
     <div className="flex flex-col items-center justify-center h-[500px] text-center space-y-6">
-        <div className="w-24 h-24 bg-slate-50 rounded-[40px] flex items-center justify-center text-slate-300 animate-pulse border border-slate-100">
+        <div className="w-24 h-24 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 animate-pulse border border-slate-100">
             <Loader2 size={48} className="animate-spin text-blue-500" />
         </div>
         <div>
@@ -1789,7 +1789,7 @@ const FormInput = ({ label, placeholder, type = 'text', colSpan = '', dark = fal
 };
 
 const ToggleCard = ({ title, desc, active = false, onToggle }) => (
-    <div className="p-8 bg-white border border-slate-100 rounded-[32px] shadow-sm flex items-start justify-between group hover:shadow-xl hover:border-blue-100 transition-all duration-700">
+    <div className="p-8 bg-white border border-slate-100 rounded-xl shadow-sm flex items-start justify-between group hover:shadow-xl hover:border-blue-100 transition-all duration-700">
         <div className="space-y-2">
             <h4 className="text-lg font-black text-[#0F172A] tracking-tight">{title}</h4>
             <p className="text-xs font-bold text-slate-400 leading-relaxed max-w-[280px]">{desc}</p>

@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 import { useTelephony } from '../../context/TelephonyContext';
 import { formatPhoneNumber } from '../../utils/phoneUtils';
 import TelephonySettingsModal from '../../components/telephony/TelephonySettingsModal';
+import { useLocation } from 'react-router-dom';
 
 const AgentCallingWorkspace = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -38,6 +39,7 @@ const AgentCallingWorkspace = () => {
   const [leadSearch, setLeadSearch] = useState('');
   const [activeTab, setActiveTab] = useState('TRANSCRIPT');
   const queryClient = useQueryClient();
+  const location = useLocation();
 
   // Task creation modal states
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -82,7 +84,7 @@ const AgentCallingWorkspace = () => {
   }, [leads, leadSearch]);
 
   const logCallMutation = useMutation({
-    mutationFn: (data) => api.post('/call/tag', data),
+    mutationFn: (data) => api.post('/agent/call/log', data),
     onSuccess: () => {
       queryClient.invalidateQueries(['agentDashboard', 'agentLeads', 'agentHistory']);
       toast.success('Call logged successfully');
@@ -127,9 +129,10 @@ const AgentCallingWorkspace = () => {
   const submitTagging = () => {
     logCallMutation.mutate({
       callSid: lastCallSid,
+      callStatus: 'COMPLETED',
       tags: taggingData.status,
       notes: taggingData.notes,
-      duration: duration,
+      durationSeconds: duration,
       phone: activeLead?.phone || phoneNumber,
       leadId: activeLead?.id
     });
@@ -146,6 +149,20 @@ const AgentCallingWorkspace = () => {
       setPhoneNumber(activeLead.phone);
     }
   }, [activeLead, callState]);
+
+  useEffect(() => {
+    if (leads && leads.length > 0) {
+      const params = new URLSearchParams(location.search);
+      const leadIdParam = params.get('leadId');
+      if (leadIdParam) {
+        const foundLead = leads.find(l => l.id.toString() === leadIdParam);
+        if (foundLead) {
+          setActiveLead(foundLead);
+          window.history.replaceState({}, '', '/agent/calling');
+        }
+      }
+    }
+  }, [leads, location.search]);
 
   return (
     <div className="space-y-8 pb-20">

@@ -43,38 +43,39 @@ const formatCurrency = (amount) => {
 const ManagerDashboard = () => {
   const [sortField, setSortField] = useState('revenue');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [period, setPeriod] = useState('month');
 
   const queryClient = useQueryClient();
   const { socket } = useSocket();
 
   const { data: statsData, isLoading: isStatsLoading, refetch: refetchStats } = useQuery({
-    queryKey: ['managerDashboardStats'],
+    queryKey: ['managerDashboardStats', period],
     queryFn: async () => {
-      const res = await api.get('/manager/dashboard/stats');
+      const res = await api.get(`/manager/dashboard/stats?period=${period}`);
       return res.data.data;
     }
   });
 
   const { data: callVolumeData, isLoading: isCallVolumeLoading, refetch: refetchCallVolume } = useQuery({
-    queryKey: ['managerDashboardCallVolume'],
+    queryKey: ['managerDashboardCallVolume', period],
     queryFn: async () => {
-      const res = await api.get('/manager/dashboard/call-volume');
+      const res = await api.get(`/manager/dashboard/call-volume?period=${period}`);
       return res.data.data;
     }
   });
 
   const { data: leadSourcesData, isLoading: isLeadSourcesLoading, refetch: refetchLeadSources } = useQuery({
-    queryKey: ['managerDashboardLeadSources'],
+    queryKey: ['managerDashboardLeadSources', period],
     queryFn: async () => {
-      const res = await api.get('/manager/dashboard/lead-sources');
+      const res = await api.get(`/manager/dashboard/lead-sources?period=${period}`);
       return res.data.data;
     }
   });
 
   const { data: funnelData, isLoading: isFunnelLoading, refetch: refetchFunnel } = useQuery({
-    queryKey: ['managerDashboardFunnel'],
+    queryKey: ['managerDashboardFunnel', period],
     queryFn: async () => {
-      const res = await api.get('/manager/dashboard/conversion-funnel');
+      const res = await api.get(`/manager/dashboard/conversion-funnel?period=${period}`);
       return res.data.data;
     }
   });
@@ -166,14 +167,27 @@ const ManagerDashboard = () => {
            <h1 className="crm-h1">Team Dashboard</h1>
            <p className="crm-body mt-1">Your team's performance at a glance</p>
         </div>
+        <div className="flex items-center gap-3">
+          <select 
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            className="crm-input py-2 pl-4 pr-10 rounded-xl bg-white text-sm font-[600] border-neutral-border-default shadow-sm hover:border-brand-primary/50 transition-colors cursor-pointer"
+          >
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="year">This Year</option>
+            <option value="all">All Time</option>
+          </select>
+        </div>
       </div>
 
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <KPICard title="Calls Today" value={cards?.callsToday ?? 0} icon={<Headphones />} type="calls" />
-        <KPICard title="Leads This Week" value={cards?.leadsAssignedThisWeek ?? 0} icon={<Target />} type="leads" />
+        <KPICard title={`Calls (${period === 'today' ? 'Today' : period === 'week' ? 'This Week' : period === 'month' ? 'This Month' : period === 'year' ? 'This Year' : 'All Time'})`} value={cards?.callsToday ?? 0} icon={<Headphones />} type="calls" />
+        <KPICard title={`Leads (${period === 'today' ? 'Today' : period === 'week' ? 'This Week' : period === 'month' ? 'This Month' : period === 'year' ? 'This Year' : 'All Time'})`} value={cards?.leadsAssignedThisWeek ?? 0} icon={<Target />} type="leads" />
         <KPICard title="Conversion Rate" value={`${cards?.conversionRate ?? 0}%`} icon={<TrendingUp />} type="conversion" />
-        <KPICard title="Revenue This Month" value={formatCurrency(cards?.revenueGenerated || 0)} icon={<DollarSign />} type="revenue" />
+        <KPICard title={`Revenue (${period === 'today' ? 'Today' : period === 'week' ? 'This Week' : period === 'month' ? 'This Month' : period === 'year' ? 'This Year' : 'All Time'})`} value={formatCurrency(cards?.revenueGenerated || 0)} icon={<DollarSign />} type="revenue" />
         <KPICard title="Avg Call Duration" value={formatDuration(cards?.avgHandleTime ?? 0)} icon={<Clock />} type="duration" />
         <KPICard 
           title="Open Tasks" 
@@ -184,11 +198,7 @@ const ManagerDashboard = () => {
         />
       </div>
 
-      {isCardsEmpty && (
-        <div className="mt-4 mb-8 text-center">
-          <p className="crm-body-small">No activity recorded yet. Data will appear here as your team makes calls and manages leads.</p>
-        </div>
-      )}
+      {/* (Global empty state banner removed, as individual components handle empty states) */}
 
       {/* CHARTS CONTAINER */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -202,9 +212,9 @@ const ManagerDashboard = () => {
             </div>
             <BarChart3 size={20} className="text-neutral-muted" />
           </div>
-          <div className="h-[350px] w-full flex-1">
+          <div className="h-[350px] w-full flex-1 min-h-[300px]">
             {callVolumeData && callVolumeData.length > 0 && totalCallsVolume > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={300} minWidth={100}>
                 <BarChart data={callVolumeData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11, fontWeight: 500}} dy={12} />
@@ -215,7 +225,7 @@ const ManagerDashboard = () => {
                   />
                   <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{fontSize: '12px'}} />
                   {agentsArray.map((agent, i) => (
-                    <Bar key={agent} dataKey={agent} stackId="a" fill={COLORS[i % COLORS.length]} radius={i === agentsArray.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
+                    <Bar key={agent} dataKey={agent} stackId="a" fill={COLORS[i % COLORS.length]} isAnimationActive={false} />
                   ))}
                 </BarChart>
               </ResponsiveContainer>
@@ -234,9 +244,9 @@ const ManagerDashboard = () => {
             </div>
             <Layers size={20} className="text-neutral-muted" />
           </div>
-          <div className="h-[250px] relative flex items-center justify-center flex-1">
+          <div className="h-[250px] relative flex items-center justify-center flex-1 min-h-[200px]">
             {leadSourcesData && leadSourcesData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={200} minWidth={100}>
                 <PieChart>
                   <Pie
                     data={leadSourcesData}
@@ -246,6 +256,7 @@ const ManagerDashboard = () => {
                     outerRadius={85}
                     paddingAngle={5}
                     dataKey="value"
+                    isAnimationActive={false}
                   >
                     {leadSourcesData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

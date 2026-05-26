@@ -16,7 +16,8 @@ const {
   getManagers,
   assignAgentTeam,
   getManagerPerformance,
-  submitManagerFeedback
+  submitManagerFeedback,
+  generateManagerCoaching
 } = require('../controllers/adminController');
 const { 
   getInvoices, 
@@ -93,6 +94,7 @@ router.get('/email-audit', getEmailAudit);
 
 router.get('/managers', getManagers);
 router.get('/manager-performance', getManagerPerformance);
+router.post('/manager-performance/generate-ai-feedback', generateManagerCoaching);
 router.post('/manager-feedback', submitManagerFeedback);
 
 

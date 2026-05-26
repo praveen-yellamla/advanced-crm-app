@@ -40,7 +40,7 @@ const AgentTasks = () => {
     title: '',
     description: '',
     dueDate: '',
-    priority: 'Normal',
+    priority: 'NORMAL',
     type: 'FOLLOWUP'
   });
 
@@ -51,7 +51,7 @@ const AgentTasks = () => {
       queryClient.invalidateQueries(['agentDashboard']);
       toast.success('Task created successfully');
       setIsModalOpen(false);
-      setNewTask({ title: '', description: '', dueDate: '', priority: 'Normal', type: 'FOLLOWUP' });
+      setNewTask({ title: '', description: '', dueDate: '', priority: 'NORMAL', type: 'FOLLOWUP' });
     }
   });
 
@@ -168,28 +168,35 @@ const AgentTasks = () => {
                         </tr>
                      </thead>
                      <tbody className="divide-y divide-slate-50">
-                        {filteredTasks.map(task => (
-                          <tr key={task.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer" onClick={() => setSelectedTask(task)}>
-                             <td className="px-10 py-8">
-                                <div className="flex items-center gap-6">
-                                   <div className="w-12 h-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-                                      <ClipboardCheck size={18} />
-                                   </div>
-                                   <div>
-                                      <p className="text-sm font-black text-slate-900 uppercase italic tracking-tight">{task.title}</p>
-                                      <p className="text-[10px] text-slate-400 font-bold mt-1 line-clamp-1">{task.description}</p>
-                                   </div>
-                                </div>
-                             </td>
-                             <td className="px-10 py-8">
-                                <span className={`px-4 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest ${
-                                   task.priority === 'Urgent' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                                   task.priority === 'High' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                   'bg-slate-50 text-slate-400 border-slate-100'
-                                }`}>
-                                   {task.priority}
-                                </span>
-                             </td>
+                        {filteredTasks.length === 0 ? (
+                           <tr>
+                              <td colSpan="5" className="px-10 py-16 text-center text-slate-400 font-bold uppercase tracking-widest text-xs italic">
+                                 No tasks available.
+                              </td>
+                           </tr>
+                        ) : (
+                          filteredTasks.map(task => (
+                           <tr key={task.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer" onClick={() => setSelectedTask(task)}>
+                              <td className="px-10 py-8">
+                                 <div className="flex items-center gap-6">
+                                    <div className="w-12 h-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                                       <ClipboardCheck size={18} />
+                                    </div>
+                                    <div>
+                                       <p className="text-sm font-black text-slate-900 uppercase italic tracking-tight">{task.title}</p>
+                                       <p className="text-[10px] text-slate-400 font-bold mt-1 line-clamp-1">{task.description}</p>
+                                    </div>
+                                 </div>
+                              </td>
+                              <td className="px-10 py-8">
+                                 <span className={`px-4 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest ${
+                                    task.priority === 'HIGH' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                    task.priority === 'MEDIUM' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                    'bg-slate-50 text-slate-400 border-slate-100'
+                                 }`}>
+                                    {task.priority}
+                                 </span>
+                              </td>
                              <td className="px-10 py-8 text-xs font-black text-slate-900 italic uppercase">
                                 {new Date(task.dueDate).toLocaleDateString()}
                              </td>
@@ -204,7 +211,8 @@ const AgentTasks = () => {
                                 </div>
                              </td>
                           </tr>
-                        ))}
+                        ))
+                        )}
                      </tbody>
                   </table>
                </div>
@@ -235,9 +243,13 @@ const AgentTasks = () => {
                     <div key={i} className="aspect-square bg-slate-50/50 rounded-3xl border border-slate-50 p-4 hover:border-blue-200 hover:bg-white transition-all cursor-pointer relative group">
                        <span className="text-[11px] font-black text-slate-400 group-hover:text-blue-600 transition-colors">{i + 1}</span>
                        <div className="absolute bottom-4 left-4 right-4 flex gap-1">
-                          {(filteredTasks || []).filter(t => new Date(t.dueDate).getDate() === (i + 1)).map((t, idx) => (
-                            idx < 3 && <div key={idx} className={`h-1.5 flex-1 rounded-full ${t.priority === 'Urgent' ? 'bg-rose-500' : 'bg-blue-500'}`} />
-                          ))}
+                          {(filteredTasks || []).filter(t => {
+                               const d = new Date(t.dueDate);
+                               const now = new Date();
+                               return d.getDate() === (i + 1) && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                           }).map((t, idx) => (
+                             idx < 3 && <div key={idx} className={`h-1.5 flex-1 rounded-full ${t.priority === 'HIGH' ? 'bg-rose-500' : 'bg-blue-500'}`} />
+                           ))}
                        </div>
                     </div>
                   ))}
@@ -291,8 +303,8 @@ const AgentTasks = () => {
                         <div className="space-y-2">
                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Priority</label>
                            <div className={`px-4 py-1.5 rounded-xl border inline-block text-[9px] font-black uppercase tracking-widest ${
-                              selectedTask.priority === 'Urgent' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                              selectedTask.priority === 'High' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                              selectedTask.priority === 'HIGH' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                              selectedTask.priority === 'MEDIUM' ? 'bg-amber-50 text-amber-600 border-amber-100' :
                               'bg-slate-50 text-slate-400 border-slate-100'
                            }`}>
                               {selectedTask.priority}
@@ -380,9 +392,9 @@ const AgentTasks = () => {
                              className="w-full h-18 px-8 bg-slate-50 border-none rounded-[24px] outline-none focus:ring-2 focus:ring-blue-600/10 font-black text-[11px] uppercase tracking-widest text-slate-900"
                              value={newTask.priority} onChange={e => setNewTask({...newTask, priority: e.target.value})}
                           >
-                             <option>Normal</option>
-                             <option>High</option>
-                             <option>Urgent</option>
+                             <option value="NORMAL">Normal</option>
+                             <option value="MEDIUM">Medium</option>
+                             <option value="HIGH">High</option>
                           </select>
                        </div>
                     </div>
@@ -408,8 +420,8 @@ const TaskCard = ({ task, onUpdate, onDelete, onClick, isManager }) => (
   >
      <div className="flex justify-between items-start mb-6">
         <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border ${
-           task.priority === 'Urgent' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-           task.priority === 'High' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+           task.priority === 'HIGH' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+           task.priority === 'MEDIUM' ? 'bg-amber-50 text-amber-600 border-amber-100' :
            'bg-slate-50 text-slate-400 border-slate-100'
         }`}>
            {task.priority}

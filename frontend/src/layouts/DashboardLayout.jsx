@@ -342,8 +342,8 @@ const DashboardLayout = () => {
                         <ShieldAlert size={15} className="text-neutral-muted" /> Security
                       </button>
                       
-                      {/* PLATFORM SECTION */}
-                      {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
+                      {/* PLATFORM SECTION (Super Admin Only) */}
+                      {user?.role === 'SUPER_ADMIN' && (
                         <>
                           <div className="h-[1px] bg-neutral-border-default/60 my-1 mx-2"></div>
                           <button onClick={() => { navigate('/platform/settings'); setIsProfileOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-neutral-hover text-[13px] font-[500] text-neutral-secondary transition-colors">
