@@ -7,11 +7,28 @@ A world-class, executive-grade CRM solution built for high-performance sales tea
 *   **Backend (API & DB)**: [https://advanced-crm-app.onrender.com](https://advanced-crm-app.onrender.com)
 *   **API Health Status**: [Check System Health](https://advanced-crm-app.onrender.com/api/health)
 
-## 🏗️ Day 2 Architecture Review
-*   **Elite UI/UX**: Minimalist luxury aesthetic with rounded geometry and clean executive spacing.
-*   **Role-Based Access (RBAC)**: Secure multi-portal entry for Admin, Manager, and Agent workflows.
-*   **Executive Dashboard**: Real-time sales intelligence, automated AI insights, and live operations tracking.
-*   **Production Infrastructure**: Fully deployed on **Render** using a high-performance PostgreSQL (Prisma) backend.
+## 💎 Premium UI/UX Architecture
+*   **Glassmorphism & Depth**: Sleek `backdrop-blur-xl` data cards floating over deep, ambient background gradients.
+*   **Dynamic Micro-Interactions**: Fully integrated with `framer-motion` for staggered cascading reveals, smooth page transitions, and hover-lift dynamics.
+*   **Minimalist Luxury**: Executive-grade styling with rounded geometry, rich text-gradients, and custom data visualizations using `recharts`.
+
+## 🔐 Multi-Tenant Role-Based Portals
+The application is a full SaaS platform divided into four distinct, secure operational workspaces:
+
+### 🛠️ Platform Ops (Super Admin)
+*   **Live System Telemetry**: Real-time infrastructure monitoring (CPU, RAM, DB Latency) polling directly from the backend.
+*   **Global Revenue Analytics**: Track global MRR/ARR, subscription tier distribution, and generate CSV financial reports.
+*   **Tenant Management**: Provision new organizations, manage global subscription tiers, and monitor live system audit logs.
+
+### 🏢 Organization Admin
+*   **Business Command Center**: Full control over billing, agent provisioning, team structures, and advanced security settings.
+*   **Unified Analytics**: Fiscal ledgers, comprehensive lead pipelines, and global task tracking across the entire company.
+
+### 📊 Team Manager
+*   **Operations Control**: Dedicated dashboards for QA call scoring, team performance analytics, lead routing, and agent monitoring.
+
+### 🎧 Sales Agent
+*   **Focused Workspace**: Streamlined interfaces for active calling, an integrated email inbox, daily task Kanban boards, and personal performance metrics.
 
 ## 🚀 CI/CD Pipeline
 
