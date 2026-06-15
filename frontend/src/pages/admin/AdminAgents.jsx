@@ -20,7 +20,7 @@ const AdminAgents = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [editAgentId, setEditAgentId] = useState(null);
-  const [filterType, setFilterType] = useState('ALL'); // ALL, MANUAL, INVITED, PENDING
+  const [filterType, setFilterType] = useState('AGENTS'); // ALL, AGENTS, MANAGERS, PENDING
   const [search, setSearch] = useState('');
   const [generatedInviteLink, setGeneratedInviteLink] = useState('');
   const [activeMenuId, setActiveMenuId] = useState(null);
@@ -196,8 +196,8 @@ const AdminAgents = () => {
       if (!matchesSearch) return false;
       
       if (filterType === 'ALL') return true;
-      if (filterType === 'MANUAL') return a.agentType === 'MANUAL';
-      if (filterType === 'INVITED') return a.agentType === 'INVITED';
+      if (filterType === 'AGENTS') return a.role === 'AGENT';
+      if (filterType === 'MANAGERS') return a.role === 'MANAGER' || a.role === 'TEAM_LEAD';
       return true;
     });
   }, [agents, newPendingInvites, filterType, search]);
@@ -236,9 +236,9 @@ const AdminAgents = () => {
       {/* STATS TILES */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
          {[
-           { label: 'Active Agents', val: agents?.filter(a => a.isActive).length || 0, icon: UserCheck, color: 'blue' },
+           { label: 'Active Members', val: agents?.filter(a => a.isActive).length || 0, icon: UserCheck, color: 'blue' },
            { label: 'Invitations Sent', val: newPendingInvites?.length || 0, icon: Send, color: 'violet' },
-           { label: 'Agents Online Now', val: agents?.filter(a => a.isActive).length || 0, icon: Zap, color: 'emerald' },
+           { label: 'Members Online Now', val: agents?.filter(a => a.isActive).length || 0, icon: Zap, color: 'emerald' },
            { label: 'Pending Invites', val: newPendingInvites?.length || 0, icon: Clock, color: 'amber' }
          ].map((stat, i) => (
            <motion.div 
@@ -271,9 +271,9 @@ const AdminAgents = () => {
          
          <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-full lg:w-auto">
             {[
-              { id: 'ALL', label: 'All' },
-              { id: 'MANUAL', label: 'Manual' },
-              { id: 'INVITED', label: 'Invited' },
+              { id: 'ALL', label: 'All Members' },
+              { id: 'AGENTS', label: 'Agents' },
+              { id: 'MANAGERS', label: 'Managers' },
               { id: 'PENDING', label: `Pending Invites (${newPendingInvites?.length || 0})` }
             ].map(t => (
                <button 

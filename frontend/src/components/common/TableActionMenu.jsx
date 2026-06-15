@@ -1,31 +1,49 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MoreVertical } from 'lucide-react';
 
 /**
  * Enterprise Grade Table Action Menu
- * Solves the "clipping" issue by dynamically calculating its position.
+ * Solves the "clipping" issue by rendering via React Portal.
  */
 const TableActionMenu = ({ id, activeId, setActiveId, children, align = 'right' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [openUp, setOpenUp] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
   const menuRef = useRef(null);
   const triggerRef = useRef(null);
 
   useEffect(() => {
     if (activeId === id) {
       setIsOpen(true);
-      // Calculate if we should open up or down
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
         const spaceBelow = window.innerHeight - rect.bottom;
-        // If less than 300px space below, open upwards
         setOpenUp(spaceBelow < 300);
+        setCoords({
+          top: rect.top + window.scrollY,
+          bottom: rect.bottom + window.scrollY,
+          left: rect.left + window.scrollX,
+          right: rect.right + window.scrollX,
+          width: rect.width
+        });
       }
     } else {
       setIsOpen(false);
     }
   }, [activeId, id]);
+
+  // Close on scroll to prevent detached floating menu
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isOpen) setActiveId(null);
+    };
+    if (isOpen) {
+      window.addEventListener('scroll', handleScroll, true);
+    }
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, [isOpen, setActiveId]);
 
   const toggle = (e) => {
     e.stopPropagation();
@@ -62,25 +80,29 @@ const TableActionMenu = ({ id, activeId, setActiveId, children, align = 'right' 
         <MoreVertical size={18} />
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
           <motion.div
             ref={menuRef}
             initial={{ opacity: 0, scale: 0.95, y: openUp ? 10 : -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: openUp ? 10 : -10 }}
-            className={`absolute z-[100] w-64 bg-white rounded-[24px] shadow-[0_25px_60px_rgba(0,0,0,0.15)] border border-slate-100 overflow-hidden ${
-              align === 'right' ? 'right-0' : 'left-0'
-            } ${
-              openUp ? 'bottom-full mb-3' : 'top-full mt-3'
-            }`}
+            style={{
+              position: 'absolute',
+              top: openUp ? 'auto' : coords.bottom + 8,
+              bottom: openUp ? window.innerHeight - coords.top + 8 : 'auto',
+              left: align === 'left' ? coords.left : 'auto',
+              right: align === 'right' ? window.innerWidth - coords.right : 'auto',
+            }}
+            className="z-[9999] w-64 bg-white rounded-[24px] shadow-[0_25px_60px_rgba(0,0,0,0.15)] border border-slate-100 overflow-hidden"
           >
             <div className="p-3 space-y-1">
               {children}
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 };

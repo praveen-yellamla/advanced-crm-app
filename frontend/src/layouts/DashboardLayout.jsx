@@ -100,7 +100,7 @@ const DashboardLayout = () => {
       { name: 'Leads', icon: Target, path: '/admin/leads' },
       { name: 'Pipeline', icon: TrendingUp, path: '/admin/pipeline' },
       { name: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
-      { name: 'Agents', icon: Users, path: '/admin/agents' },
+      { name: 'Team Members', icon: Users, path: '/admin/agents' },
       { name: 'Teams', icon: Layers, path: '/admin/teams' },
       { name: 'Manager Feedback', icon: MessageSquare, path: '/admin/manager-feedback' },
       { name: 'Tasks', icon: ClipboardCheck, path: '/admin/tasks' },

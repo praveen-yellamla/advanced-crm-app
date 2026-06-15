@@ -49,6 +49,8 @@ const Login = () => {
         setErrorMsg("Your account isn't active yet. Check your email for your invitation link.");
       } else if (code === 'TOO_MANY_ATTEMPTS' || err.response?.status === 429) {
         setErrorMsg("Too many failed attempts. Try again in 15 minutes or reset your password.");
+      } else if (!err.response) {
+        setErrorMsg("Network Error: Could not connect to the server. Please check your connection.");
       } else {
         setErrorMsg("Incorrect email or password. Please try again.");
       }

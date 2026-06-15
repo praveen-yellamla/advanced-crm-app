@@ -421,7 +421,7 @@ const getAgents = async (req, res) => {
   try {
     const agents = await prisma.user.findMany({
       where: { 
-        role: 'AGENT',
+        role: { notIn: ['SUPER_ADMIN', 'ADMIN'] },
         organizationId: req.user.organizationId,
         // Exclude invited agents who have not yet completed setup.
         // These agents have no real access and must not appear in team/lead dropdowns.
@@ -940,13 +940,17 @@ const assignAgentTeam = async (req, res) => {
     const agentId = parseInt(id);
     const parsedTeamId = team_id ? parseInt(team_id) : null;
 
-    // Check if agent exists
+    // Check if user exists
     const agent = await prisma.user.findFirst({
-      where: { id: agentId, role: 'AGENT', organizationId: req.user.organizationId }
+      where: { 
+        id: agentId, 
+        role: { notIn: ['SUPER_ADMIN', 'ADMIN'] }, 
+        organizationId: req.user.organizationId 
+      }
     });
 
     if (!agent) {
-      return res.status(404).json({ success: false, message: 'Agent not found' });
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
     // Block team assignment for agents who have not completed account setup

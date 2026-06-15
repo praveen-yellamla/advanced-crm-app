@@ -1,9 +1,10 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 // ==========================================
@@ -446,7 +447,7 @@ model Lead {
   source         LeadSource
   status         LeadStatus @default(NEW)
   score          Int?       @default(0)
-  aiSummary      String?    @map("ai_summary") @db.Text
+  aiSummary      String?    @map("ai_summary")
 
   assignedToId Int?  @map("assigned_to")
   assignedTo   User? @relation("AssignedLeads", fields: [assignedToId], references: [id])
@@ -472,14 +473,14 @@ model Task {
   organization   Organization @relation(fields: [organizationId], references: [id])
   
   title       String
-  description String?   @db.Text
+  description String?  
   dueDate     DateTime? @map("due_date")
   priority    String?   @default("Normal")
   status      String?   @default("PENDING")
   
   type        String?   @default("FOLLOWUP")
-  tags        String[]  @default([])
-  notes       String?   @db.Text
+  tags        String?
+  notes       String?
   
   reminderTime DateTime? @map("reminder_time")
   isRecurring Boolean   @default(false) @map("is_recurring")
@@ -514,9 +515,9 @@ model Call {
   status          String     @default("ringing")
   duration        Int        @default(0)
   recordingUrl    String?    @map("recording_url")
-  transcript      String?    @db.Text
-  summary         String?    @db.Text
-  notes           String?    @db.Text
+  transcript      String?   
+  summary         String?   
+  notes           String?   
   tags            String?
   disposition     String?
   sentiment       String?    @default("NEUTRAL")
@@ -552,7 +553,7 @@ model Invoice {
   tax        Float?        @default(0)
   subtotal   Float?        @default(0)
   
-  notes      String?       @db.Text
+  notes      String?      
   status     String        @default("DRAFT")
   dueDate    DateTime?     @map("due_date")
   
@@ -593,7 +594,7 @@ model InvoiceAuditLog {
   userId    Int?     @map("user_id")
   
   messageId String?  @map("message_id")
-  error     String?  @db.Text
+  error     String? 
   
   timestamp DateTime @default(now())
   
@@ -611,7 +612,7 @@ model InvoiceDeliveryLog {
   
   status    String   // ACCEPTED, DELIVERED, BOUNCED, FAILED
   messageId String?  @map("message_id")
-  error     String?  @db.Text
+  error     String? 
   
   timestamp DateTime @default(now())
   
@@ -669,7 +670,7 @@ model ChatMessage {
   userId    Int      @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   role      String   // user, assistant
-  content   String   @db.Text
+  content   String  
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("chat_messages")
@@ -685,7 +686,7 @@ model Email {
   agent   User  @relation("AgentEmails", fields: [agentId], references: [id])
   
   subject      String
-  content      String  @db.Text
+  content      String 
   status       String  @default("SENT")
   createdAt    DateTime @default(now()) @map("created_at")
 
@@ -723,13 +724,13 @@ model EmailThread {
   leadId        Int?     @map("lead_id")
   lead          Lead?    @relation(fields: [leadId], references: [id])
   subject       String
-  snippet       String?  @db.Text
+  snippet       String? 
   folder        String   @default("INBOX") // INBOX, SENT, ARCHIVED, SPAM, TRASH, DRAFTS
   isRead        Boolean  @default(false) @map("is_read")
   isStarred     Boolean  @default(false) @map("is_starred")
   urgency       String   @default("LOW") // LOW, MEDIUM, HIGH, URGENT
   sentiment     String   @default("NEUTRAL") // POSITIVE, NEUTRAL, NEGATIVE
-  summary       String?  @db.Text
+  summary       String? 
   replySuggestions Json? @map("reply_suggestions") // 3 reply suggestions
   lastMessageAt DateTime @default(now()) @map("last_message_at")
   createdAt     DateTime @default(now()) @map("created_at")
@@ -786,7 +787,7 @@ model EmailTemplate {
   organization   Organization @relation(fields: [organizationId], references: [id])
   name           String
   subject        String
-  content        String   @db.Text
+  content        String  
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
@@ -872,7 +873,7 @@ model Feedback {
   agent          User         @relation("AgentFeedback", fields: [agentId], references: [id])
   managerId      Int          @map("manager_id")
   manager        User         @relation("ManagerFeedback", fields: [managerId], references: [id])
-  content        String       @db.Text
+  content        String      
   type           String       @default("COACHING") // COACHING, PRAISE, CORRECTION, ESCALATION
   priority       String?      @default("NORMAL")
   category       String?
@@ -883,7 +884,7 @@ model Feedback {
   callId           Int?         @map("call_id")
   acknowledgedAt   DateTime?    @map("acknowledged_at")
   improvementStatus String?     @default("PENDING") @map("improvement_status")
-  response         String?      @db.Text
+  response         String?     
   createdAt        DateTime     @default(now()) @map("created_at")
 
   @@map("feedbacks")
@@ -897,7 +898,7 @@ model CallAnnotation {
   call           Call         @relation(fields: [callId], references: [id], onDelete: Cascade)
   managerId      Int          @map("manager_id")
   timestamp      Float        // seconds
-  note           String       @db.Text
+  note           String      
   createdAt      DateTime     @default(now()) @map("created_at")
 
   @@map("call_annotations")
@@ -916,7 +917,7 @@ model QAScore {
   objection      Int          @default(0)
   closing        Int          @default(0)
   total          Int          @default(0)
-  notes          String?      @db.Text
+  notes          String?     
   createdAt      DateTime     @default(now()) @map("created_at")
 
   @@map("qa_scores")

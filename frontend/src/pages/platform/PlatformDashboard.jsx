@@ -73,31 +73,35 @@ const PlatformDashboard = () => {
     <motion.div 
       initial={{ opacity: 0, y: 20 }} 
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-12 pb-24"
+      className="space-y-12 pb-24 relative"
     >
+      {/* AMBIENT BACKGROUND */}
+      <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none -z-10" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-400/5 rounded-full blur-[120px] pointer-events-none -z-10" />
+
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
         <div>
            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
+              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 shadow-sm">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-[10px] font-black uppercase tracking-widest">Platform Online</span>
               </div>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Uptime: 99.99%</span>
            </div>
-           <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter italic uppercase">Dashboard</h1>
-           <p className="text-sm font-medium text-slate-500 mt-2 max-w-2xl leading-relaxed">Global platform management and performance monitoring.</p>
+           <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#0F172A] to-blue-800 tracking-tighter italic uppercase leading-none drop-shadow-sm">Dashboard</h1>
+           <p className="text-sm font-medium text-slate-500 mt-4 max-w-2xl leading-relaxed">Global platform management and performance monitoring.</p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
            <button 
              onClick={() => navigate('/platform/organizations')}
-             className="h-16 px-8 bg-white border border-slate-200 text-[#0F172A] rounded-3xl text-[11px] font-black uppercase tracking-widest shadow-sm flex items-center gap-4 hover:border-blue-600 hover:scale-105 transition-all active:scale-95"
+             className="h-16 px-8 bg-white/80 backdrop-blur-md border border-white/50 text-[#0F172A] rounded-3xl text-[11px] font-black uppercase tracking-widest shadow-sm flex items-center gap-4 hover:border-blue-600 hover:scale-105 transition-all active:scale-95"
            >
               <Building2 size={20} className="text-blue-600" /> View Companies
            </button>
            <button 
              onClick={() => navigate('/platform/analytics')}
-             className="h-16 px-8 bg-white border border-slate-200 text-[#0F172A] rounded-3xl text-[11px] font-black uppercase tracking-widest shadow-sm flex items-center gap-4 hover:border-emerald-600 hover:scale-105 transition-all active:scale-95"
+             className="h-16 px-8 bg-white/80 backdrop-blur-md border border-white/50 text-[#0F172A] rounded-3xl text-[11px] font-black uppercase tracking-widest shadow-sm flex items-center gap-4 hover:border-emerald-600 hover:scale-105 transition-all active:scale-95"
            >
               <DollarSign size={20} className="text-emerald-600" /> Open Revenue
            </button>
@@ -106,12 +110,12 @@ const PlatformDashboard = () => {
                 const healthSection = document.getElementById('system-status-section');
                 healthSection?.scrollIntoView({ behavior: 'smooth' });
              }}
-             className="h-16 px-8 bg-white border border-slate-200 text-[#0F172A] rounded-3xl text-[11px] font-black uppercase tracking-widest shadow-sm flex items-center gap-4 hover:border-amber-600 hover:scale-105 transition-all active:scale-95"
+             className="h-16 px-8 bg-white/80 backdrop-blur-md border border-white/50 text-[#0F172A] rounded-3xl text-[11px] font-black uppercase tracking-widest shadow-sm flex items-center gap-4 hover:border-amber-600 hover:scale-105 transition-all active:scale-95"
            >
               <Activity size={20} className="text-amber-600" /> System Status
            </button>
            <button 
-             className="h-16 w-16 bg-[#0F172A] text-white rounded-3xl flex items-center justify-center shadow-xl hover:scale-110 active:scale-90 transition-all"
+             className="h-16 w-16 bg-gradient-to-br from-[#0F172A] to-slate-800 text-white rounded-3xl flex items-center justify-center shadow-[0_8px_20px_rgb(15,23,42,0.3)] hover:shadow-[0_12px_25px_rgb(15,23,42,0.5)] hover:scale-105 active:scale-95 transition-all border border-slate-700/50"
              onClick={() => queryClient.invalidateQueries()}
            >
               <Activity size={24} />
@@ -168,7 +172,7 @@ const PlatformDashboard = () => {
         </div>
 
         {/* REVENUE MIX */}
-        <div className="bg-white p-12 rounded-[56px] border border-slate-100 shadow-sm flex flex-col justify-between">
+        <div className="bg-white/80 backdrop-blur-xl p-12 rounded-[56px] border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:shadow-[0_40px_100px_rgba(0,0,0,0.08)] transition-all duration-700 flex flex-col justify-between">
            <div className="space-y-2">
               <h3 className="text-2xl font-black text-[#0F172A] uppercase italic">Revenue Mix</h3>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">By Subscription Tier</p>
@@ -216,8 +220,8 @@ const PlatformDashboard = () => {
       </div>
 
       {/* RECENT SIGNUPS */}
-      <div className="bg-white rounded-[64px] border border-slate-100 shadow-sm overflow-hidden">
-         <div className="px-12 py-10 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+      <div className="bg-white/80 backdrop-blur-xl rounded-[64px] border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden">
+         <div className="px-12 py-10 border-b border-white/50 flex items-center justify-between bg-slate-50/50 backdrop-blur-md">
             <div>
                <h3 className="text-2xl font-black text-[#0F172A] uppercase italic">Recent Signups</h3>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">System Activity Feed</p>
@@ -308,7 +312,7 @@ const SaaSKPICard = ({ label, value, trend, icon: Icon, color }) => {
   };
 
   return (
-    <div className="bg-white p-10 rounded-[48px] border border-slate-100 shadow-sm space-y-12 group hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative overflow-hidden z-0">
+    <div className="bg-white/80 backdrop-blur-xl p-10 rounded-[48px] border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] space-y-12 group hover:shadow-[0_40px_100px_rgba(0,0,0,0.1)] hover:-translate-y-2 transition-all duration-700 relative overflow-hidden z-0">
        <div className="flex items-center justify-between relative z-10">
           <div className={`w-18 h-18 rounded-[28px] flex items-center justify-center transition-all duration-500 group-hover:scale-110 shadow-lg ${colors[color]}`}>
              <Icon size={32} />
