@@ -2,28 +2,30 @@ const { createClient } = require('@libsql/client');
 const fs = require('fs');
 const path = require('path');
 
-// Read .env manually to bypass dotenvx
+// Read .env manually to bypass dotenvx if it exists
 const envPath = path.join(__dirname, '../.env');
-const envContent = fs.readFileSync(envPath, 'utf8');
 const envVars = {};
-for (const line of envContent.split('\n')) {
-  const trimmed = line.trim();
-  if (!trimmed || trimmed.startsWith('#')) continue;
-  const idx = trimmed.indexOf('=');
-  if (idx === -1) continue;
-  const key = trimmed.substring(0, idx).trim();
-  let val = trimmed.substring(idx + 1).trim();
-  // Remove inline comments
-  const commentIdx = val.indexOf(' #');
-  if (commentIdx !== -1) val = val.substring(0, commentIdx).trim();
-  envVars[key] = val;
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  for (const line of envContent.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const idx = trimmed.indexOf('=');
+    if (idx === -1) continue;
+    const key = trimmed.substring(0, idx).trim();
+    let val = trimmed.substring(idx + 1).trim();
+    // Remove inline comments
+    const commentIdx = val.indexOf(' #');
+    if (commentIdx !== -1) val = val.substring(0, commentIdx).trim();
+    envVars[key] = val;
+  }
 }
 
-const connectionString = envVars['DATABASE_URL'];
-const authToken = envVars['TURSO_AUTH_TOKEN'];
+const connectionString = envVars['DATABASE_URL'] || process.env.DATABASE_URL;
+const authToken = envVars['TURSO_AUTH_TOKEN'] || process.env.TURSO_AUTH_TOKEN;
 
-if (!connectionString || !authToken) {
-  console.error('❌ Missing DATABASE_URL or TURSO_AUTH_TOKEN in .env');
+if (!connectionString) {
+  console.error('❌ Missing DATABASE_URL environment variable');
   process.exit(1);
 }
 

@@ -11,24 +11,26 @@ const path = require('path');
 // ── Read .env manually ────────────────────────────────────────────────────────
 const envPath = path.join(__dirname, '../.env');
 const env = {};
-fs.readFileSync(envPath, 'utf8').split(/\r?\n/).forEach(line => {
-  const t = line.trim();
-  if (!t || t.startsWith('#')) return;
-  const i = t.indexOf('=');
-  if (i === -1) return;
-  const key = t.slice(0, i).trim();
-  let val = t.slice(i + 1).trim();
-  // Strip inline comments
-  const ci = val.indexOf(' #');
-  if (ci !== -1) val = val.slice(0, ci).trim();
-  env[key] = val;
-});
+if (fs.existsSync(envPath)) {
+  fs.readFileSync(envPath, 'utf8').split(/\r?\n/).forEach(line => {
+    const t = line.trim();
+    if (!t || t.startsWith('#')) return;
+    const i = t.indexOf('=');
+    if (i === -1) return;
+    const key = t.slice(0, i).trim();
+    let val = t.slice(i + 1).trim();
+    // Strip inline comments
+    const ci = val.indexOf(' #');
+    if (ci !== -1) val = val.slice(0, ci).trim();
+    env[key] = val;
+  });
+}
 
-const DB_URL   = env.DATABASE_URL;
-const DB_TOKEN = env.TURSO_AUTH_TOKEN;
+const DB_URL   = env.DATABASE_URL || process.env.DATABASE_URL;
+const DB_TOKEN = env.TURSO_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
 
-if (!DB_URL || !DB_TOKEN) {
-  console.error('❌  DATABASE_URL or TURSO_AUTH_TOKEN missing in .env');
+if (!DB_URL) {
+  console.error('❌  DATABASE_URL missing');
   process.exit(1);
 }
 
