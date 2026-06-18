@@ -21,15 +21,28 @@ if (fs.existsSync(envPath)) {
   }
 }
 
-const connectionString = envVars['DATABASE_URL'] || process.env.DATABASE_URL;
+// Print environment keys for debugging (hiding values)
+console.log('Available environment variables:', 
+  Object.keys(process.env).filter(k => /DB|DATABASE|URL|TURSO/i.test(k))
+);
+
+const connectionString = envVars['TURSO_DATABASE_URL'] || process.env.TURSO_DATABASE_URL || envVars['DATABASE_URL'] || process.env.DATABASE_URL;
 const authToken = envVars['TURSO_AUTH_TOKEN'] || process.env.TURSO_AUTH_TOKEN;
 
 if (!connectionString) {
-  console.error('❌ Missing DATABASE_URL environment variable');
+  console.error('❌ Missing DATABASE_URL or TURSO_DATABASE_URL environment variable');
   process.exit(1);
 }
 
-console.log(`🔗 Connecting to Turso: ${connectionString}`);
+if (connectionString.startsWith('postgres://') || connectionString.startsWith('postgresql://')) {
+  console.error('\n❌ Error: The database URL points to a PostgreSQL database, but this app has been migrated to Turso/LibSQL (SQLite).');
+  console.error('To resolve this, please either:');
+  console.error('  1. Unlink the PostgreSQL database from this Web Service in your Render Dashboard settings.');
+  console.error('  2. Or, configure a new Environment Variable in Render named "TURSO_DATABASE_URL" containing your Turso database URL.\n');
+  process.exit(1);
+}
+
+console.log(`🔗 Connecting to database URL: ${connectionString.split('@').pop()}`);
 
 async function run() {
   const client = createClient({

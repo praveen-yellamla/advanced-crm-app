@@ -26,15 +26,21 @@ if (fs.existsSync(envPath)) {
   });
 }
 
-const DB_URL   = env.DATABASE_URL || process.env.DATABASE_URL;
+const DB_URL   = env.TURSO_DATABASE_URL || process.env.TURSO_DATABASE_URL || env.DATABASE_URL || process.env.DATABASE_URL;
 const DB_TOKEN = env.TURSO_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
 
 if (!DB_URL) {
-  console.error('❌  DATABASE_URL missing');
+  console.error('❌  DATABASE_URL or TURSO_DATABASE_URL missing');
   process.exit(1);
 }
 
-console.log('🔗  Connecting to:', DB_URL);
+if (DB_URL.startsWith('postgres://') || DB_URL.startsWith('postgresql://')) {
+  console.error('\n❌ Error: The database URL points to a PostgreSQL database, but this app has been migrated to Turso/LibSQL (SQLite).');
+  console.error('Please configure a new Environment Variable in Render named "TURSO_DATABASE_URL" containing your Turso database URL.\n');
+  process.exit(1);
+}
+
+console.log('🔗  Connecting to:', DB_URL.split('@').pop());
 
 // ── Create client ─────────────────────────────────────────────────────────────
 const db = createClient({ url: DB_URL, authToken: DB_TOKEN });
